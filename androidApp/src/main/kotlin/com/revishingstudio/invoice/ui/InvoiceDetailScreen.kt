@@ -3,6 +3,10 @@
 package com.revishingstudio.invoice.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,8 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -90,6 +92,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             BackTopBar(inv?.number ?: "", nav::back) {
                 if (inv != null) {
@@ -128,7 +131,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(inv.client.name, style = MaterialTheme.typography.headlineSmall)
+                    Text(inv.client.name, style = MaterialTheme.typography.headlineMedium)
                     Text(
                         "Issued ${InvoiceDates.format(inv.issueDate)} · Due ${InvoiceDates.format(inv.dueDate)}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -137,7 +140,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
                 StatusChip(status)
             }
 
-            Button(onClick = ::sharePdf, modifier = Modifier.fillMaxWidth()) { Text("View / share PDF") }
+            PrimaryButton("View / share PDF", ::sharePdf, Modifier.padding(top = 8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (inv.state == InvoiceState.DRAFT) {
                     OutlinedButton(onClick = { actions.run("Marked as sent", onDone = reload) { markSent(id) } }, modifier = Modifier.weight(1f)) {
@@ -150,8 +153,8 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
             }
 
             SectionTitle("Items")
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            GlassCard {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     inv.items.forEach { item ->
                         Row {
                             Column(Modifier.weight(1f)) {
@@ -167,7 +170,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
                             Text(MoneyFormat.format(item.amountMinor, inv.currency), fontWeight = FontWeight.SemiBold)
                         }
                     }
-                    HorizontalDivider()
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     AmountRow("Total", inv.totalMinor, inv.currency, bold = true)
                     if (inv.paidMinor > 0) {
                         AmountRow("Paid", inv.paidMinor, inv.currency)
@@ -178,33 +181,36 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
 
             SectionTitle("Payments")
             if (inv.payments.isEmpty()) {
-                Text("No payments recorded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("No payments recorded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp))
             }
             inv.payments.forEach { payment ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("${MoneyFormat.format(payment.amountMinor, inv.currency)} · ${payment.method.label}")
-                        val details = buildList {
-                            add(InvoiceDates.format(payment.receivedOn))
-                            payment.inrReceivedMinor?.let { add("received ${MoneyFormat.format(it, Currency.INR)}") }
-                            if (payment.note.isNotBlank()) add(payment.note)
+                GlassCard(contentPadding = PaddingValues(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("${MoneyFormat.format(payment.amountMinor, inv.currency)} · ${payment.method.label}")
+                            val details = buildList {
+                                add(InvoiceDates.format(payment.receivedOn))
+                                payment.inrReceivedMinor?.let { add("received ${MoneyFormat.format(it, Currency.INR)}") }
+                                if (payment.note.isNotBlank()) add(payment.note)
+                            }
+                            Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton(onClick = { paymentToDelete = payment }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Delete payment")
+                        IconButton(onClick = { paymentToDelete = payment }) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Delete payment", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
 
             if (inv.notes.isNotBlank()) {
                 SectionTitle("Notes")
-                Text(inv.notes)
+                GlassCard { Text(inv.notes) }
             }
             inv.bankAccount?.let {
                 SectionTitle("Bank account on invoice")
-                Text("${it.bankName} · ${it.accountNumber}")
+                GlassCard { Text("${it.bankName} · ${it.accountNumber}") }
             }
+            Spacer(Modifier.height(24.dp))
         }
     }
 

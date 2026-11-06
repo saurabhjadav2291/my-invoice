@@ -2,7 +2,18 @@
 
 package com.revishingstudio.invoice.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -47,9 +58,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
-/** The orange accent from your invoice design. */
-val Accent = Color(0xFFFF5400)
-
 fun today(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
 
 private const val DAY_MILLIS = 86_400_000L
@@ -57,23 +65,62 @@ private const val DAY_MILLIS = 86_400_000L
 @Composable
 fun BackTopBar(title: String, onBack: () -> Unit, actions: @Composable () -> Unit = {}) {
     TopAppBar(
-        title = { Text(title) },
+        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
         navigationIcon = {
-            IconButton(onClick = onBack) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .padding(start = 8.dp, end = 4.dp)
+                    .size(42.dp)
+                    .shadow(8.dp, CircleShape, ambientColor = Color(0x22B4643C), spotColor = Color(0x33B4643C))
+                    .background(Color.White, CircleShape),
+            ) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
         },
         actions = { actions() },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            scrolledContainerColor = Color.Transparent,
+        ),
     )
 }
 
 @Composable
 fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     Text(
-        text.uppercase(),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.padding(top = 16.dp, bottom = 4.dp),
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier.padding(start = 4.dp, top = 18.dp, bottom = 4.dp),
+    )
+}
+
+private val FieldShape = RoundedCornerShape(14.dp)
+
+@Composable
+private fun fieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = Color.White,
+    unfocusedContainerColor = Color.White.copy(alpha = 0.9f),
+    errorContainerColor = Color.White,
+    focusedBorderColor = Palette.Orange,
+    unfocusedBorderColor = Palette.FieldBorder,
+    focusedLabelColor = Palette.Orange,
+    cursorColor = Palette.Orange,
+)
+
+/** White rounded box that looks like a text field but opens a picker. */
+@Composable
+private fun PickerButton(onClick: () -> Unit, content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        shape = FieldShape,
+        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White.copy(alpha = 0.9f)),
+        border = BorderStroke(1.dp, Palette.FieldBorder),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+        modifier = Modifier.fillMaxWidth(),
+        content = content,
     )
 }
 
@@ -98,6 +145,8 @@ fun Field(
         isError = isError,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         supportingText = supportingText?.let { { Text(it) } },
+        shape = FieldShape,
+        colors = fieldColors(),
         modifier = modifier.fillMaxWidth(),
     )
 }
@@ -115,15 +164,20 @@ fun <T> DropdownField(
 ) {
     var open by remember { mutableStateOf(false) }
     Column(modifier) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+        )
         Box {
-            OutlinedButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth()) {
+            PickerButton(onClick = { open = true }) {
                 Text(
                     selected?.let(optionLabel) ?: placeholder,
                     modifier = Modifier.weight(1f),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 options.forEach { option ->
@@ -144,9 +198,14 @@ fun <T> DropdownField(
 fun DateField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
     Column(modifier) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth()) {
-            Text(InvoiceDates.format(date), color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+        )
+        PickerButton(onClick = { open = true }) {
+            Text(InvoiceDates.format(date), color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
         }
     }
     if (open) {
@@ -185,19 +244,19 @@ fun SwitchRow(title: String, subtitle: String?, checked: Boolean, onChange: (Boo
 @Composable
 fun StatusChip(status: PaymentStatus) {
     val (background, content) = when (status) {
-        PaymentStatus.PAID -> Color(0xFFDCF5E3) to Color(0xFF1B6B34)
-        PaymentStatus.OVERDUE -> Color(0xFFFDE2DF) to Color(0xFFB3261E)
-        PaymentStatus.PARTLY_PAID -> Color(0xFFFFEBD9) to Color(0xFFA14000)
-        PaymentStatus.SENT -> Color(0xFFE3ECFB) to Color(0xFF1E4E9C)
-        PaymentStatus.DRAFT, PaymentStatus.VOID -> Color(0xFFEDEDED) to Color(0xFF555555)
+        PaymentStatus.PAID -> Color(0xFFDDF5E5) to Color(0xFF1B7A3D)
+        PaymentStatus.OVERDUE -> Color(0xFFFFE1DD) to Color(0xFFC62A1F)
+        PaymentStatus.PARTLY_PAID -> Color(0xFFFFE8D9) to Color(0xFFB34200)
+        PaymentStatus.SENT -> Color(0xFFE6EDFD) to Color(0xFF2753A8)
+        PaymentStatus.DRAFT, PaymentStatus.VOID -> Color(0xFFF0EEF0) to Color(0xFF5E606E)
     }
-    Surface(color = background, shape = MaterialTheme.shapes.small) {
+    Surface(color = background, shape = CircleShape) {
         Text(
             status.label,
             color = content,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
         )
     }
 }
@@ -226,9 +285,13 @@ fun ConfirmDialog(
 
 @Composable
 fun EmptyState(title: String, message: String, modifier: Modifier = Modifier) {
-    Column(modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(
+        modifier.fillMaxWidth().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
     }
 }
 

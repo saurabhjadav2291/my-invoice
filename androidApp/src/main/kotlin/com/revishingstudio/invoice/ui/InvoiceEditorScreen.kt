@@ -3,6 +3,11 @@
 package com.revishingstudio.invoice.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,8 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -154,6 +157,7 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             BackTopBar(if (id == null) "New invoice" else "Edit invoice", nav::back) {
                 TextButton(onClick = ::save) { Text("Save") }
@@ -209,9 +213,11 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
             }
             OutlinedButton(onClick = { items += ItemInput() }) { Text("Add item") }
 
-            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Total", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                Text(MoneyFormat.format(total, currency), style = MaterialTheme.typography.titleLarge, color = Accent, fontWeight = FontWeight.Bold)
+            HeroCard(Modifier.padding(vertical = 8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Total", style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.weight(1f))
+                    Text(MoneyFormat.format(total, currency), style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
 
             DropdownField(
@@ -224,26 +230,27 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
             )
             Field("Notes (optional, printed on the invoice)", notes, { notes = it }, singleLine = false, minLines = 2)
 
-            Button(onClick = ::save, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text(if (id == null) "Create invoice" else "Save changes")
-            }
+            PrimaryButton(if (id == null) "Create invoice" else "Save changes", ::save, Modifier.padding(top = 12.dp))
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
 @Composable
 private fun ItemEditor(item: ItemInput, currency: Currency, canRemove: Boolean, onRemove: () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    GlassCard(contentPadding = PaddingValues(14.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Field("Description", item.description, { item.description = it }, Modifier.weight(1f), singleLine = false)
                 if (canRemove) {
-                    IconButton(onClick = onRemove) { Icon(Icons.Filled.Delete, contentDescription = "Remove item") }
+                    IconButton(onClick = onRemove) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Remove item", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = !item.priced, onClick = { item.priced = false }, label = { Text("Amount") })
-                FilterChip(selected = item.priced, onClick = { item.priced = true }, label = { Text("Rate × qty") })
+                FilterChip(selected = !item.priced, onClick = { item.priced = false }, label = { Text("Amount") }, shape = CircleShape)
+                FilterChip(selected = item.priced, onClick = { item.priced = true }, label = { Text("Rate × qty") }, shape = CircleShape)
             }
             if (item.priced) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

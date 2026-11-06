@@ -4,18 +4,22 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
-import com.revishingstudio.invoice.ui.Accent
+import android.graphics.Color
+import androidx.activity.SystemBarStyle
+import com.revishingstudio.invoice.ui.AppTheme
 import com.revishingstudio.invoice.ui.InvoiceAppUi
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // The app is always light, so keep dark status and navigation bar icons.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+        )
         val repository = (application as InvoiceApp).repository
         setContent {
-            MaterialTheme(colorScheme = lightColorScheme(primary = Accent)) {
+            AppTheme {
                 InvoiceAppUi(repository)
             }
         }

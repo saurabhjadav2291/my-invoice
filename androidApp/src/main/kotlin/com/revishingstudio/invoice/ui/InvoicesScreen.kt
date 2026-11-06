@@ -2,9 +2,14 @@
 
 package com.revishingstudio.invoice.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,19 +20,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,9 +60,12 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
 
     Scaffold(
         modifier = modifier,
-        topBar = { TopAppBar(title = { Text("Invoices") }) },
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = { LargeTitleBar("Invoices") },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            GlossyFab(
+                contentDescription = "New invoice",
                 onClick = {
                     when {
                         profile == null -> {
@@ -79,34 +79,53 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
                         else -> nav.go(Screen.InvoiceEditor(null))
                     }
                 },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("New invoice") },
             )
         },
     ) { padding ->
         val list = invoices ?: return@Scaffold
         if (list.isEmpty()) {
-            EmptyState(
+            IllustratedEmptyState(
                 "No invoices yet",
                 if (profile == null) {
                     "Start in Settings: add your details and bank account. Then add a client and create your first invoice."
                 } else {
-                    "Tap \"New invoice\" to create your first one."
+                    "Tap the + button to create your first one."
                 },
+                AppIcons.Document,
                 Modifier.padding(padding),
             )
             return@Scaffold
         }
         val shown = list.filter { filter.matches(it.status(today)) }
-        LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+        LazyColumn(
+            Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             item { OutstandingCard(list, today) }
             item {
                 Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     InvoiceFilter.entries.forEach { f ->
-                        FilterChip(selected = filter == f, onClick = { filter = f }, label = { Text(f.label) })
+                        FilterChip(
+                            selected = filter == f,
+                            onClick = { filter = f },
+                            label = { Text(f.label) },
+                            shape = CircleShape,
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = Color.White.copy(alpha = 0.85f),
+                                selectedContainerColor = Palette.Peach,
+                                selectedLabelColor = Palette.OrangeDeep,
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = filter == f,
+                                borderColor = Palette.FieldBorder,
+                                selectedBorderColor = Color.White,
+                            ),
+                        )
                     }
                 }
             }
@@ -115,9 +134,7 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
             }
             items(shown, key = { it.id }) { invoice ->
                 InvoiceRow(invoice, today) { nav.go(Screen.InvoiceDetail(invoice.id)) }
-                HorizontalDivider()
             }
-            item { Spacer(Modifier.height(88.dp)) }
         }
     }
 }
@@ -131,23 +148,24 @@ private fun OutstandingCard(list: List<InvoiceSummary>, today: kotlinx.datetime.
     }
     val owed = unpaid.groupBy { it.currency }.mapValues { (_, l) -> l.sumOf { it.outstandingMinor } }.filterValues { it > 0 }
     val overdue = unpaid.count { it.status(today) == PaymentStatus.OVERDUE }
-    Card(
-        Modifier.fillMaxWidth().padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text("Still to be paid", style = MaterialTheme.typography.labelLarge)
-            if (owed.isEmpty()) {
-                Text("Nothing outstanding", style = MaterialTheme.typography.titleLarge)
-            } else {
-                Currency.entries.filter { it in owed }.forEach { c ->
-                    Text(MoneyFormat.format(owed.getValue(c), c), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                }
+    HeroCard {
+        Text("Still to be paid", style = MaterialTheme.typography.labelLarge, color = Color.White.copy(alpha = 0.85f))
+        Spacer(Modifier.height(4.dp))
+        if (owed.isEmpty()) {
+            Text("Nothing outstanding", style = MaterialTheme.typography.headlineSmall, color = Color.White)
+        } else {
+            Currency.entries.filter { it in owed }.forEach { c ->
+                Text(MoneyFormat.format(owed.getValue(c), c), style = MaterialTheme.typography.headlineMedium, color = Color.White)
             }
-            if (overdue > 0) {
+        }
+        if (overdue > 0) {
+            Spacer(Modifier.height(10.dp))
+            Surface(color = Color.White.copy(alpha = 0.22f), shape = CircleShape) {
                 Text(
                     if (overdue == 1) "1 invoice overdue" else "$overdue invoices overdue",
-                    color = MaterialTheme.colorScheme.error,
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
                 )
             }
         }
@@ -156,21 +174,20 @@ private fun OutstandingCard(list: List<InvoiceSummary>, today: kotlinx.datetime.
 
 @Composable
 private fun InvoiceRow(invoice: InvoiceSummary, today: kotlinx.datetime.LocalDate, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(invoice.clientName, style = MaterialTheme.typography.titleMedium)
-            Text(
-                "${invoice.number} · ${InvoiceDates.format(invoice.issueDate)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(MoneyFormat.format(invoice.totalMinor, invoice.currency), fontWeight = FontWeight.SemiBold)
-            StatusChip(invoice.status(today))
+    GlassCard(onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(invoice.clientName, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "${invoice.number} · ${InvoiceDates.format(invoice.issueDate)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(MoneyFormat.format(invoice.totalMinor, invoice.currency), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                StatusChip(invoice.status(today))
+            }
         }
     }
 }

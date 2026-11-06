@@ -2,16 +2,9 @@ package com.revishingstudio.invoice.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateListOf
@@ -19,6 +12,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import com.revishingstudio.invoice.core.InvoiceRepository
 import kotlinx.coroutines.CoroutineScope
@@ -99,42 +95,34 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
     CompositionLocalProvider(LocalActions provides actions) {
         val current = nav.current
         val isTab = current == Screen.Invoices || current == Screen.Clients || current == Screen.Settings
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbar) },
-            bottomBar = {
-                if (isTab) {
-                    NavigationBar {
-                        NavigationBarItem(
-                            selected = current == Screen.Invoices,
-                            onClick = { nav.tab(Screen.Invoices) },
-                            icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
-                            label = { Text("Invoices") },
-                        )
-                        NavigationBarItem(
-                            selected = current == Screen.Clients,
-                            onClick = { nav.tab(Screen.Clients) },
-                            icon = { Icon(Icons.Filled.Person, contentDescription = null) },
-                            label = { Text("Clients") },
-                        )
-                        NavigationBarItem(
-                            selected = current == Screen.Settings,
-                            onClick = { nav.tab(Screen.Settings) },
-                            icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                            label = { Text("Settings") },
+        AppBackground {
+            Scaffold(
+                containerColor = Color.Transparent,
+                // Each screen handles system bars itself; this only reserves room for the tab bar.
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                snackbarHost = { SnackbarHost(snackbar) },
+                bottomBar = {
+                    if (isTab) {
+                        FloatingNavBar(
+                            listOf(
+                                NavItem("Invoices", AppIcons.Invoices, current == Screen.Invoices) { nav.tab(Screen.Invoices) },
+                                NavItem("Clients", AppIcons.Clients, current == Screen.Clients) { nav.tab(Screen.Clients) },
+                                NavItem("Settings", Icons.Outlined.Settings, current == Screen.Settings) { nav.tab(Screen.Settings) },
+                            ),
                         )
                     }
+                },
+            ) { outer ->
+                val modifier = Modifier.padding(bottom = outer.calculateBottomPadding())
+                when (current) {
+                    Screen.Invoices -> InvoicesScreen(nav, modifier)
+                    Screen.Clients -> ClientsScreen(nav, modifier)
+                    Screen.Settings -> SettingsScreen(nav, modifier)
+                    is Screen.InvoiceDetail -> InvoiceDetailScreen(current.id, nav, modifier)
+                    is Screen.InvoiceEditor -> InvoiceEditorScreen(current.id, nav, modifier)
+                    is Screen.ClientEditor -> ClientEditorScreen(current.id, nav, modifier)
+                    is Screen.BankEditor -> BankEditorScreen(current.id, nav, modifier)
                 }
-            },
-        ) { outer ->
-            val modifier = Modifier.padding(bottom = outer.calculateBottomPadding())
-            when (current) {
-                Screen.Invoices -> InvoicesScreen(nav, modifier)
-                Screen.Clients -> ClientsScreen(nav, modifier)
-                Screen.Settings -> SettingsScreen(nav, modifier)
-                is Screen.InvoiceDetail -> InvoiceDetailScreen(current.id, nav, modifier)
-                is Screen.InvoiceEditor -> InvoiceEditorScreen(current.id, nav, modifier)
-                is Screen.ClientEditor -> ClientEditorScreen(current.id, nav, modifier)
-                is Screen.BankEditor -> BankEditorScreen(current.id, nav, modifier)
             }
         }
     }

@@ -2,8 +2,21 @@
 
 package com.revishingstudio.invoice.ui
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,18 +25,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,36 +52,53 @@ fun ClientsScreen(nav: Navigator, modifier: Modifier = Modifier) {
 
     Scaffold(
         modifier = modifier,
-        topBar = { TopAppBar(title = { Text("Clients") }) },
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = { LargeTitleBar("Clients") },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { nav.go(Screen.ClientEditor(null)) },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("New client") },
-            )
+            GlossyFab(onClick = { nav.go(Screen.ClientEditor(null)) }, contentDescription = "New client")
         },
     ) { padding ->
         if (clients.isEmpty()) {
-            EmptyState(
+            IllustratedEmptyState(
                 "No clients yet",
                 "Add the people and companies you invoice. Their details appear under \"Bill to\".",
+                AppIcons.Clients,
                 Modifier.padding(padding),
             )
         } else {
-            LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+            LazyColumn(
+                Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 96.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 items(clients, key = { it.id }) { client ->
-                    Column(
-                        Modifier.fillMaxWidth()
-                            .clickable { nav.go(Screen.ClientEditor(client.id)) }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                    ) {
-                        Text(client.name, style = MaterialTheme.typography.titleMedium)
-                        val sub = listOf(client.legalName, client.email, client.defaultCurrency.code)
-                            .filter { it.isNotBlank() }
-                            .joinToString(" · ")
-                        Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    GlassCard(onClick = { nav.go(Screen.ClientEditor(client.id)) }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Brush.verticalGradient(listOf(Color(0xFFFFEDE3), Palette.Peach))),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    client.name.trim().take(1).uppercase(),
+                                    color = Palette.Orange,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                            Spacer(Modifier.width(14.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(client.name, style = MaterialTheme.typography.titleMedium)
+                                val sub = listOf(client.legalName, client.email, client.defaultCurrency.code)
+                                    .filter { it.isNotBlank() }
+                                    .joinToString(" · ")
+                                Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
-                    HorizontalDivider()
                 }
             }
         }
@@ -130,6 +153,7 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             BackTopBar(if (id == null) "New client" else "Client", nav::back) {
                 TextButton(onClick = ::save) { Text("Save") }
@@ -154,9 +178,9 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
                 optionLabel = { "${it.code} (${it.symbol})" },
                 onSelect = { currency = it },
             )
-            Button(onClick = ::save, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Save") }
+            PrimaryButton("Save", ::save, Modifier.padding(top = 12.dp))
             if (id != null) {
-                TextButton(onClick = { confirmArchive = true }) {
+                TextButton(onClick = { confirmArchive = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                     Text("Archive client", color = MaterialTheme.colorScheme.error)
                 }
             }

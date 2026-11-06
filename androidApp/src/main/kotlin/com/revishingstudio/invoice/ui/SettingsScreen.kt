@@ -9,6 +9,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +29,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -150,15 +152,14 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                title = { Text("Settings") },
-                actions = {
-                    TextButton(onClick = {
-                        buildProfile()?.let { profile -> actions.run("Saved") { saveProfile(profile) } }
-                    }) { Text("Save") }
-                },
-            )
+            LargeTitleBar("Settings") {
+                TextButton(onClick = {
+                    buildProfile()?.let { profile -> actions.run("Saved") { saveProfile(profile) } }
+                }) { Text("Save", style = MaterialTheme.typography.titleMedium) }
+            }
         },
     ) { padding ->
         if (!loaded) return@Scaffold
@@ -167,105 +168,118 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SectionTitle("Your details")
-            Field("Your name (as on invoice)", ownerName, { ownerName = it })
-            Field("Studio name (for the sign-off)", studioName, { studioName = it })
-            Field("Address", address, { address = it }, singleLine = false, minLines = 3)
-            Field("PAN", pan, { pan = it })
-            Field("Email", email, { email = it }, keyboardType = KeyboardType.Email)
-            Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone)
+            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Field("Your name (as on invoice)", ownerName, { ownerName = it })
+                Field("Studio name (for the sign-off)", studioName, { studioName = it })
+                Field("Address", address, { address = it }, singleLine = false, minLines = 3)
+                Field("PAN", pan, { pan = it })
+                Field("Email", email, { email = it }, keyboardType = KeyboardType.Email)
+                Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone)
+            }
 
             SectionTitle("Logo")
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                val bitmap = remember(logoPath, logoVersion) {
-                    logoPath?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    val bitmap = remember(logoPath, logoVersion) {
+                        logoPath?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+                    }
+                    if (bitmap != null) Image(bitmap, contentDescription = "Logo", modifier = Modifier.size(56.dp))
+                    OutlinedButton(onClick = { pickLogo.launch("image/*") }) {
+                        Text(if (logoPath == null) "Choose logo" else "Change logo")
+                    }
+                    if (logoPath != null) TextButton(onClick = { logoPath = null }) { Text("Remove") }
                 }
-                if (bitmap != null) Image(bitmap, contentDescription = "Logo", modifier = Modifier.size(56.dp))
-                OutlinedButton(onClick = { pickLogo.launch("image/*") }) {
-                    Text(if (logoPath == null) "Choose logo" else "Change logo")
-                }
-                if (logoPath != null) TextButton(onClick = { logoPath = null }) { Text("Remove") }
             }
 
             SectionTitle("Invoice numbers")
-            DropdownField(
-                label = "Style",
-                selected = NumberStyle.entries.firstOrNull { it.pattern == pattern } ?: NumberStyle.CUSTOM,
-                options = NumberStyle.entries,
-                optionLabel = { it.label },
-                onSelect = { style ->
-                    style.pattern?.let { pattern = it }
-                    reset = when (style) {
-                        NumberStyle.FINANCIAL_YEAR -> NumberReset.FINANCIAL_YEAR
-                        NumberStyle.YEAR_NUMBER -> NumberReset.NEVER
-                        NumberStyle.CUSTOM -> reset
-                    }
-                },
-            )
-            Field(
-                "Pattern",
-                pattern,
-                { pattern = it },
-                supportingText = "{PREFIX} {FY} {FYS} {YYYY} {YY} {SEQ} or {SEQ:3}",
-            )
-            Field("Prefix", prefix, { prefix = it })
-            DropdownField(
-                label = "Restart numbering",
-                selected = reset,
-                options = NumberReset.entries,
-                optionLabel = ::resetLabel,
-                onSelect = { reset = it },
-            )
-            Field(
-                "Start from number",
-                startAt,
-                { startAt = it.filter(Char::isDigit) },
-                keyboardType = KeyboardType.Number,
-                supportingText = "To continue your old series, enter the next number (e.g. 32)",
-            )
-            Text(
-                numberPreview.fold({ "Next invoice: $it" }, { it.message ?: "Invalid pattern" }),
-                color = if (numberPreview.isSuccess) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-            )
+            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                DropdownField(
+                    label = "Style",
+                    selected = NumberStyle.entries.firstOrNull { it.pattern == pattern } ?: NumberStyle.CUSTOM,
+                    options = NumberStyle.entries,
+                    optionLabel = { it.label },
+                    onSelect = { style ->
+                        style.pattern?.let { pattern = it }
+                        reset = when (style) {
+                            NumberStyle.FINANCIAL_YEAR -> NumberReset.FINANCIAL_YEAR
+                            NumberStyle.YEAR_NUMBER -> NumberReset.NEVER
+                            NumberStyle.CUSTOM -> reset
+                        }
+                    },
+                )
+                Field(
+                    "Pattern",
+                    pattern,
+                    { pattern = it },
+                    supportingText = "{PREFIX} {FY} {FYS} {YYYY} {YY} {SEQ} or {SEQ:3}",
+                )
+                Field("Prefix", prefix, { prefix = it })
+                DropdownField(
+                    label = "Restart numbering",
+                    selected = reset,
+                    options = NumberReset.entries,
+                    optionLabel = ::resetLabel,
+                    onSelect = { reset = it },
+                )
+                Field(
+                    "Start from number",
+                    startAt,
+                    { startAt = it.filter(Char::isDigit) },
+                    keyboardType = KeyboardType.Number,
+                    supportingText = "To continue your old series, enter the next number (e.g. 32)",
+                )
+                Text(
+                    numberPreview.fold({ "Next invoice: $it" }, { it.message ?: "Invalid pattern" }),
+                    color = if (numberPreview.isSuccess) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+                )
+            }
 
             SectionTitle("On the invoice")
-            SwitchRow("Show due date", null, showDueDate) { showDueDate = it }
-            SwitchRow("Show \"not registered under GST\"", "Recommended while you are not GST registered", showGstNote) {
-                showGstNote = it
+            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                SwitchRow("Show due date", null, showDueDate) { showDueDate = it }
+                SwitchRow("Show \"not registered under GST\"", "Recommended while you are not GST registered", showGstNote) {
+                    showGstNote = it
+                }
+                Field(
+                    "Days until due",
+                    dueDays,
+                    { dueDays = it.filter(Char::isDigit) },
+                    keyboardType = KeyboardType.Number,
+                )
             }
-            Field(
-                "Days until due",
-                dueDays,
-                { dueDays = it.filter(Char::isDigit) },
-                keyboardType = KeyboardType.Number,
-            )
 
             SectionTitle("Bank accounts")
-            banks.forEach { bank -> BankRow(bank) { nav.go(Screen.BankEditor(bank.id)) } }
-            OutlinedButton(onClick = { nav.go(Screen.BankEditor(null)) }) { Text("Add bank account") }
+            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                banks.forEach { bank -> BankRow(bank) { nav.go(Screen.BankEditor(bank.id)) } }
+                OutlinedButton(onClick = { nav.go(Screen.BankEditor(null)) }) { Text("Add bank account") }
+            }
 
             SectionTitle("Preview")
-            OutlinedButton(onClick = {
-                val profile = buildProfile() ?: return@OutlinedButton
-                actions.run {
-                    val (sample, _) = InvoicePdfExporter.sampleInvoice()
-                    val withBank = sample.copy(bankAccount = banks.firstOrNull { it.isDefault } ?: sample.bankAccount)
-                    val file = InvoicePdfExporter.export(context, withBank, profile)
-                    withContext(Dispatchers.Main) { InvoicePdfExporter.open(context, file) }
-                }
-            }) { Text("Preview a sample invoice") }
+            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(onClick = {
+                    val profile = buildProfile() ?: return@OutlinedButton
+                    actions.run {
+                        val (sample, _) = InvoicePdfExporter.sampleInvoice()
+                        val withBank = sample.copy(bankAccount = banks.firstOrNull { it.isDefault } ?: sample.bankAccount)
+                        val file = InvoicePdfExporter.export(context, withBank, profile)
+                        withContext(Dispatchers.Main) { InvoicePdfExporter.open(context, file) }
+                    }
+                }) { Text("Preview a sample invoice") }
+            }
 
-            Button(
+            PrimaryButton(
+                "Save settings",
                 onClick = { buildProfile()?.let { profile -> actions.run("Saved") { saveProfile(profile) } } },
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-            ) { Text("Save settings") }
-            Row(Modifier.height(24.dp)) {}
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            Row(Modifier.height(32.dp)) {}
         }
     }
 }
 
 @Composable
 private fun BankRow(bank: BankAccount, onClick: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp)) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(vertical = 8.dp, horizontal = 4.dp)) {
         Text(
             bank.label.ifBlank { bank.bankName } + if (bank.isDefault) "  (default)" else "",
             style = MaterialTheme.typography.titleSmall,
@@ -276,7 +290,7 @@ private fun BankRow(bank: BankAccount, onClick: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    HorizontalDivider()
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable
@@ -327,6 +341,7 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             BackTopBar(if (id == null) "Add bank account" else "Bank account", nav::back) {
                 TextButton(onClick = ::save) { Text("Save") }
@@ -345,9 +360,9 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
             Field("IFSC code", ifsc, { ifsc = it })
             Field("SWIFT code (for overseas payments)", swift, { swift = it })
             SwitchRow("Use by default on new invoices", null, isDefault) { isDefault = it }
-            Button(onClick = ::save, modifier = Modifier.fillMaxWidth()) { Text("Save") }
+            PrimaryButton("Save", ::save, Modifier.padding(top = 12.dp))
             if (id != null) {
-                TextButton(onClick = { confirmDelete = true }) {
+                TextButton(onClick = { confirmDelete = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                     Text("Delete this account", color = MaterialTheme.colorScheme.error)
                 }
             }
