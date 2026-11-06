@@ -1,0 +1,2 @@
+-- Version 1 -> 2: option to print the due date on invoices.
+ALTER TABLE business_profile ADD COLUMN show_due_date INTEGER NOT NULL DEFAULT 1;

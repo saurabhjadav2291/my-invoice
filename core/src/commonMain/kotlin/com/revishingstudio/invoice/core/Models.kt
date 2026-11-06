@@ -12,6 +12,8 @@ data class BusinessProfile(
     val logoPath: String? = null,
     /** Prints "Supplier not registered under GST" on invoices. */
     val showGstNote: Boolean = true,
+    /** Prints the due date under the invoice date. */
+    val showDueDate: Boolean = true,
     val defaultDueDays: Int = 15,
     val numbering: NumberingScheme = NumberingScheme(),
 )

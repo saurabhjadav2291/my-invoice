@@ -26,6 +26,19 @@ macOS app planned later.
   Overdue are worked out from recorded payments and the due date. Sent invoices
   can be voided but not deleted, so numbers are never reused.
 
+## Invoice PDF
+
+`core/.../pdf/InvoicePdfLayout.kt` draws the invoice in the original design
+(A4, Inter font, orange `#FF5400` accent), measured from the hand-made invoice
+template. It draws onto a small `PageCanvas` interface, so the same layout is
+used by Android (`AndroidPdfWriter`, built on `PdfDocument`) and by the
+desktop/tests (`PdfBoxWriter`, built on Apache PDFBox). Long text wraps and
+many line items flow onto extra pages, with the bank details at the bottom of
+the last page. The due date and the GST note can each be switched off in the
+business profile.
+
+The Inter fonts (SIL Open Font License) are bundled in `core/src/jvmMain/resources/fonts`.
+
 ## Building
 
 ```bash
