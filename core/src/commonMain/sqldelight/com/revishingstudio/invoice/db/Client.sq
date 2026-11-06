@@ -1,0 +1,29 @@
+CREATE TABLE client (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    legal_name TEXT NOT NULL DEFAULT '',
+    address TEXT NOT NULL DEFAULT '',
+    phone TEXT NOT NULL DEFAULT '',
+    email TEXT NOT NULL DEFAULT '',
+    tax_ids TEXT NOT NULL DEFAULT '',
+    default_currency TEXT NOT NULL DEFAULT 'INR',
+    archived INTEGER NOT NULL DEFAULT 0
+);
+
+activeClients:
+SELECT * FROM client WHERE archived = 0 ORDER BY name COLLATE NOCASE;
+
+clientById:
+SELECT * FROM client WHERE id = ?;
+
+insertClient:
+INSERT INTO client (name, legal_name, address, phone, email, tax_ids, default_currency, archived)
+VALUES (?, ?, ?, ?, ?, ?, ?, 0);
+
+updateClient:
+UPDATE client
+SET name = ?, legal_name = ?, address = ?, phone = ?, email = ?, tax_ids = ?, default_currency = ?
+WHERE id = ?;
+
+setClientArchived:
+UPDATE client SET archived = ? WHERE id = ?;
