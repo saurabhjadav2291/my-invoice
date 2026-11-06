@@ -26,6 +26,18 @@ macOS app planned later.
   Overdue are worked out from recorded payments and the due date. Sent invoices
   can be voided but not deleted, so numbers are never reused.
 
+## Using the app
+
+1. **Settings:** add your details, logo and bank account, and choose how
+   invoices are numbered (to continue your old `26031` series, pick
+   "Year + number" and set the start number).
+2. **Clients:** add each client once, with their usual currency.
+3. **Invoices:** tap *New invoice*, pick the client, add items (a fixed
+   amount, or rate × quantity), and save. It starts as a draft.
+4. On the invoice, tap *View / share PDF* to send it, *Mark as sent*, and
+   later *Record payment* when money arrives. Part payments add up, and an
+   invoice turns *Overdue* once its due date passes.
+
 ## Invoice PDF
 
 `core/.../pdf/InvoicePdfLayout.kt` draws the invoice in the original design
