@@ -50,6 +50,7 @@ class InvoiceRepository(
             phone = profile.phone,
             logo_path = profile.logoPath,
             show_gst_note = profile.showGstNote.toLong(),
+            show_due_date = profile.showDueDate.toLong(),
             default_due_days = profile.defaultDueDays.toLong(),
             number_pattern = n.pattern,
             number_prefix = n.prefix,
@@ -326,6 +327,7 @@ private fun ProfileRow.toModel() = BusinessProfile(
     phone = phone,
     logoPath = logo_path,
     showGstNote = show_gst_note != 0L,
+    showDueDate = show_due_date != 0L,
     defaultDueDays = default_due_days.toInt(),
     numbering = NumberingScheme(
         pattern = number_pattern,

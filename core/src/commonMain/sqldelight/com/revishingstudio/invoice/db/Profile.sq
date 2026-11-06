@@ -9,6 +9,7 @@ CREATE TABLE business_profile (
     phone TEXT NOT NULL,
     logo_path TEXT,
     show_gst_note INTEGER NOT NULL DEFAULT 1,
+    show_due_date INTEGER NOT NULL DEFAULT 1,
     default_due_days INTEGER NOT NULL DEFAULT 15,
     number_pattern TEXT NOT NULL,
     number_prefix TEXT NOT NULL,
@@ -34,8 +35,8 @@ SELECT * FROM business_profile WHERE id = 1;
 upsertProfile:
 INSERT OR REPLACE INTO business_profile (
     id, owner_name, studio_name, address, pan, email, phone, logo_path,
-    show_gst_note, default_due_days, number_pattern, number_prefix, number_reset, number_start
-) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    show_gst_note, show_due_date, default_due_days, number_pattern, number_prefix, number_reset, number_start
+) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 allBankAccounts:
 SELECT * FROM bank_account ORDER BY is_default DESC, id;

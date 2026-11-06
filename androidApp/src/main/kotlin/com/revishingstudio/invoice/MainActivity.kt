@@ -17,10 +17,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -28,6 +31,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.revishingstudio.invoice.core.InvoiceDates
 import com.revishingstudio.invoice.core.InvoiceSummary
 import com.revishingstudio.invoice.core.MoneyFormat
+import com.revishingstudio.invoice.pdf.InvoicePdfExporter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
@@ -55,11 +62,30 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun InvoiceListScreen(invoices: List<InvoiceSummary>) {
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-    Scaffold(topBar = { TopAppBar(title = { Text("My Invoice") }) }) { padding ->
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val previewSample: () -> Unit = {
+        scope.launch {
+            val file = withContext(Dispatchers.IO) {
+                val (invoice, profile) = InvoicePdfExporter.sampleInvoice()
+                InvoicePdfExporter.export(context, invoice, profile)
+            }
+            InvoicePdfExporter.open(context, file)
+        }
+    }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("My Invoice") },
+                actions = { TextButton(onClick = previewSample) { Text("Sample PDF") } },
+            )
+        },
+    ) { padding ->
         if (invoices.isEmpty()) {
             Column(Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
                 Text("No invoices yet", style = MaterialTheme.typography.titleMedium)
-                Text("Creating invoices arrives in the next update.")
+                Text("Creating invoices arrives in a coming update.")
+                Text("Tap \"Sample PDF\" to see how your invoices will look.")
             }
         } else {
             LazyColumn(

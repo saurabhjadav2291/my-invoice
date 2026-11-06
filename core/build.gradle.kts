@@ -26,6 +26,9 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
         }
         jvmTest.dependencies {
+            // Desktop PDF writer, used by tests to render and check invoices.
+            // Kept out of the main code so the Android app doesn't ship it.
+            implementation(libs.pdfbox)
             implementation(libs.sqldelight.sqlite.driver)
         }
     }

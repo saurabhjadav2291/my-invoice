@@ -6,9 +6,12 @@ coroutines = "1.10.2"
 datetime = "0.7.1"
 composeBom = "2025.10.01"
 activityCompose = "1.11.0"
+coreKtx = "1.17.0"
 lifecycle = "2.9.4"
+pdfbox = "3.0.8"
 
 [libraries]
+pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
@@ -22,6 +25,7 @@ compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-core = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 
