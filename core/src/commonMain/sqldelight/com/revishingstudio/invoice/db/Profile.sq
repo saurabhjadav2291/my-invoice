@@ -1,0 +1,62 @@
+-- Your own business details. There is a single row with id = 1.
+CREATE TABLE business_profile (
+    id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+    owner_name TEXT NOT NULL,
+    studio_name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    pan TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    logo_path TEXT,
+    show_gst_note INTEGER NOT NULL DEFAULT 1,
+    default_due_days INTEGER NOT NULL DEFAULT 15,
+    number_pattern TEXT NOT NULL,
+    number_prefix TEXT NOT NULL,
+    number_reset TEXT NOT NULL,
+    number_start INTEGER NOT NULL DEFAULT 1
+);
+
+-- Bank accounts printed on invoices. One is marked as the default.
+CREATE TABLE bank_account (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    label TEXT NOT NULL,
+    bank_name TEXT NOT NULL,
+    account_name TEXT NOT NULL,
+    account_number TEXT NOT NULL,
+    ifsc TEXT NOT NULL,
+    swift TEXT NOT NULL,
+    is_default INTEGER NOT NULL DEFAULT 0
+);
+
+getProfile:
+SELECT * FROM business_profile WHERE id = 1;
+
+upsertProfile:
+INSERT OR REPLACE INTO business_profile (
+    id, owner_name, studio_name, address, pan, email, phone, logo_path,
+    show_gst_note, default_due_days, number_pattern, number_prefix, number_reset, number_start
+) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+allBankAccounts:
+SELECT * FROM bank_account ORDER BY is_default DESC, id;
+
+bankAccountById:
+SELECT * FROM bank_account WHERE id = ?;
+
+insertBankAccount:
+INSERT INTO bank_account (label, bank_name, account_name, account_number, ifsc, swift, is_default)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateBankAccount:
+UPDATE bank_account
+SET label = ?, bank_name = ?, account_name = ?, account_number = ?, ifsc = ?, swift = ?, is_default = ?
+WHERE id = ?;
+
+clearDefaultBankAccount:
+UPDATE bank_account SET is_default = 0;
+
+deleteBankAccount:
+DELETE FROM bank_account WHERE id = ?;
+
+lastInsertRowId:
+SELECT last_insert_rowid();

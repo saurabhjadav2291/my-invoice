@@ -1,0 +1,107 @@
+CREATE TABLE invoice (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    number TEXT NOT NULL UNIQUE,
+    period_key TEXT NOT NULL,
+    sequence INTEGER NOT NULL,
+    client_id INTEGER NOT NULL REFERENCES client(id),
+    bank_account_id INTEGER REFERENCES bank_account(id) ON DELETE SET NULL,
+    currency TEXT NOT NULL,
+    issue_date TEXT NOT NULL,
+    due_date TEXT NOT NULL,
+    state TEXT NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+);
+
+CREATE INDEX invoice_client ON invoice(client_id);
+CREATE INDEX invoice_period ON invoice(period_key, sequence);
+
+-- Amounts are stored in minor units (paise or cents).
+-- quantity_milli is the quantity times 1000, so 1.5 hours is 1500.
+-- rate and quantity are optional: an advance payment has only an amount.
+CREATE TABLE line_item (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    invoice_id INTEGER NOT NULL REFERENCES invoice(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    rate_minor INTEGER,
+    quantity_milli INTEGER,
+    amount_minor INTEGER NOT NULL
+);
+
+CREATE INDEX line_item_invoice ON line_item(invoice_id, position);
+
+CREATE TABLE payment (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    invoice_id INTEGER NOT NULL REFERENCES invoice(id) ON DELETE CASCADE,
+    received_on TEXT NOT NULL,
+    amount_minor INTEGER NOT NULL,
+    method TEXT NOT NULL,
+    inr_received_minor INTEGER,
+    note TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX payment_invoice ON payment(invoice_id);
+
+insertInvoice:
+INSERT INTO invoice (number, period_key, sequence, client_id, bank_account_id, currency, issue_date, due_date, state, notes, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateInvoice:
+UPDATE invoice
+SET client_id = ?, bank_account_id = ?, currency = ?, issue_date = ?, due_date = ?, notes = ?
+WHERE id = ?;
+
+setInvoiceState:
+UPDATE invoice SET state = ? WHERE id = ?;
+
+deleteInvoice:
+DELETE FROM invoice WHERE id = ?;
+
+invoiceById:
+SELECT * FROM invoice WHERE id = ?;
+
+maxSequenceInPeriod:
+SELECT MAX(sequence) AS max_seq FROM invoice WHERE period_key = ?;
+
+numberExists:
+SELECT COUNT(*) FROM invoice WHERE number = ?;
+
+-- One row per invoice with its client name, total and amount paid so far.
+invoiceSummaries:
+SELECT
+    i.id,
+    i.number,
+    i.currency,
+    i.issue_date,
+    i.due_date,
+    i.state,
+    c.name AS client_name,
+    COALESCE((SELECT SUM(amount_minor) FROM line_item WHERE invoice_id = i.id), 0) AS total_minor,
+    COALESCE((SELECT SUM(amount_minor) FROM payment WHERE invoice_id = i.id), 0) AS paid_minor
+FROM invoice i
+JOIN client c ON c.id = i.client_id
+ORDER BY i.issue_date DESC, i.id DESC;
+
+lineItemsForInvoice:
+SELECT * FROM line_item WHERE invoice_id = ? ORDER BY position;
+
+insertLineItem:
+INSERT INTO line_item (invoice_id, position, description, rate_minor, quantity_milli, amount_minor)
+VALUES (?, ?, ?, ?, ?, ?);
+
+deleteLineItemsForInvoice:
+DELETE FROM line_item WHERE invoice_id = ?;
+
+paymentsForInvoice:
+SELECT * FROM payment WHERE invoice_id = ? ORDER BY received_on, id;
+
+insertPayment:
+INSERT INTO payment (invoice_id, received_on, amount_minor, method, inr_received_minor, note)
+VALUES (?, ?, ?, ?, ?, ?);
+
+deletePayment:
+DELETE FROM payment WHERE id = ?;
+
+deletePaymentsForInvoice:
+DELETE FROM payment WHERE invoice_id = ?;
