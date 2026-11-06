@@ -1,7 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    alias(libs.plugins.android.application)
+    // Version comes from the root buildscript classpath.
+    id("com.android.application")
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
 }
