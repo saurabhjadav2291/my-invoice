@@ -136,7 +136,7 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
 
     fun save() {
         val client = clientId ?: return actions.message("Choose a client")
-        lineItems.firstOrNull { it.isFailure }?.let { return actions.message(it.exceptionOrNull()?.message ?: "Check the items") }
+        lineItems.firstOrNull { it.isFailure }?.let { return actions.message(it.exceptionOrNull()?.friendlyMessage("Check the items") ?: "Check the items") }
         val draft = InvoiceDraft(
             clientId = client,
             currency = currency,

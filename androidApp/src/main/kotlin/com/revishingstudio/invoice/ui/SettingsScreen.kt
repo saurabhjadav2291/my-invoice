@@ -132,7 +132,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             return null
         }
         val numbering = numberingResult.getOrElse {
-            actions.message(it.message ?: "Check the numbering settings")
+            actions.message(it.friendlyMessage("Check the numbering settings"))
             return null
         }
         return BusinessProfile(
@@ -244,7 +244,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     if (numberPreview.isSuccess) {
                         OutlineChip(numberPreview.getOrThrow(), mono = true)
                     } else {
-                        Text(numberPreview.exceptionOrNull()?.message ?: "Invalid pattern", color = c.error, style = MaterialTheme.typography.bodySmall)
+                        Text(numberPreview.exceptionOrNull()?.friendlyMessage("Invalid pattern") ?: "Invalid pattern", color = c.error, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
