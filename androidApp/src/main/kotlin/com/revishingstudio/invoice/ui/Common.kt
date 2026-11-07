@@ -4,24 +4,24 @@ package com.revishingstudio.invoice.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
@@ -30,15 +30,12 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,9 +44,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.revishingstudio.invoice.core.InvoiceDates
 import com.revishingstudio.invoice.core.PaymentStatus
@@ -62,64 +62,79 @@ fun today(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
 
 private const val DAY_MILLIS = 86_400_000L
 
+/**
+ * Top bar of an inner screen: a round back button, a title, and actions on the right.
+ * [onSky] draws the title in white for screens that sit on the blue header.
+ */
 @Composable
-fun BackTopBar(title: String, onBack: () -> Unit, actions: @Composable () -> Unit = {}) {
-    TopAppBar(
-        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
-        navigationIcon = {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 4.dp)
-                    .size(42.dp)
-                    .shadow(8.dp, CircleShape, ambientColor = Color(0x22B4643C), spotColor = Color(0x33B4643C))
-                    .background(Color.White, CircleShape),
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-            }
-        },
-        actions = { actions() },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Transparent,
-            scrolledContainerColor = Color.Transparent,
-        ),
-    )
+fun BackTopBar(title: String, onBack: () -> Unit, onSky: Boolean = false, actions: @Composable RowScope.() -> Unit = {}) {
+    val c = Ui.colors
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(start = 16.dp, end = 12.dp, top = 8.dp, bottom = 8.dp)
+            .heightIn(min = 56.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RoundIconButton(AppIcons.Back, "Back", onBack, style = RoundStyle.Dark)
+        Spacer(Modifier.width(14.dp))
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLarge,
+            color = if (onSky) c.onSky else c.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
+    }
 }
 
 @Composable
-fun SectionTitle(text: String, modifier: Modifier = Modifier) {
+fun SectionTitle(text: String, modifier: Modifier = Modifier) = SectionHeader(text, modifier)
+
+/** Label above a field, in grey caption text. */
+@Composable
+private fun FieldLabel(text: String) {
     Text(
         text,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier.padding(start = 4.dp, top = 18.dp, bottom = 4.dp),
+        style = MaterialTheme.typography.bodySmall,
+        color = Ui.colors.greyText,
+        modifier = Modifier.padding(start = 16.dp, bottom = 6.dp),
     )
 }
 
-private val FieldShape = RoundedCornerShape(14.dp)
+/** Single-line fields are full pills; multi-line boxes are as round as they can be. */
+private val MultiLineShape = RoundedCornerShape(26.dp)
 
 @Composable
 private fun fieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = Color.White,
-    unfocusedContainerColor = Color.White.copy(alpha = 0.9f),
-    errorContainerColor = Color.White,
-    focusedBorderColor = Palette.Orange,
-    unfocusedBorderColor = Palette.FieldBorder,
-    focusedLabelColor = Palette.Orange,
-    cursorColor = Palette.Orange,
+    focusedContainerColor = Ui.colors.surface,
+    unfocusedContainerColor = Ui.colors.surface,
+    errorContainerColor = Ui.colors.surface,
+    focusedBorderColor = Ui.colors.primary,
+    unfocusedBorderColor = Ui.colors.hairline,
+    focusedTextColor = Ui.colors.ink,
+    unfocusedTextColor = Ui.colors.ink,
+    cursorColor = Ui.colors.primary,
+    errorBorderColor = Ui.colors.error,
 )
 
-/** White rounded box that looks like a text field but opens a picker. */
+/** Pill that looks like a text field but opens a picker. */
 @Composable
-private fun PickerButton(onClick: () -> Unit, content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        shape = FieldShape,
-        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White.copy(alpha = 0.9f)),
-        border = BorderStroke(1.dp, Palette.FieldBorder),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-        modifier = Modifier.fillMaxWidth(),
+private fun PickerPill(onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
+    val c = Ui.colors
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .clip(CircleShape)
+            .background(c.surface)
+            .border(1.dp, c.hairline, CircleShape)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = 20.dp, end = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
         content = content,
     )
 }
@@ -136,22 +151,33 @@ fun Field(
     supportingText: String? = null,
     isError: Boolean = false,
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        singleLine = singleLine,
-        minLines = minLines,
-        isError = isError,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        supportingText = supportingText?.let { { Text(it) } },
-        shape = FieldShape,
-        colors = fieldColors(),
-        modifier = modifier.fillMaxWidth(),
-    )
+    val pill = singleLine && minLines <= 1
+    Column(modifier.fillMaxWidth()) {
+        FieldLabel(label)
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = singleLine,
+            minLines = minLines,
+            isError = isError,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            textStyle = MaterialTheme.typography.bodyLarge,
+            shape = if (pill) CircleShape else MultiLineShape,
+            colors = fieldColors(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (supportingText != null) {
+            Text(
+                supportingText,
+                style = MaterialTheme.typography.labelSmall,
+                color = Ui.colors.greyText,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp),
+            )
+        }
+    }
 }
 
-/** A button that opens a menu of choices. */
+/** A pill that opens a menu of choices. */
 @Composable
 fun <T> DropdownField(
     label: String,
@@ -163,26 +189,31 @@ fun <T> DropdownField(
     placeholder: String = "Choose",
 ) {
     var open by remember { mutableStateOf(false) }
+    val c = Ui.colors
     Column(modifier) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
-        )
+        FieldLabel(label)
         Box {
-            PickerButton(onClick = { open = true }) {
+            PickerPill(onClick = { open = true }) {
                 Text(
                     selected?.let(optionLabel) ?: placeholder,
                     modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (selected == null) c.grey else c.ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = c.greyText)
             }
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenu(
+                expanded = open,
+                onDismissRequest = { open = false },
+                shape = RoundedCornerShape(20.dp),
+                containerColor = c.surfaceRaised,
+                border = if (c.isDark) BorderStroke(1.dp, c.hairline) else null,
+            ) {
                 options.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(optionLabel(option)) },
+                        text = { Text(optionLabel(option), color = c.ink) },
                         onClick = {
                             onSelect(option)
                             open = false
@@ -198,14 +229,15 @@ fun <T> DropdownField(
 fun DateField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
     Column(modifier) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
-        )
-        PickerButton(onClick = { open = true }) {
-            Text(InvoiceDates.format(date), color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+        FieldLabel(label)
+        PickerPill(onClick = { open = true }) {
+            Text(
+                InvoiceDates.format(date),
+                style = MaterialTheme.typography.bodyLarge,
+                color = Ui.colors.ink,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+            )
         }
     }
     if (open) {
@@ -213,12 +245,13 @@ fun DateField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, mod
         DatePickerDialog(
             onDismissRequest = { open = false },
             confirmButton = {
-                TextButton(onClick = {
+                TextPill("OK", onClick = {
                     state.selectedDateMillis?.let { onChange(LocalDate.fromEpochDays(it / DAY_MILLIS)) }
                     open = false
-                }) { Text("OK") }
+                })
             },
-            dismissButton = { TextButton(onClick = { open = false }) { Text("Cancel") } },
+            dismissButton = { TextPill("Cancel", onClick = { open = false }, color = Ui.colors.greyText) },
+            shape = RoundedCornerShape(32.dp),
         ) {
             DatePicker(state = state)
         }
@@ -227,37 +260,58 @@ fun DateField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, mod
 
 @Composable
 fun SwitchRow(title: String, subtitle: String?, checked: Boolean, onChange: (Boolean) -> Unit) {
+    val c = Ui.colors
     Row(
         Modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(title)
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = c.ink)
             subtitle?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(it, style = MaterialTheme.typography.bodySmall, color = c.greyText)
             }
         }
-        Switch(checked = checked, onCheckedChange = onChange)
+        Switch(
+            checked = checked,
+            onCheckedChange = onChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = c.primary,
+                checkedBorderColor = c.primary,
+                uncheckedThumbColor = c.grey,
+                uncheckedTrackColor = c.neutralChip,
+                uncheckedBorderColor = c.hairline,
+            ),
+        )
     }
 }
 
 @Composable
-fun StatusChip(status: PaymentStatus) {
-    val (background, content) = when (status) {
-        PaymentStatus.PAID -> Color(0xFFDDF5E5) to Color(0xFF1B7A3D)
-        PaymentStatus.OVERDUE -> Color(0xFFFFE1DD) to Color(0xFFC62A1F)
-        PaymentStatus.PARTLY_PAID -> Color(0xFFFFE8D9) to Color(0xFFB34200)
-        PaymentStatus.SENT -> Color(0xFFE6EDFD) to Color(0xFF2753A8)
-        PaymentStatus.DRAFT, PaymentStatus.VOID -> Color(0xFFF0EEF0) to Color(0xFF5E606E)
+fun statusColors(status: PaymentStatus): StatusColors {
+    val c = Ui.colors
+    return when (status) {
+        PaymentStatus.PAID -> c.paid
+        PaymentStatus.OVERDUE -> c.overdue
+        PaymentStatus.PARTLY_PAID -> c.partlyPaid
+        PaymentStatus.SENT -> c.sent
+        PaymentStatus.DRAFT, PaymentStatus.VOID -> c.draft
     }
-    Surface(color = background, shape = CircleShape) {
-        Text(
-            status.label,
-            color = content,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-        )
+}
+
+/** Soft tinted pill with a coloured dot (design.md section 2.3). */
+@Composable
+fun StatusChip(status: PaymentStatus) {
+    val colors = statusColors(status)
+    Row(
+        Modifier
+            .clip(CircleShape)
+            .background(colors.fill)
+            .padding(start = 10.dp, end = 12.dp, top = 5.dp, bottom = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(6.dp).clip(CircleShape).background(colors.content))
+        Spacer(Modifier.width(6.dp))
+        Text(status.label, color = colors.content, style = MaterialTheme.typography.labelMedium)
     }
 }
 
@@ -269,17 +323,20 @@ fun ConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val c = Ui.colors
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(message) },
+        title = { Text(title, style = MaterialTheme.typography.titleLarge, color = c.ink) },
+        text = { Text(message, style = MaterialTheme.typography.bodyLarge, color = c.greyText) },
         confirmButton = {
-            TextButton(onClick = {
+            TextPill(confirmLabel, onClick = {
                 onConfirm()
                 onDismiss()
-            }) { Text(confirmLabel) }
+            }, color = c.error)
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextPill("Cancel", onClick = onDismiss, color = c.greyText) },
+        shape = RoundedCornerShape(32.dp),
+        containerColor = c.surfaceRaised,
     )
 }
 
@@ -290,8 +347,8 @@ fun EmptyState(title: String, message: String, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        Text(title, style = MaterialTheme.typography.titleMedium, color = Ui.colors.ink)
+        Text(message, color = Ui.colors.greyText, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
     }
 }
 

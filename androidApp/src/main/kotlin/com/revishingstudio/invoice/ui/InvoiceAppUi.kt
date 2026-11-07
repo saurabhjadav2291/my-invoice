@@ -1,7 +1,14 @@
 package com.revishingstudio.invoice.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.material.icons.Icons
+import android.app.Activity
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Snackbar
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -13,7 +20,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import com.revishingstudio.invoice.core.InvoiceRepository
@@ -89,26 +95,68 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val actions = remember { Actions(repository, scope, snackbar) }
+    val profile by repository.observeProfile().collectAsStateWithLifecycle(null)
+    val clients by repository.observeClients().collectAsStateWithLifecycle(null)
 
     BackHandler(enabled = nav.canGoBack) { nav.back() }
 
+    val current = nav.current
+    val isTab = current == Screen.Invoices || current == Screen.Clients || current == Screen.Settings
+    // Forms sit on the plain canvas; everything else opens on the blue sky.
+    val sky = isTab || current is Screen.InvoiceDetail
+    val colors = Ui.colors
+
+    // Light status bar icons over the sky and in dark mode, dark icons on the light canvas.
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = !colors.isDark && !sky
+            controller.isAppearanceLightNavigationBars = !colors.isDark
+        }
+    }
+
+    fun newInvoice() {
+        when {
+            profile == null -> {
+                actions.message("First add your details in Settings")
+                nav.tab(Screen.Settings)
+            }
+            clients.isNullOrEmpty() -> {
+                actions.message("First add a client")
+                nav.go(Screen.ClientEditor(null))
+            }
+            else -> nav.go(Screen.InvoiceEditor(null))
+        }
+    }
+
     CompositionLocalProvider(LocalActions provides actions) {
-        val current = nav.current
-        val isTab = current == Screen.Invoices || current == Screen.Clients || current == Screen.Settings
-        AppBackground {
+        AppBackground(sky = sky) {
             Scaffold(
                 containerColor = Color.Transparent,
                 // Each screen handles system bars itself; this only reserves room for the tab bar.
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                snackbarHost = { SnackbarHost(snackbar) },
+                snackbarHost = {
+                    SnackbarHost(snackbar) { data ->
+                        Snackbar(
+                            data,
+                            shape = CircleShape,
+                            containerColor = colors.inverse,
+                            contentColor = colors.onInverse,
+                            actionColor = colors.primary,
+                        )
+                    }
+                },
                 bottomBar = {
                     if (isTab) {
                         FloatingNavBar(
                             listOf(
                                 NavItem("Invoices", AppIcons.Invoices, current == Screen.Invoices) { nav.tab(Screen.Invoices) },
                                 NavItem("Clients", AppIcons.Clients, current == Screen.Clients) { nav.tab(Screen.Clients) },
-                                NavItem("Settings", Icons.Outlined.Settings, current == Screen.Settings) { nav.tab(Screen.Settings) },
+                                NavItem("Settings", AppIcons.Settings, current == Screen.Settings) { nav.tab(Screen.Settings) },
                             ),
+                            onNewInvoice = ::newInvoice,
                         )
                     }
                 },
