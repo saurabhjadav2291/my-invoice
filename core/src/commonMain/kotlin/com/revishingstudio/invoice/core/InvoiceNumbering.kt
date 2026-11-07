@@ -67,6 +67,8 @@ data class NumberingScheme(
 
     companion object {
         const val DEFAULT_PATTERN = "{PREFIX}/{FY}/{SEQ:3}"
-        private val SEQ_REGEX = Regex("""\{SEQ(?::(\d+))?}""")
+        // Both braces are escaped: Android's regex engine (ICU) rejects a bare
+        // "}", which made this class fail to load on the phone.
+        private val SEQ_REGEX = Regex("""\{SEQ(?::(\d+))?\}""")
     }
 }

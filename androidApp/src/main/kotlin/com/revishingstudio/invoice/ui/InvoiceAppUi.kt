@@ -1,5 +1,6 @@
 package com.revishingstudio.invoice.ui
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import android.app.Activity
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -90,13 +91,26 @@ class Actions(
                 onDone()
                 successMessage?.let { snackbar.showSnackbar(it) }
             }
-            result.onFailure { snackbar.showSnackbar(it.message ?: "Something went wrong") }
+            result.onFailure {
+                Log.e("MyInvoice", "Action failed", it)
+                snackbar.showSnackbar(it.friendlyMessage())
+            }
         }
     }
 
     fun message(text: String) {
         scope.launch { snackbar.showSnackbar(text) }
     }
+}
+
+/**
+ * Text for the snackbar. Our own checks (require/check) carry a sentence written
+ * for people, so show that; anything else is a bug, and a class name or stack
+ * detail means nothing to the reader.
+ */
+fun Throwable.friendlyMessage(fallback: String = "Something went wrong. Please try again."): String {
+    val text = message?.takeIf { it.isNotBlank() }
+    return if ((this is IllegalArgumentException || this is IllegalStateException) && text != null) text else fallback
 }
 
 val LocalActions = staticCompositionLocalOf<Actions> { error("Actions not provided") }
