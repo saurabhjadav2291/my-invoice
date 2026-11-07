@@ -2,7 +2,7 @@
 
 Status: **proposal for review**. Nothing in the app uses this yet. If it is adopted, it replaces the warm orange theme from the "glossy theme" restyle (PR #4) with a cool blue one, in light and dark.
 
-Decided so far (2026-11-07): the invoice PDF stays orange; dark mode is included (section 10); all buttons and text fields are fully rounded.
+Decided so far (2026-11-07): the invoice PDF stays orange; dark mode is included (section 10); all buttons and text fields are fully rounded; the New invoice button is blue.
 
 This document is drawn from five reference images Saurabh shared on 2026-11-07: a "Font & Colors" sheet, two phone mockups (a task dashboard and an assistant home screen), a poster with a glossy 3D illustration, and a long overview board of the same app. The references are productivity apps, so the second half of this document translates their patterns onto the invoice screens we already have (Invoices, Clients, Settings, editor, details, payments).
 
@@ -249,13 +249,13 @@ Floats 16 dp above the bottom edge and 20 dp from the sides. 64 dp tall, `Ink` f
 
 In the app: tabs **Invoices · Clients · Settings**.
 
-**New invoice button: blue (recommended, awaiting Saurabh's confirmation).** A 64 dp `Primary` circle with a white "+" icon, a subtle top highlight, and the blue glow. Reasons:
+**New invoice button: blue (decided 2026-11-07).** A 64 dp `Primary` circle with a white "+" icon, a subtle top highlight, and the blue glow. Why:
 
 1. Creating an invoice is the app's main action, and section 2.4 reserves blue for the main action. Next to a black tab bar, a black button would read as just another tab.
 2. It works in dark mode. A black button on a near-black screen disappears, while blue stands out in both themes.
 3. The second reference uses exactly this: a glossy blue circle at the centre of the bottom bar.
 
-The alternative is a black circle that matches the first reference's send button. In dark mode it would need to flip to a light circle.
+The alternative considered was a black circle matching the first reference's send button; it was rejected because it would vanish in dark mode.
 
 ### 6.10 Forms (invoice editor)
 
@@ -358,7 +358,7 @@ The restyle in PR #4 already has the right structure, so adopting this is mostly
 | `Theme.kt` colour scheme | Two schemes, `lightColorScheme` and `darkColorScheme`, from sections 2 and 10, plus a `LocalAppColors` for the tokens Material has no slot for (sky gradient, status colours) |
 | Settings | Add "Appearance: System / Light / Dark" |
 
-Still open for Saurabh: confirm the New invoice button colour (blue recommended, section 6.9) and the status colours (section 2.3).
+Still open for Saurabh: the status colours (section 2.3).
 
 ---
 
