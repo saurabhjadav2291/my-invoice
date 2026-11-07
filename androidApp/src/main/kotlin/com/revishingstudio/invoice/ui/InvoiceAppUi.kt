@@ -1,5 +1,6 @@
 package com.revishingstudio.invoice.ui
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import android.app.Activity
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,7 +93,8 @@ class Actions(
                 successMessage?.let { snackbar.showSnackbar(BannerVisuals(it, BannerKind.Success)) }
             }
             result.onFailure {
-                snackbar.showSnackbar(BannerVisuals(it.message ?: "Something went wrong", BannerKind.Error))
+                Log.e("MyInvoice", "Action failed", it)
+                snackbar.showSnackbar(BannerVisuals(it.friendlyMessage(), BannerKind.Error))
             }
         }
     }
@@ -112,6 +114,16 @@ class BannerVisuals(
     override val actionLabel: String? = null
     override val withDismissAction: Boolean = false
     override val duration: SnackbarDuration = SnackbarDuration.Short
+}
+
+/**
+ * Text for the snackbar. Our own checks (require/check) carry a sentence written
+ * for people, so show that; anything else is a bug, and a class name or stack
+ * detail means nothing to the reader.
+ */
+fun Throwable.friendlyMessage(fallback: String = "Something went wrong. Please try again."): String {
+    val text = message?.takeIf { it.isNotBlank() }
+    return if ((this is IllegalArgumentException || this is IllegalStateException) && text != null) text else fallback
 }
 
 val LocalActions = staticCompositionLocalOf<Actions> { error("Actions not provided") }
