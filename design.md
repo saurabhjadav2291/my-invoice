@@ -238,9 +238,11 @@ Content never ends in a hard cut where it meets the status bar or the floating t
 
 | Edge | Band height | Blur | Tint for readability |
 |---|---|---|---|
-| Top | Status bar height + 24 dp | 0 at the bottom of the band, rising to 20 dp at the top edge | The colour at the top of the screen (sky blue on sky screens, `Canvas` on forms), 0% → 55% towards the edge |
-| Bottom (tab screens) | From the screen's bottom edge up to 24 dp above the top of the tab bar (about 124 dp plus the gesture bar) | 0 at the top of the band, rising to 24 dp at the bottom edge | `Canvas`, 0% → 60% towards the edge |
-| Bottom (editor) | Behind the sticky total bar, plus 24 dp above it | Same as the tab screens | Same |
+| Top | The status bar only | 0 at the bottom of the status bar, rising to 20 dp at the top edge | The colour at the top of the screen (sky blue on sky screens, `Canvas` on forms), 0% → 55% towards the edge |
+| Bottom (tab screens) | The bottom navigation only: from the screen's bottom edge up to the top of the floating tab bar (about 100 dp including the gesture bar) | 0 at the top of the band, rising to 24 dp at the bottom edge | `Canvas`, 0% → 60% towards the edge |
+| Bottom (editor) | Behind the sticky total bar only | Same as the tab screens | Same |
+
+**Decided (2026-11-07):** the blur covers only the status bar at the top and only the bottom navigation at the bottom, with the soft strength above. The screen title is not pinned; it scrolls away under the status-bar blur.
 
 - The ramp follows an ease-in curve, so text is still crisp in the upper part of the bottom band and only blurs close to the edge.
 - The bands are always on, not only while scrolling. When a list is short and nothing sits behind a band, the band is invisible.
