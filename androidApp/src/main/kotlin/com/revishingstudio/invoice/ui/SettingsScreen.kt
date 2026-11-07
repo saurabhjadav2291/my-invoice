@@ -151,7 +151,6 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
     }
 
     val c = Ui.colors
-    val appearanceStore = LocalAppearanceStore.current
     val logo = rememberLogo(logoPath, logoVersion)
     fun saveAll() {
         buildProfile()?.let { profile -> actions.run("Saved") { saveProfile(profile) } }
@@ -174,18 +173,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             Modifier.padding(horizontal = ScreenMargin),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AppCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Appearance", style = MaterialTheme.typography.titleMedium, color = c.ink)
-                PillChoice(
-                    Appearance.entries,
-                    appearanceStore.appearance,
-                    { it.label },
-                    { appearanceStore.set(it) },
-                    Modifier.fillMaxWidth(),
-                )
-            }
-
-            SectionTitle("Your details")
+            SectionTitle("Your details", Modifier.padding(top = 0.dp))
             AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Field("Your name (as on invoice)", ownerName, { ownerName = it })
                 Field("Studio name (for the sign-off)", studioName, { studioName = it })

@@ -1,12 +1,10 @@
 package com.revishingstudio.invoice.ui
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -27,11 +25,12 @@ import com.revishingstudio.invoice.R
 data class StatusColors(val content: Color, val fill: Color)
 
 /**
- * Every colour in design.md, for one theme. Screens use these tokens (or the Material
- * colour scheme built from them), never raw hex values, so light and dark both work.
+ * Every colour in design.md. Screens use these tokens (or the Material colour scheme
+ * built from them), never raw hex values.
  */
 @Immutable
 data class AppColors(
+    /** Always false: the app is light only. Components keep their dark branches in case that changes. */
     val isDark: Boolean,
     val background: Color,
     val surface: Color,
@@ -90,33 +89,6 @@ val LightAppColors = AppColors(
     overdue = StatusColors(Color(0xFFD23B3B), Color(0xFFFDE6E6)),
 )
 
-val DarkAppColors = AppColors(
-    isDark = true,
-    background = Color(0xFF0B0F14),
-    surface = Color(0xFF161B22),
-    surfaceRaised = Color(0xFF1F2630),
-    ink = Color(0xFFF2F6F9),
-    greyText = Color(0xFF9AA3AE),
-    grey = Color(0xFF7D8590),
-    hairline = Color(0xFF2A323C),
-    primary = Primary,
-    primaryText = Color(0xFF6FA6F3),
-    primarySoft = Color(0xFF1A2C47),
-    sky = listOf(Color(0xFF1B3A66), Color(0xFF173153), Color(0xFF121A26), Color(0xFF0B0F14)),
-    onSky = Color(0xFFF2F6F9),
-    inverse = Color(0xFFF2F6F9),
-    onInverse = Color(0xFF000203),
-    neutralChip = Color(0xFF1F2630),
-    tabBar = Color(0xFF1F2630),
-    tabBarIcon = Color(0xFFF2F6F9).copy(alpha = 0.7f),
-    error = Color(0xFFF07070),
-    draft = StatusColors(Color(0xFF9AA3AE), Color(0xFF1F2630)),
-    sent = StatusColors(Color(0xFF6FA6F3), Color(0xFF1A2C47)),
-    partlyPaid = StatusColors(Color(0xFFF0B44C), Color(0xFF3A2A10)),
-    paid = StatusColors(Color(0xFF4CC27E), Color(0xFF123222)),
-    overdue = StatusColors(Color(0xFFF07070), Color(0xFF3D1717)),
-)
-
 val LocalAppColors = staticCompositionLocalOf { LightAppColors }
 
 /** Shorthand for the current theme's tokens: `Ui.colors.primary`. */
@@ -172,36 +144,7 @@ private val AppShapes = Shapes(
     extraLarge = RoundedCornerShape(32.dp),
 )
 
-private fun schemeFor(c: AppColors) = if (c.isDark) {
-    darkColorScheme(
-        primary = c.primary,
-        onPrimary = Color.White,
-        primaryContainer = c.primarySoft,
-        onPrimaryContainer = c.primaryText,
-        secondary = c.primary,
-        onSecondary = Color.White,
-        secondaryContainer = c.primarySoft,
-        onSecondaryContainer = c.primaryText,
-        tertiary = c.primaryText,
-        background = c.background,
-        onBackground = c.ink,
-        surface = c.surface,
-        onSurface = c.ink,
-        surfaceVariant = c.neutralChip,
-        onSurfaceVariant = c.greyText,
-        surfaceTint = Color.Transparent,
-        outline = c.hairline,
-        outlineVariant = c.hairline,
-        surfaceContainerLowest = c.background,
-        surfaceContainerLow = c.surface,
-        surfaceContainer = c.surface,
-        surfaceContainerHigh = c.surfaceRaised,
-        surfaceContainerHighest = c.surfaceRaised,
-        inverseSurface = c.inverse,
-        inverseOnSurface = c.onInverse,
-        error = c.error,
-    )
-} else {
+private fun schemeFor(c: AppColors) = run {
     lightColorScheme(
         primary = c.primary,
         onPrimary = Color.White,
@@ -232,23 +175,9 @@ private fun schemeFor(c: AppColors) = if (c.isDark) {
     )
 }
 
-/** Light, dark, or whatever the phone uses. Chosen in Settings. */
-enum class Appearance(val label: String) {
-    SYSTEM("System"),
-    LIGHT("Light"),
-    DARK("Dark"),
-}
-
 @Composable
-fun Appearance.isDark(): Boolean = when (this) {
-    Appearance.SYSTEM -> isSystemInDarkTheme()
-    Appearance.LIGHT -> false
-    Appearance.DARK -> true
-}
-
-@Composable
-fun AppTheme(dark: Boolean, content: @Composable () -> Unit) {
-    val colors = if (dark) DarkAppColors else LightAppColors
+fun AppTheme(content: @Composable () -> Unit) {
+    val colors = LightAppColors
     CompositionLocalProvider(LocalAppColors provides colors) {
         MaterialTheme(
             colorScheme = schemeFor(colors),
