@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Brush
+import dev.chrisbanes.haze.HazeState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +26,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -155,24 +156,23 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
     }
 
     val c = Ui.colors
-    Scaffold(
+    InnerScaffold(
         modifier = modifier,
-        containerColor = Color.Transparent,
         topBar = {
             BackTopBar(if (id == null) "New invoice" else "Edit invoice", nav::back) {
                 TextPill("Save", ::save)
             }
         },
-        bottomBar = {
-            if (loaded) TotalBar(total, currency, if (id == null) "Create invoice" else "Save changes", ::save)
+        bottomBar = { haze ->
+            if (loaded) TotalBar(total, currency, if (id == null) "Create invoice" else "Save changes", ::save, haze)
         },
     ) { padding ->
-        if (!loaded) return@Scaffold
+        if (!loaded) return@InnerScaffold
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .verticalScroll(rememberScrollState())
+                .padding(padding)
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -236,16 +236,17 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
 
 /** Sticky bar at the bottom of the editor with the running total and the save button. */
 @Composable
-private fun TotalBar(total: Long, currency: Currency, label: String, onSave: () -> Unit) {
+private fun TotalBar(total: Long, currency: Currency, label: String, onSave: () -> Unit, haze: HazeState) {
     val c = Ui.colors
     val shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    // Glass made from the form scrolling behind it (design.md section 5.5).
     Column(
         Modifier
             .fillMaxWidth()
-            .then(if (c.isDark) Modifier else Modifier.shadow(16.dp, shape, ambientColor = Color.Black.copy(alpha = 0.06f), spotColor = Color.Black.copy(alpha = 0.10f)))
+            .shadow(16.dp, shape, ambientColor = Color(0xFF0B2A5B).copy(alpha = 0.08f), spotColor = Color(0xFF0B2A5B).copy(alpha = 0.12f))
             .clip(shape)
-            .background(c.surfaceRaised)
-            .border(1.dp, if (c.isDark) c.hairline else Color.Transparent, shape)
+            .hazeGlass(haze, Glass.Regular.tint.copy(alpha = 0.78f))
+            .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.9f), Color.White.copy(alpha = 0.2f))), shape)
             .navigationBarsPadding()
             .imePadding()
             .padding(start = ScreenMargin, end = ScreenMargin, top = 14.dp, bottom = 14.dp),

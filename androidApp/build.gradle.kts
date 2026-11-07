@@ -54,5 +54,6 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.activity.compose)
     implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.haze)
     debugImplementation(libs.compose.ui.tooling)
 }

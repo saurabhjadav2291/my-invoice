@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
@@ -23,7 +24,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -85,9 +85,9 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
     }
 
     val c = Ui.colors
-    Scaffold(
+    InnerScaffold(
         modifier = modifier,
-        containerColor = Color.Transparent,
+        onSky = true,
         topBar = {
             BackTopBar(inv?.number ?: "", nav::back, onSky = true) {
                 if (inv != null) {
@@ -97,8 +97,10 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
                         DropdownMenu(
                             expanded = menuOpen,
                             onDismissRequest = { menuOpen = false },
-                            shape = RoundedCornerShape(20.dp),
-                            containerColor = c.surfaceRaised,
+                            shape = RoundedCornerShape(16.dp),
+                            containerColor = Glass.Overlay.tint,
+                            border = BorderStroke(1.dp, Color.White),
+                            shadowElevation = 12.dp,
                         ) {
                             if (inv.state == InvoiceState.SENT) {
                                 DropdownMenuItem(text = { Text("Move back to draft", color = c.ink) }, onClick = {
@@ -124,12 +126,12 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
             }
         },
     ) { padding ->
-        if (inv == null || status == null) return@Scaffold
+        if (inv == null || status == null) return@InnerScaffold
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .verticalScroll(rememberScrollState())
+                .padding(padding)
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -357,7 +359,7 @@ private fun RecordPaymentDialog(invoice: Invoice, onDismiss: () -> Unit, onSave:
             })
         },
         dismissButton = { TextPill("Cancel", onClick = onDismiss, color = Ui.colors.greyText) },
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(28.dp),
         containerColor = Ui.colors.surfaceRaised,
     )
 }

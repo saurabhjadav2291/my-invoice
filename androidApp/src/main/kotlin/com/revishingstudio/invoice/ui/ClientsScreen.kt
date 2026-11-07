@@ -29,7 +29,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,7 +54,7 @@ fun ClientsScreen(nav: Navigator, modifier: Modifier = Modifier) {
 
     LazyColumn(
         modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp),
+        contentPadding = PaddingValues(bottom = LocalBottomBarPadding.current + 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(key = "header") {
@@ -73,7 +72,8 @@ fun ClientsScreen(nav: Navigator, modifier: Modifier = Modifier) {
         if (list == null) return@LazyColumn
         if (list.isEmpty()) {
             item(key = "empty") {
-                AppCard(Modifier.padding(horizontal = ScreenMargin), contentPadding = PaddingValues(vertical = 8.dp)) {
+                // No background block behind empty states (design.md section 7.1).
+                Column(Modifier.padding(horizontal = ScreenMargin, vertical = 16.dp)) {
                     IllustratedEmptyState(
                         "No clients yet",
                         "Add the people and companies you invoice. Their details appear under \"Bill to\".",
@@ -156,21 +156,20 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
         actions.run("Client saved", onDone = { nav.back() }) { saveClient(client) }
     }
 
-    Scaffold(
+    InnerScaffold(
         modifier = modifier,
-        containerColor = Color.Transparent,
         topBar = {
             BackTopBar(if (id == null) "New client" else "Client", nav::back) {
                 TextPill("Save", ::save)
             }
         },
     ) { padding ->
-        if (!loaded) return@Scaffold
+        if (!loaded) return@InnerScaffold
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .verticalScroll(rememberScrollState())
+                .padding(padding)
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

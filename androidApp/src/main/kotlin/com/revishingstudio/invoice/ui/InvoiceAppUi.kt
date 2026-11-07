@@ -2,14 +2,27 @@ package com.revishingstudio.invoice.ui
 
 import androidx.activity.compose.BackHandler
 import android.app.Activity
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import androidx.compose.material3.Snackbar
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -19,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import com.revishingstudio.invoice.core.InvoiceRepository
@@ -131,47 +143,83 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
         }
     }
 
-    CompositionLocalProvider(LocalActions provides actions) {
-        AppBackground(sky = sky) {
-            Scaffold(
-                containerColor = Color.Transparent,
-                // Each screen handles system bars itself; this only reserves room for the tab bar.
-                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                snackbarHost = {
-                    SnackbarHost(snackbar) { data ->
-                        Snackbar(
-                            data,
-                            shape = CircleShape,
-                            containerColor = colors.inverse,
-                            contentColor = colors.onInverse,
-                            actionColor = colors.primary,
-                        )
-                    }
-                },
-                bottomBar = {
-                    if (isTab) {
-                        FloatingNavBar(
-                            listOf(
-                                NavItem("Invoices", AppIcons.Invoices, current == Screen.Invoices) { nav.tab(Screen.Invoices) },
-                                NavItem("Clients", AppIcons.Clients, current == Screen.Clients) { nav.tab(Screen.Clients) },
-                                NavItem("Settings", AppIcons.Settings, current == Screen.Settings) { nav.tab(Screen.Settings) },
-                            ),
-                            onNewInvoice = ::newInvoice,
-                        )
-                    }
-                },
-            ) { outer ->
-                val modifier = Modifier.padding(bottom = outer.calculateBottomPadding())
+    val haze = rememberHazeState()
+    val systemBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    // Room the tab lists keep free so their last row can rest above the tab bar.
+    val bottomBarPadding = if (isTab) NavBandHeight + systemBottom else 0.dp
+
+    CompositionLocalProvider(
+        LocalActions provides actions,
+        LocalHazeState provides haze,
+        LocalBottomBarPadding provides bottomBarPadding,
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            // Everything that scrolls is the blur source for the bands and the tab bar.
+            AppBackground(sky = sky, modifier = Modifier.hazeSource(haze)) {
                 when (current) {
-                    Screen.Invoices -> InvoicesScreen(nav, modifier)
-                    Screen.Clients -> ClientsScreen(nav, modifier)
-                    Screen.Settings -> SettingsScreen(nav, modifier)
-                    is Screen.InvoiceDetail -> InvoiceDetailScreen(current.id, nav, modifier)
-                    is Screen.InvoiceEditor -> InvoiceEditorScreen(current.id, nav, modifier)
-                    is Screen.ClientEditor -> ClientEditorScreen(current.id, nav, modifier)
-                    is Screen.BankEditor -> BankEditorScreen(current.id, nav, modifier)
+                    Screen.Invoices -> InvoicesScreen(nav)
+                    Screen.Clients -> ClientsScreen(nav)
+                    Screen.Settings -> SettingsScreen(nav)
+                    is Screen.InvoiceDetail -> InvoiceDetailScreen(current.id, nav)
+                    is Screen.InvoiceEditor -> InvoiceEditorScreen(current.id, nav)
+                    is Screen.ClientEditor -> ClientEditorScreen(current.id, nav)
+                    is Screen.BankEditor -> BankEditorScreen(current.id, nav)
                 }
+            }
+            if (isTab) {
+                // Progressive blur over the status bar only (design.md section 5.5).
+                Box(
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .windowInsetsTopHeight(WindowInsets.statusBars)
+                        .progressiveBlur(haze, colors.sky[0].copy(alpha = 0.55f), blurAtTop = true, blur = 20.dp),
+                )
+                // Progressive blur behind the bottom navigation only, with the tab bar on top.
+                Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .progressiveBlur(haze, colors.background.copy(alpha = 0.6f), blurAtTop = false, blur = 24.dp),
+                    )
+                    FloatingNavBar(
+                        listOf(
+                            NavItem("Invoices", AppIcons.Invoices, current == Screen.Invoices) { nav.tab(Screen.Invoices) },
+                            NavItem("Clients", AppIcons.Clients, current == Screen.Clients) { nav.tab(Screen.Clients) },
+                            NavItem("Settings", AppIcons.Settings, current == Screen.Settings) { nav.tab(Screen.Settings) },
+                        ),
+                        onNewInvoice = ::newInvoice,
+                        haze = haze,
+                        modifier = Modifier.padding(top = NavBandHeight - NavBarHeight).navigationBarsPadding(),
+                    )
+                }
+            }
+            SnackbarHost(
+                snackbar,
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = bottomBarPadding)
+                    .navigationBarsPadding()
+                    .imePadding(),
+            ) { data ->
+                Snackbar(
+                    data,
+                    modifier = Modifier.padding(horizontal = ScreenMargin, vertical = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    containerColor = Glass.Smoked.tint.copy(alpha = 0.9f),
+                    contentColor = colors.onInverse,
+                    actionColor = colors.primary,
+                )
             }
         }
     }
 }
+
+/** Height of the tab bar row: 8 dp above, the 64 dp bar, 12 dp below. */
+private val NavBarHeight = 84.dp
+
+/** The blur band behind the tab bar reaches a little above it (about 100 dp in all). */
+private val NavBandHeight = 100.dp
+
+/** Bottom padding a tab screen adds so its content can rest above the tab bar. */
+val LocalBottomBarPadding = compositionLocalOf { 0.dp }

@@ -77,7 +77,7 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
 
     LazyColumn(
         modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp),
+        contentPadding = PaddingValues(bottom = LocalBottomBarPadding.current + 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(key = "header") {
@@ -91,7 +91,8 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
         if (list == null) return@LazyColumn
         if (list.isEmpty()) {
             item(key = "empty") {
-                AppCard(Modifier.padding(horizontal = ScreenMargin), contentPadding = PaddingValues(vertical = 8.dp)) {
+                // No background block behind empty states (design.md section 7.1).
+                Column(Modifier.padding(horizontal = ScreenMargin, vertical = 16.dp)) {
                     IllustratedEmptyState(
                         "No invoices yet",
                         if (profile == null) {

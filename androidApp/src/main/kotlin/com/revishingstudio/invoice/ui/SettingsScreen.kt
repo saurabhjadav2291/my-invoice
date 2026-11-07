@@ -28,7 +28,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -289,7 +288,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             )
 
             PrimaryButton("Save settings", ::saveAll, Modifier.padding(top = 12.dp))
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(LocalBottomBarPadding.current + 16.dp))
         }
     }
 }
@@ -381,21 +380,20 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
         actions.run("Bank account saved", onDone = { nav.back() }) { saveBankAccount(account) }
     }
 
-    Scaffold(
+    InnerScaffold(
         modifier = modifier,
-        containerColor = Color.Transparent,
         topBar = {
             BackTopBar(if (id == null) "Add bank account" else "Bank account", nav::back) {
                 TextPill("Save", ::save)
             }
         },
     ) { padding ->
-        if (!loaded) return@Scaffold
+        if (!loaded) return@InnerScaffold
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .verticalScroll(rememberScrollState())
+                .padding(padding)
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

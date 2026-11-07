@@ -1,11 +1,15 @@
 package com.revishingstudio.invoice.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -21,7 +25,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -39,53 +42,190 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.HazeProgressive
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
 
 /** Screen side margin from design.md section 4.1. */
 val ScreenMargin = 20.dp
 
+/** Corner radius of text fields and form buttons (design.md section 4.2). */
+val FormCorner = 8.dp
+val FormShape = RoundedCornerShape(FormCorner)
+
 private val ShadowInk = Color(0xFF0B2A5B)
+private val DeepBlue = Color(0xFF2F6FD6)
+private val DarkBlue = Color(0xFF1F55B0)
+private val GemDark = Color(0xFF2559B8)
+private val LightBlue = Color(0xFF8DBAF6)
+
+// ---------------------------------------------------------------------------
+// Liquid glass (design.md section 5.3)
+// ---------------------------------------------------------------------------
+
+enum class Glass(val tint: Color) {
+    /** Cards, fields, the hero card, list rows. */
+    Regular(Color.White.copy(alpha = 0.68f)),
+
+    /** Things that sit on the blue sky: header buttons, the avatar ring. */
+    Clear(Color.White.copy(alpha = 0.22f)),
+
+    /** The tab bar and the dark round "open" buttons. */
+    Smoked(Color(0xFF000203).copy(alpha = 0.62f)),
+
+    /** Menus and dialogs float over busy content, so they are nearly opaque. */
+    Overlay(Color.White.copy(alpha = 0.94f)),
+}
+
+/**
+ * The glass look: tint, a specular rim (bright top left, faint bottom right), a thin inner
+ * highlight along the top edge, and a soft shadow. Blur comes from [hazeGlass] where real
+ * content scrolls behind the surface; elsewhere the backdrop is the plain sky or canvas.
+ */
+fun Modifier.glass(
+    shape: Shape,
+    glass: Glass = Glass.Regular,
+    shadow: Boolean = true,
+    tint: Color = glass.tint,
+): Modifier = this
+    .then(
+        if (shadow) {
+            Modifier.shadow(
+                if (glass == Glass.Smoked) 10.dp else 14.dp,
+                shape,
+                ambientColor = ShadowInk.copy(alpha = 0.08f),
+                spotColor = ShadowInk.copy(alpha = if (glass == Glass.Smoked) 0.22f else 0.10f),
+            )
+        } else {
+            Modifier
+        },
+    )
+    .clip(shape)
+    .background(tint)
+    .drawWithContent {
+        drawContent()
+        drawInnerHighlight(glass)
+    }
+    .border(
+        1.dp,
+        Brush.linearGradient(
+            if (glass == Glass.Smoked) {
+                listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.06f))
+            } else {
+                listOf(Color.White.copy(alpha = 0.85f), Color.White.copy(alpha = 0.15f))
+            },
+        ),
+        shape,
+    )
+
+private fun DrawScope.drawInnerHighlight(glass: Glass) {
+    val alpha = if (glass == Glass.Smoked) 0.22f else 0.60f
+    drawLine(
+        Brush.horizontalGradient(
+            0f to Color.Transparent,
+            0.2f to Color.White.copy(alpha = alpha),
+            0.8f to Color.White.copy(alpha = alpha),
+            1f to Color.Transparent,
+        ),
+        start = Offset(0f, 1.5.dp.toPx()),
+        end = Offset(size.width, 1.5.dp.toPx()),
+        strokeWidth = 1.dp.toPx(),
+    )
+}
+
+/** Real backdrop blur behind a surface (Android 12+; a plain tint on older phones). */
+fun Modifier.hazeGlass(state: HazeState, tint: Color, blur: Dp = 24.dp): Modifier =
+    hazeEffect(state) {
+        blurRadius = blur
+        tints = listOf(HazeTint(tint))
+        fallbackTint = HazeTint(tint.copy(alpha = maxOf(tint.alpha, 0.92f)))
+        noiseFactor = 0f
+    }
+
+/**
+ * Progressive blur band (design.md section 5.5). [blurAtTop] true for the band over the
+ * status bar (strongest at the top edge), false for the band behind the bottom navigation.
+ */
+fun Modifier.progressiveBlur(state: HazeState, tint: Color, blurAtTop: Boolean, blur: Dp): Modifier =
+    hazeEffect(state) {
+        blurRadius = blur
+        noiseFactor = 0f
+        tints = listOf(
+            HazeTint(
+                Brush.verticalGradient(
+                    if (blurAtTop) listOf(tint, Color.Transparent) else listOf(Color.Transparent, tint),
+                ),
+            ),
+        )
+        fallbackTint = HazeTint(
+            Brush.verticalGradient(
+                if (blurAtTop) listOf(tint, Color.Transparent) else listOf(Color.Transparent, tint),
+            ),
+        )
+        progressive = if (blurAtTop) {
+            HazeProgressive.verticalGradient(startIntensity = 1f, endIntensity = 0f)
+        } else {
+            HazeProgressive.verticalGradient(startIntensity = 0f, endIntensity = 1f)
+        }
+    }
+
+/** The app-wide blur source, set up in InvoiceAppUi. Null where no blur source is active. */
+val LocalHazeState = staticCompositionLocalOf<HazeState?> { null }
+
+// ---------------------------------------------------------------------------
+// Backgrounds and headers
+// ---------------------------------------------------------------------------
 
 /**
  * The page behind every screen: the canvas colour, with the blue sky gradient across
  * the top ~40% when [sky] is true (top-level screens and invoice details).
  */
 @Composable
-fun AppBackground(sky: Boolean, content: @Composable BoxScope.() -> Unit) {
+fun AppBackground(sky: Boolean, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     val c = Ui.colors
     BoxWithConstraints(
-        Modifier
+        modifier
             .fillMaxSize()
             .background(c.background),
     ) {
         if (sky) {
-            val height = maxHeight * 0.42f
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(height)
+                    .height(maxHeight * 0.42f)
                     .background(
                         Brush.verticalGradient(
                             0f to c.sky[0],
@@ -102,7 +242,7 @@ fun AppBackground(sky: Boolean, content: @Composable BoxScope.() -> Unit) {
 
 /**
  * Header of a top-level screen, drawn on the sky: an optional avatar, a big title and a
- * short line under it, with round buttons on the right.
+ * short line under it, with round buttons on the right. It scrolls with the content.
  */
 @Composable
 fun SkyHeader(
@@ -124,13 +264,7 @@ fun SkyHeader(
             Spacer(Modifier.width(12.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(
-                title,
-                style = MaterialTheme.typography.headlineMedium,
-                color = c.onSky,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Text(title, style = MaterialTheme.typography.headlineMedium, color = c.onSky, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (subtitle != null) {
                 Text(
                     subtitle,
@@ -145,17 +279,20 @@ fun SkyHeader(
     }
 }
 
-/** 44 dp circle with the studio logo, or the first letter of a name. */
+/** 44 dp circle with the studio logo, or the first letter of a name, in clear glass. */
 @Composable
 fun Avatar(logo: ImageBitmap?, name: String, onSky: Boolean = true, size: Dp = 44.dp) {
     val c = Ui.colors
-    val fill = if (onSky) Color.White.copy(alpha = if (c.isDark) 0.10f else 0.25f) else c.primarySoft
     Box(
         Modifier
             .size(size)
-            .clip(CircleShape)
-            .background(if (logo != null) Color.White else fill)
-            .border(1.dp, if (onSky) Color.White.copy(alpha = 0.4f) else Color.Transparent, CircleShape),
+            .then(
+                when {
+                    logo != null -> Modifier.glass(CircleShape, Glass.Regular, shadow = false, tint = Color.White)
+                    onSky -> Modifier.glass(CircleShape, Glass.Clear, shadow = false)
+                    else -> Modifier.glass(CircleShape, Glass.Regular, shadow = false, tint = c.primarySoft)
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         if (logo != null) {
@@ -170,7 +307,11 @@ fun Avatar(logo: ImageBitmap?, name: String, onSky: Boolean = true, size: Dp = 4
     }
 }
 
-/** Plain white card (dark grey in dark mode) with large rounded corners and no shadow. */
+// ---------------------------------------------------------------------------
+// Cards
+// ---------------------------------------------------------------------------
+
+/** Glass card with large rounded corners. */
 @Composable
 fun AppCard(
     modifier: Modifier = Modifier,
@@ -179,45 +320,35 @@ fun AppCard(
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val c = Ui.colors
     val shape = RoundedCornerShape(24.dp)
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.98f else 1f, tween(120), label = "card press")
     Column(
         modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(c.surface)
-            .then(if (c.isDark) Modifier.border(1.dp, c.hairline, shape) else Modifier)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .scale(scale)
+            .glass(shape, tint = if (pressed) Color.White.copy(alpha = 0.78f) else Glass.Regular.tint)
+            .then(if (onClick != null) Modifier.clickable(interactionSource = interaction, indication = null, onClick = onClick) else Modifier)
             .padding(contentPadding),
         verticalArrangement = verticalArrangement,
         content = content,
     )
 }
 
-/** The larger card that sits on the sky gradient, holding a screen's headline numbers. */
+/** The larger glass card that sits on the sky gradient, holding a screen's headline numbers. */
 @Composable
 fun HeroCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val c = Ui.colors
-    val shape = RoundedCornerShape(28.dp)
     Column(
         modifier
             .fillMaxWidth()
-            .then(
-                if (c.isDark) {
-                    Modifier
-                } else {
-                    Modifier.shadow(16.dp, shape, ambientColor = ShadowInk.copy(alpha = 0.06f), spotColor = ShadowInk.copy(alpha = 0.10f))
-                },
-            )
-            .clip(shape)
-            .background(c.surfaceRaised)
-            .border(1.dp, if (c.isDark) Color.White.copy(alpha = 0.06f) else Color.Transparent, shape)
+            .glass(RoundedCornerShape(28.dp), tint = Color.White.copy(alpha = 0.74f))
             .padding(20.dp),
         content = content,
     )
 }
 
-/** Heading above a group of cards, with an optional link on the right. */
+/** Heading above a group of cards, with an optional note on the right. */
 @Composable
 fun SectionHeader(text: String, modifier: Modifier = Modifier, trailing: String? = null) {
     Row(
@@ -234,10 +365,12 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier, trailing: String?
 }
 
 // ---------------------------------------------------------------------------
-// Buttons. Every button is a full pill or a circle (design.md section 6.8).
+// Buttons (design.md section 6.8). Text buttons have 8 dp corners.
 // ---------------------------------------------------------------------------
 
-/** Blue pill for the main action on a screen. */
+private val ButtonLabel = TextStyle(fontSize = 16.sp)
+
+/** Skeuomorphic blue button for the main action on a screen (design.md section 5.4). */
 @Composable
 fun PrimaryButton(
     text: String,
@@ -246,21 +379,19 @@ fun PrimaryButton(
     icon: ImageVector? = null,
     height: Dp = 54.dp,
 ) {
-    val c = Ui.colors
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val shadow by animateDpAsState(if (pressed) 4.dp else 12.dp, tween(100), label = "button shadow")
+    val drop by animateDpAsState(if (pressed) 1.dp else 0.dp, tween(100), label = "button drop")
     Row(
         modifier
             .fillMaxWidth()
+            .offset(y = drop)
             .height(height)
-            .shadow(
-                10.dp,
-                CircleShape,
-                ambientColor = c.primary.copy(alpha = if (c.isDark) 0.25f else 0.35f),
-                spotColor = c.primary.copy(alpha = if (c.isDark) 0.25f else 0.35f),
-            )
-            .clip(CircleShape)
-            .background(c.primary)
-            .drawBehind { drawPillHighlight() }
-            .clickable(role = Role.Button, onClick = onClick)
+            .shadow(shadow, FormShape, ambientColor = DeepBlue.copy(alpha = 0.40f), spotColor = DeepBlue.copy(alpha = 0.45f))
+            .clip(FormShape)
+            .drawBehind { drawSkeuoBlue(pressed) }
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
             .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -269,11 +400,42 @@ fun PrimaryButton(
             Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
         }
-        Text(text, color = Color.White, style = MaterialTheme.typography.titleSmall.copy(fontSize = 16.sp))
+        Text(
+            text,
+            color = Color.White,
+            style = MaterialTheme.typography.titleSmall.merge(ButtonLabel).copy(
+                shadow = androidx.compose.ui.graphics.Shadow(DarkBlue.copy(alpha = 0.45f), Offset(0f, 2f), 0f),
+            ),
+        )
     }
 }
 
-/** White pill with a hairline border, for secondary actions. */
+/** Fill, gloss and bevel of the skeuomorphic blue button. */
+private fun DrawScope.drawSkeuoBlue(pressed: Boolean) {
+    val r = CornerRadius(FormCorner.toPx())
+    val stops = if (pressed) {
+        listOf(DeepBlue, Color(0xFF438BEF), Color(0xFF5A9BF2))
+    } else {
+        listOf(Color(0xFF5A9BF2), Color(0xFF438BEF), DeepBlue)
+    }
+    drawRoundRect(Brush.verticalGradient(stops), cornerRadius = r)
+    if (!pressed) {
+        // Gloss across the top half.
+        drawRoundRect(
+            Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.28f), Color.Transparent), endY = size.height * 0.5f),
+            size = Size(size.width, size.height * 0.5f),
+            cornerRadius = r,
+        )
+    } else {
+        // Inner shadow at the top when pressed in.
+        drawRect(Brush.verticalGradient(listOf(ShadowInk.copy(alpha = 0.30f), Color.Transparent), endY = 6.dp.toPx()))
+    }
+    // Bevel: light top edge, dark bottom edge.
+    drawLine(Color.White.copy(alpha = if (pressed) 0.2f else 0.55f), Offset(r.x, 0.75f), Offset(size.width - r.x, 0.75f), 1.dp.toPx())
+    drawLine(DarkBlue.copy(alpha = 0.45f), Offset(r.x, size.height - 0.75f), Offset(size.width - r.x, size.height - 0.75f), 1.dp.toPx())
+}
+
+/** Glass button with a hairline rim, for secondary actions. */
 @Composable
 fun SecondaryButton(
     text: String,
@@ -283,14 +445,14 @@ fun SecondaryButton(
     height: Dp = 54.dp,
     contentColor: Color = Ui.colors.ink,
 ) {
-    val c = Ui.colors
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
     Row(
         modifier
             .height(height)
-            .clip(CircleShape)
-            .background(c.surface)
-            .border(1.dp, c.hairline, CircleShape)
-            .clickable(role = Role.Button, onClick = onClick)
+            .scale(if (pressed) 0.98f else 1f)
+            .glass(FormShape, tint = if (pressed) Color.White.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.72f))
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
             .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -303,37 +465,37 @@ fun SecondaryButton(
     }
 }
 
-/** Black pill (light in dark mode), for a strong action that isn't the blue one. */
+/** Smoked-glass button, for a strong action that isn't the blue one. */
 @Composable
 fun DarkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector? = null) {
-    val c = Ui.colors
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
     Row(
         modifier
             .fillMaxWidth()
             .height(54.dp)
-            .shadow(if (c.isDark) 0.dp else 8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.18f))
-            .clip(CircleShape)
-            .background(c.inverse)
-            .clickable(role = Role.Button, onClick = onClick)
+            .scale(if (pressed) 0.98f else 1f)
+            .glass(FormShape, Glass.Smoked, tint = Color(0xFF000203).copy(alpha = if (pressed) 0.75f else 0.86f))
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
             .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = c.onInverse, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
         }
-        Text(text, color = c.onInverse, style = MaterialTheme.typography.labelLarge)
+        Text(text, color = Color.White, style = MaterialTheme.typography.labelLarge)
     }
 }
 
-/** A text-only pill, e.g. "Save" in a top bar. Blue text by default. */
+/** A text-only button, e.g. "Save" in a top bar or a dialog. Blue text by default. */
 @Composable
 fun TextPill(text: String, onClick: () -> Unit, color: Color = Ui.colors.primaryText, modifier: Modifier = Modifier) {
     Box(
         modifier
             .heightIn(min = 40.dp)
-            .clip(CircleShape)
+            .clip(FormShape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
@@ -344,7 +506,7 @@ fun TextPill(text: String, onClick: () -> Unit, color: Color = Ui.colors.primary
 
 enum class RoundStyle { Light, Dark, OnSky }
 
-/** 44 dp round icon button: white with a hairline, black ("open" arrow, back) or frosted on the sky. */
+/** Round glass icon button: regular glass, smoked ("open" arrow, back) or clear on the sky. */
 @Composable
 fun RoundIconButton(
     icon: ImageVector,
@@ -355,91 +517,102 @@ fun RoundIconButton(
     size: Dp = 44.dp,
 ) {
     val c = Ui.colors
-    val (fill, border, tint) = when (style) {
-        RoundStyle.Light -> Triple(c.surface, c.hairline, c.ink)
-        RoundStyle.Dark -> Triple(c.inverse, Color.Transparent, c.onInverse)
-        RoundStyle.OnSky -> Triple(
-            Color.White.copy(alpha = if (c.isDark) 0.08f else 0.20f),
-            Color.White.copy(alpha = if (c.isDark) 0.12f else 0.40f),
-            c.onSky,
-        )
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val (glass, tint) = when (style) {
+        RoundStyle.Light -> Glass.Regular to c.ink
+        RoundStyle.Dark -> Glass.Smoked to Color.White
+        RoundStyle.OnSky -> Glass.Clear to c.onSky
+    }
+    val fill = when (style) {
+        RoundStyle.Dark -> Color(0xFF000203).copy(alpha = 0.86f)
+        else -> glass.tint
     }
     Box(
         modifier
             .size(size)
-            .then(
-                if (style == RoundStyle.Dark && !c.isDark) {
-                    Modifier.shadow(6.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.18f))
-                } else {
-                    Modifier
-                },
-            )
-            .clip(CircleShape)
-            .background(fill)
-            .border(1.dp, border, CircleShape)
-            .clickable(role = Role.Button, onClick = onClick),
+            .scale(if (pressed) 0.94f else 1f)
+            .glass(CircleShape, glass, shadow = style != RoundStyle.OnSky, tint = fill)
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(size * 0.45f))
     }
 }
 
-/** The round blue "New invoice" button beside the tab bar. */
+/** The glossy blue gem "+" button beside the tab bar (design.md section 5.4). */
 @Composable
 fun NewInvoiceButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val c = Ui.colors
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.94f else 1f, tween(100), label = "gem press")
     Box(
         modifier
             .size(64.dp)
-            .shadow(14.dp, CircleShape, ambientColor = c.primary.copy(alpha = 0.45f), spotColor = c.primary.copy(alpha = 0.55f))
+            .scale(scale)
+            .shadow(if (pressed) 8.dp else 16.dp, CircleShape, ambientColor = Color(0xFF438BEF).copy(alpha = 0.45f), spotColor = Color(0xFF438BEF).copy(alpha = 0.55f))
             .clip(CircleShape)
-            .background(
-                Brush.radialGradient(
-                    listOf(Color(0xFF6FA6F3), c.primary, Color(0xFF2F6FD6)),
-                    center = Offset.Unspecified,
-                ),
-            )
-            .drawBehind {
-                // Soft gloss on the top left.
-                drawOval(
-                    Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.45f), Color.Transparent), startY = 0f, endY = size.height * 0.5f),
-                    topLeft = Offset(size.width * 0.18f, size.height * 0.08f),
-                    size = Size(size.width * 0.5f, size.height * 0.32f),
-                )
-            }
-            .border(1.dp, Color.White.copy(alpha = 0.35f), CircleShape)
-            .clickable(role = Role.Button, onClick = onClick),
+            .drawBehind { drawGem(pressed) }
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.Add, contentDescription = "New invoice", tint = Color.White, modifier = Modifier.size(30.dp))
+        // Engraved shadow under the "+".
+        Icon(Icons.Filled.Add, contentDescription = null, tint = DarkBlue.copy(alpha = 0.5f), modifier = Modifier.offset(y = 1.dp).size(32.dp))
+        Icon(Icons.Filled.Add, contentDescription = "New invoice", tint = Color.White, modifier = Modifier.size(32.dp))
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPillHighlight() {
-    drawRect(
-        Brush.verticalGradient(
-            listOf(Color.White.copy(alpha = 0.16f), Color.Transparent),
-            endY = size.height * 0.55f,
+private fun DrawScope.drawGem(pressed: Boolean) {
+    val w = size.width
+    val h = size.height
+    drawCircle(
+        Brush.radialGradient(
+            0f to LightBlue,
+            0.55f to Color(0xFF438BEF),
+            1f to GemDark,
+            center = Offset(w * 0.32f, h * 0.28f),
+            radius = w * 0.95f,
         ),
     )
+    // Bounce light inside the bottom edge.
+    drawOval(
+        Brush.verticalGradient(listOf(Color.Transparent, LightBlue.copy(alpha = 0.45f)), startY = h * 0.7f, endY = h),
+        topLeft = Offset(w * 0.18f, h * 0.68f),
+        size = Size(w * 0.64f, h * 0.30f),
+    )
+    // Specular highlight across the top.
+    drawOval(
+        Brush.verticalGradient(
+            listOf(Color.White.copy(alpha = if (pressed) 0.45f else 0.70f), Color.Transparent),
+            startY = h * 0.04f,
+            endY = h * 0.42f,
+        ),
+        topLeft = Offset(w * 0.16f, h * 0.05f),
+        size = Size(w * 0.68f, h * 0.38f),
+    )
+    // Rims: dark outside, light just inside.
+    drawCircle(GemDark.copy(alpha = 0.6f), radius = w / 2 - 0.5.dp.toPx(), style = Stroke(1.dp.toPx()))
+    drawCircle(Color.White.copy(alpha = 0.35f), radius = w / 2 - 1.5.dp.toPx(), style = Stroke(1.dp.toPx()))
 }
 
 // ---------------------------------------------------------------------------
 // Chips
 // ---------------------------------------------------------------------------
 
-/** Filter chip: black when selected (light in dark mode), soft grey otherwise. */
+/** Filter chip: black when selected, glass otherwise. */
 @Composable
 fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = Ui.colors
-    val fill by animateColorAsState(if (selected) c.inverse else c.surface, label = "chip fill")
     val text by animateColorAsState(if (selected) c.onInverse else c.ink, label = "chip text")
     Box(
         modifier
             .height(36.dp)
-            .clip(CircleShape)
-            .background(fill)
-            .border(1.dp, if (selected) Color.Transparent else c.hairline, CircleShape)
+            .glass(
+                CircleShape,
+                if (selected) Glass.Smoked else Glass.Regular,
+                shadow = selected,
+                tint = if (selected) Color(0xFF000203).copy(alpha = 0.88f) else Glass.Regular.tint,
+            )
             .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
             .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
@@ -461,21 +634,11 @@ fun <T> PillChoice(options: List<T>, selected: T, label: (T) -> String, onSelect
     ) {
         options.forEach { option ->
             val isSelected = option == selected
-            val fill by animateColorAsState(if (isSelected) c.surface else Color.Transparent, label = "segment fill")
             Box(
                 Modifier
                     .weight(1f)
                     .height(36.dp)
-                    .then(
-                        if (isSelected && !c.isDark) {
-                            Modifier.shadow(3.dp, CircleShape, ambientColor = ShadowInk.copy(alpha = 0.08f), spotColor = ShadowInk.copy(alpha = 0.12f))
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .clip(CircleShape)
-                    .background(fill)
-                    .border(1.dp, if (isSelected && c.isDark) c.hairline else Color.Transparent, CircleShape)
+                    .then(if (isSelected) Modifier.glass(CircleShape, tint = Color.White) else Modifier.clip(CircleShape))
                     .selectable(selected = isSelected, onClick = { onSelect(option) }, role = Role.RadioButton),
                 contentAlignment = Alignment.Center,
             ) {
@@ -490,13 +653,14 @@ fun <T> PillChoice(options: List<T>, selected: T, label: (T) -> String, onSelect
     }
 }
 
-/** Small outlined pill, e.g. an invoice number on a card. */
+/** Small outlined pill, e.g. an invoice number on a card. A flat tint, not blurred. */
 @Composable
 fun OutlineChip(text: String, modifier: Modifier = Modifier) {
     val c = Ui.colors
     Box(
         modifier
             .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.5f))
             .border(1.dp, c.hairline, CircleShape)
             .padding(horizontal = 12.dp, vertical = 5.dp),
     ) {
@@ -505,31 +669,49 @@ fun OutlineChip(text: String, modifier: Modifier = Modifier) {
 }
 
 // ---------------------------------------------------------------------------
-// Floating tab bar (design.md section 6.9)
+// Floating tab bar (design.md sections 5.4 and 6.9)
 // ---------------------------------------------------------------------------
 
 class NavItem(val label: String, val icon: ImageVector, val selected: Boolean, val onClick: () -> Unit)
 
-/** Black floating pill with the tabs, and the round blue New invoice button beside it. */
+/**
+ * Smoked-glass tab bar with skeuomorphic depth and a raised white key for the selected tab,
+ * plus the blue gem + button beside it. [haze] blurs the content scrolling underneath.
+ */
 @Composable
-fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Modifier = Modifier) {
-    val c = Ui.colors
+fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, haze: HazeState?, modifier: Modifier = Modifier) {
     Row(
         modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
             .padding(start = ScreenMargin, end = ScreenMargin, top = 8.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val barShape = CircleShape
         Row(
             Modifier
                 .weight(1f)
                 .height(64.dp)
-                .shadow(if (c.isDark) 0.dp else 18.dp, barShape, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.22f))
-                .clip(barShape)
-                .background(c.tabBar)
-                .border(1.dp, if (c.isDark) c.hairline else Color.Transparent, barShape)
+                .shadow(18.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.20f), spotColor = Color.Black.copy(alpha = 0.30f))
+                .clip(CircleShape)
+                .then(if (haze != null) Modifier.hazeGlass(haze, Glass.Smoked.tint, blur = 20.dp) else Modifier.background(Color(0xFF000203).copy(alpha = 0.9f)))
+                .drawWithContent {
+                    drawContent()
+                    // Bevel: light top edge, inner shadow along the bottom.
+                    drawLine(
+                        Brush.horizontalGradient(
+                            0f to Color.Transparent,
+                            0.15f to Color.White.copy(alpha = 0.22f),
+                            0.85f to Color.White.copy(alpha = 0.22f),
+                            1f to Color.Transparent,
+                        ),
+                        Offset(0f, 1.dp.toPx()),
+                        Offset(size.width, 1.dp.toPx()),
+                        1.dp.toPx(),
+                    )
+                    drawRect(
+                        Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f)), startY = size.height - 6.dp.toPx()),
+                    )
+                }
+                .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.04f))), CircleShape)
                 .padding(6.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -539,22 +721,39 @@ fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Mod
                     Modifier
                         .then(if (item.selected) Modifier.weight(1.6f) else Modifier.weight(1f))
                         .fillMaxHeight()
-                        .clip(CircleShape)
-                        .background(if (item.selected) (if (c.isDark) c.inverse else Color.White) else Color.Transparent)
+                        .then(
+                            if (item.selected) {
+                                Modifier
+                                    .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.30f))
+                                    .clip(CircleShape)
+                                    .background(Brush.verticalGradient(listOf(Color.White, Color(0xFFE9EEF3))))
+                                    .drawWithContent {
+                                        drawContent()
+                                        drawLine(
+                                            Color(0xFFC9D3DD),
+                                            Offset(size.height / 2, size.height - 0.5.dp.toPx()),
+                                            Offset(size.width - size.height / 2, size.height - 0.5.dp.toPx()),
+                                            1.dp.toPx(),
+                                        )
+                                    }
+                            } else {
+                                Modifier.clip(CircleShape)
+                            },
+                        )
                         .selectable(selected = item.selected, onClick = item.onClick, role = Role.Tab),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val selectedContent = if (c.isDark) c.onInverse else Color(0xFF000203)
-                    Icon(
-                        item.icon,
-                        contentDescription = if (item.selected) null else item.label,
-                        tint = if (item.selected) selectedContent else c.tabBarIcon,
-                        modifier = Modifier.size(22.dp),
-                    )
                     if (item.selected) {
+                        Icon(item.icon, contentDescription = null, tint = Color(0xFF000203), modifier = Modifier.size(22.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(item.label, color = selectedContent, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                        Text(item.label, color = Color(0xFF000203), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                    } else {
+                        // Engraved icon: a dark copy 1 dp below the light one.
+                        Box {
+                            Icon(item.icon, contentDescription = null, tint = Color.Black.copy(alpha = 0.4f), modifier = Modifier.offset(y = 1.dp).size(22.dp))
+                            Icon(item.icon, contentDescription = item.label, tint = Color.White.copy(alpha = 0.72f), modifier = Modifier.size(22.dp))
+                        }
                     }
                 }
             }
@@ -565,7 +764,7 @@ fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Mod
 }
 
 // ---------------------------------------------------------------------------
-// Empty states. A Compose-drawn stand-in for the glossy 3D illustrations.
+// Empty states (design.md section 7.1). No background block.
 // ---------------------------------------------------------------------------
 
 /** A page shape with the top right corner cut off for a folded flap. */
@@ -585,7 +784,7 @@ private fun foldedCardShape(radius: Float, fold: Float) = GenericShape { size, _
     close()
 }
 
-/** Two soft, glossy pages with a blue folded corner, for empty screens. */
+/** Two soft glass pages with a blue folded corner: the stand-in for the 3D illustrations. */
 @Composable
 fun EmptyIllustration(icon: ImageVector, modifier: Modifier = Modifier) {
     val c = Ui.colors
@@ -597,10 +796,7 @@ fun EmptyIllustration(icon: ImageVector, modifier: Modifier = Modifier) {
                 .offset(x = 14.dp, y = 6.dp)
                 .size(150.dp)
                 .rotate(-9f)
-                .then(if (c.isDark) Modifier else Modifier.shadow(10.dp, backShape, ambientColor = ShadowInk.copy(alpha = 0.08f), spotColor = ShadowInk.copy(alpha = 0.10f)))
-                .clip(backShape)
-                .background(Brush.linearGradient(listOf(c.primarySoft, c.surface)))
-                .border(1.dp, c.hairline, backShape),
+                .glass(backShape, tint = c.primarySoft.copy(alpha = 0.8f)),
         )
         Box(
             Modifier
@@ -630,12 +826,10 @@ private fun foldedCard(radius: Dp, fold: Dp): Modifier {
     val foldPx = with(density) { fold.toPx() }
     val shape = foldedCardShape(radiusPx, foldPx)
     return Modifier
-        .then(
-            if (c.isDark) Modifier else Modifier.shadow(24.dp, shape, ambientColor = c.primary.copy(alpha = 0.18f), spotColor = ShadowInk.copy(alpha = 0.22f)),
-        )
+        .shadow(24.dp, shape, ambientColor = c.primary.copy(alpha = 0.18f), spotColor = ShadowInk.copy(alpha = 0.22f))
         .clip(shape)
-        .background(Brush.linearGradient(listOf(c.surfaceRaised, c.surface)))
-        .border(1.5.dp, c.hairline, shape)
+        .background(Brush.linearGradient(listOf(Color.White.copy(alpha = 0.95f), Color.White.copy(alpha = 0.75f))))
+        .border(1.5.dp, Brush.linearGradient(listOf(Color.White, c.hairline)), shape)
         .drawWithContent {
             drawContent()
             val w = size.width
@@ -650,7 +844,7 @@ private fun foldedCard(radius: Dp, fold: Dp): Modifier {
             drawPath(
                 flap,
                 Brush.linearGradient(
-                    listOf(Color(0xFF8DBAF6), c.primary, Color(0xFF2F6FD6)),
+                    listOf(LightBlue, c.primary, DeepBlue),
                     start = Offset(w - f, 0f),
                     end = Offset(w - f * 0.4f, f),
                 ),
@@ -696,6 +890,5 @@ fun IllustratedEmptyState(
     }
 }
 
-/** Keeps a border-only stroke handy for Material components that take one. */
-@Composable
-fun hairlineBorder(): BorderStroke = BorderStroke(1.dp, Ui.colors.hairline)
+@Suppress("unused")
+private fun DrawScope.clipTo(path: Path, block: DrawScope.() -> Unit) = clipPath(path) { block() }

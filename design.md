@@ -4,7 +4,7 @@ Status: **adopted 2026-11-07**. The Android app is styled from this document. It
 
 Decided so far (2026-11-07): the invoice PDF stays orange; the app is light only, with no dark mode; the New invoice button is blue; text fields and form buttons have 8 dp corners; every surface is liquid glass (section 5.3); primary buttons, the tab bar and the + button are skeuomorphic (5.4); screens fade into a progressive blur at the top and bottom (5.5); empty states have no background block.
 
-**Update pending in the app:** sections 4.2, 5.3–5.5, 6.8–6.10 and 7.1 were revised on 2026-11-07 (evening) and the Android app does not follow them yet.
+The Android app follows every section, including the 2026-11-07 evening revision (sections 4.2, 5.3–5.5, 6.8–6.10 and 7.1).
 
 This document is drawn from five reference images Saurabh shared on 2026-11-07: a "Font & Colors" sheet, two phone mockups (a task dashboard and an assistant home screen), a poster with a glossy 3D illustration, and a long overview board of the same app. The references are productivity apps, so the second half of this document translates their patterns onto the invoice screens we already have (Invoices, Clients, Settings, editor, details, payments).
 
@@ -243,6 +243,8 @@ Content never ends in a hard cut where it meets the status bar or the floating t
 | Bottom (editor) | Behind the sticky total bar only | Same as the tab screens | Same |
 
 **Decided (2026-11-07):** the blur covers only the status bar at the top and only the bottom navigation at the bottom, with the soft strength above. The screen title is not pinned; it scrolls away under the status-bar blur.
+
+Inner screens (invoice details and the forms) keep their back button and title pinned, as they did before. The form scrolls under that bar, which is blurred glass of the same tint, solid behind the title and fading out at its lower edge, so there is no hard cut there either.
 
 - The ramp follows an ease-in curve, so text is still crisp in the upper part of the bottom band and only blurs close to the edge.
 - The bands are always on, not only while scrolling. When a list is short and nothing sits behind a band, the band is invisible.

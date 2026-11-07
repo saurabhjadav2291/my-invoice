@@ -4,7 +4,6 @@ package com.revishingstudio.invoice.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +12,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,6 +38,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,17 +80,23 @@ private const val DAY_MILLIS = 86_400_000L
  * [onSky] draws the title in white for screens that sit on the blue header.
  */
 @Composable
-fun BackTopBar(title: String, onBack: () -> Unit, onSky: Boolean = false, actions: @Composable RowScope.() -> Unit = {}) {
+fun BackTopBar(
+    title: String,
+    onBack: () -> Unit,
+    onSky: Boolean = false,
+    modifier: Modifier = Modifier,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
     val c = Ui.colors
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .statusBarsPadding()
             .padding(start = 16.dp, end = 12.dp, top = 8.dp, bottom = 8.dp)
             .heightIn(min = 56.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RoundIconButton(AppIcons.Back, "Back", onBack, style = RoundStyle.Dark)
+        RoundIconButton(AppIcons.Back, "Back", onBack, style = if (onSky) RoundStyle.OnSky else RoundStyle.Dark)
         Spacer(Modifier.width(14.dp))
         Text(
             title,
@@ -88,6 +107,56 @@ fun BackTopBar(title: String, onBack: () -> Unit, onSky: Boolean = false, action
             modifier = Modifier.weight(1f),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
+    }
+}
+
+/**
+ * Layout of an inner screen (details and forms). The content scrolls under a pinned
+ * [topBar] and an optional [bottomBar]; both sit on blurred glass made from the content
+ * behind them (design.md section 5.5), so nothing is cut off by a hard edge.
+ * [content] gets the padding it needs to clear both bars when scrolled to an end.
+ */
+@Composable
+fun InnerScaffold(
+    modifier: Modifier = Modifier,
+    onSky: Boolean = false,
+    topBar: @Composable () -> Unit,
+    bottomBar: @Composable (HazeState) -> Unit = {},
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    val c = Ui.colors
+    val density = LocalDensity.current
+    val haze = rememberHazeState()
+    var topHeight by remember { mutableStateOf(0.dp) }
+    var bottomHeight by remember { mutableStateOf(0.dp) }
+    val systemBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val tint = if (onSky) c.sky[0] else c.background
+    Box(modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().hazeSource(haze)) {
+            content(PaddingValues(top = topHeight, bottom = maxOf(bottomHeight, systemBottom)))
+        }
+        Box(
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .onSizeChanged { topHeight = with(density) { it.height.toDp() } }
+                .hazeEffect(haze) {
+                    blurRadius = 20.dp
+                    noiseFactor = 0f
+                    // Solid enough behind the title to read it, fading out at the lower edge.
+                    tints = listOf(
+                        HazeTint(Brush.verticalGradient(0f to tint.copy(alpha = 0.9f), 0.7f to tint.copy(alpha = 0.7f), 1f to Color.Transparent)),
+                    )
+                    fallbackTint = HazeTint(Brush.verticalGradient(0f to tint, 0.7f to tint.copy(alpha = 0.92f), 1f to Color.Transparent))
+                    mask = Brush.verticalGradient(0.7f to Color.Black, 1f to Color.Transparent)
+                },
+        ) { topBar() }
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .onSizeChanged { bottomHeight = with(density) { it.height.toDp() } },
+        ) { bottomBar(haze) }
     }
 }
 
@@ -105,23 +174,20 @@ private fun FieldLabel(text: String) {
     )
 }
 
-/** Single-line fields are full pills; multi-line boxes are as round as they can be. */
-private val MultiLineShape = RoundedCornerShape(26.dp)
-
 @Composable
 private fun fieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = Ui.colors.surface,
-    unfocusedContainerColor = Ui.colors.surface,
-    errorContainerColor = Ui.colors.surface,
+    focusedContainerColor = Glass.Regular.tint,
+    unfocusedContainerColor = Glass.Regular.tint,
+    errorContainerColor = Glass.Regular.tint,
     focusedBorderColor = Ui.colors.primary,
-    unfocusedBorderColor = Ui.colors.hairline,
+    unfocusedBorderColor = Color.White.copy(alpha = 0.9f),
     focusedTextColor = Ui.colors.ink,
     unfocusedTextColor = Ui.colors.ink,
     cursorColor = Ui.colors.primary,
     errorBorderColor = Ui.colors.error,
 )
 
-/** Pill that looks like a text field but opens a picker. */
+/** Glass box with 8 dp corners that looks like a text field but opens a picker. */
 @Composable
 private fun PickerPill(onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
     val c = Ui.colors
@@ -129,11 +195,9 @@ private fun PickerPill(onClick: () -> Unit, content: @Composable RowScope.() -> 
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .clip(CircleShape)
-            .background(c.surface)
-            .border(1.dp, c.hairline, CircleShape)
+            .glass(FormShape, shadow = false)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(start = 20.dp, end = 14.dp),
+            .padding(start = 16.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content,
     )
@@ -151,7 +215,6 @@ fun Field(
     supportingText: String? = null,
     isError: Boolean = false,
 ) {
-    val pill = singleLine && minLines <= 1
     Column(modifier.fillMaxWidth()) {
         FieldLabel(label)
         OutlinedTextField(
@@ -162,7 +225,7 @@ fun Field(
             isError = isError,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             textStyle = MaterialTheme.typography.bodyLarge,
-            shape = if (pill) CircleShape else MultiLineShape,
+            shape = FormShape,
             colors = fieldColors(),
             modifier = Modifier.fillMaxWidth(),
         )
@@ -207,9 +270,10 @@ fun <T> DropdownField(
             DropdownMenu(
                 expanded = open,
                 onDismissRequest = { open = false },
-                shape = RoundedCornerShape(20.dp),
-                containerColor = c.surfaceRaised,
-                border = if (c.isDark) BorderStroke(1.dp, c.hairline) else null,
+                shape = RoundedCornerShape(16.dp),
+                containerColor = Glass.Overlay.tint,
+                border = BorderStroke(1.dp, Color.White),
+                shadowElevation = 12.dp,
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(
@@ -251,9 +315,10 @@ fun DateField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, mod
                 })
             },
             dismissButton = { TextPill("Cancel", onClick = { open = false }, color = Ui.colors.greyText) },
-            shape = RoundedCornerShape(32.dp),
+            shape = RoundedCornerShape(28.dp),
+            colors = DatePickerDefaults.colors(containerColor = Glass.Overlay.tint),
         ) {
-            DatePicker(state = state)
+            DatePicker(state = state, colors = DatePickerDefaults.colors(containerColor = Color.Transparent))
         }
     }
 }
@@ -335,8 +400,8 @@ fun ConfirmDialog(
             }, color = c.error)
         },
         dismissButton = { TextPill("Cancel", onClick = onDismiss, color = c.greyText) },
-        shape = RoundedCornerShape(32.dp),
-        containerColor = c.surfaceRaised,
+        shape = RoundedCornerShape(28.dp),
+        containerColor = Glass.Overlay.tint,
     )
 }
 
