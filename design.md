@@ -1,6 +1,8 @@
 # My Invoice design system
 
-Status: **proposal for review**. Nothing in the app uses this yet. If it is adopted, it replaces the warm orange theme from the "glossy theme" restyle (PR #4) with a cool blue one.
+Status: **proposal for review**. Nothing in the app uses this yet. If it is adopted, it replaces the warm orange theme from the "glossy theme" restyle (PR #4) with a cool blue one, in light and dark.
+
+Decided so far (2026-11-07): the invoice PDF stays orange; dark mode is included (section 10); all buttons and text fields are fully rounded.
 
 This document is drawn from five reference images Saurabh shared on 2026-11-07: a "Font & Colors" sheet, two phone mockups (a task dashboard and an assistant home screen), a poster with a glossy 3D illustration, and a long overview board of the same app. The references are productivity apps, so the second half of this document translates their patterns onto the invoice screens we already have (Invoices, Clients, Settings, editor, details, payments).
 
@@ -14,7 +16,7 @@ Principles:
 
 1. **One accent.** Blue marks the one thing to do next. Everything else is black, white or grey.
 2. **Soft surfaces, hard ink.** Surfaces are pale and rounded; text and key controls are near black for contrast.
-3. **Pills and circles.** Every interactive element is either a full pill or a circle. Squares only appear as cards.
+3. **Pills and circles.** Every button and every text input is fully rounded: a full pill (radius = half the height) or a circle. No square or slightly-rounded buttons or fields anywhere. Rounded rectangles are only for cards and multi-line text boxes.
 4. **Space over lines.** Separate content with whitespace and card edges, not dividers.
 
 ---
@@ -60,11 +62,12 @@ The references have no status colours, so these are new. They are used only as a
 - At most **one** filled blue element per screen region (the main button, or the selected chip, or the FAB).
 - Body text is always `Ink`. Never put body text in blue or grey on the gradient.
 - Text on the blue header gradient is `White` at the top and switches to `Ink` once the gradient has faded past `SkyMid`.
-- Dark mode is out of scope for v1. The references are light only. If added later, swap `Canvas` → `#0B0F14`, `White` → `#151A21`, `Ink` → `#F2F6F9`, and keep `Primary`.
+- White text on `#438BEF` is 3.4:1, which is fine for icons and large text. For buttons with small labels, use labels of at least 16 sp SemiBold, or fill the button with `PrimaryDeep` instead.
+- Every colour above has a dark-theme counterpart in section 10. Code always refers to the token, never the hex, so both themes work.
 
 ### 2.5 The invoice PDF
 
-The PDF keeps its own orange accent (`#FF5400`, Inter). It is a printed document that matches the invoices already sent to clients, and it should not change because the app theme did. **Open question for Saurabh:** keep the PDF orange, or move it to blue too?
+**Decided (2026-11-07): the PDF stays orange.** It keeps its own accent (`#FF5400`) and Inter, so new invoices match the ones already sent to clients. The app theme, including dark mode, never changes the PDF. The in-app PDF preview always shows the PDF on white, even in dark mode.
 
 ---
 
@@ -119,8 +122,9 @@ A 4 dp base grid. Common steps: 4, 8, 12, 16, 20, 24, 32.
 |---|---|
 | Large card / hero card | 28 dp |
 | Standard card, grid tile | 24 dp |
-| Input field, search bar | full pill (height / 2) |
-| Chip, button, tab bar | full pill |
+| Text input, search bar, dropdown, date picker field | full pill (height / 2) |
+| Multi-line text box (notes, addresses) | 26 dp (as round as possible while still holding several lines) |
+| Every button, chip, segmented control, tab bar | full pill |
 | Icon well, round buttons, avatars | circle |
 | Bottom sheet top corners | 32 dp |
 
@@ -224,6 +228,8 @@ In the app: a 2×2 grid on the home screen or in Settings: "New invoice", "Add c
 
 ### 6.8 Buttons
 
+Every button is a full pill or a circle. In Compose, use `CircleShape` (or `RoundedCornerShape(50)`) for all of them, including Material buttons, dialog buttons and snackbar actions, so nothing falls back to the default 20 dp corners.
+
 | Type | Spec |
 |---|---|
 | Primary | Pill, 54 dp tall, `Primary` fill, `White` `bodyMedium` text, glow shadow |
@@ -239,15 +245,25 @@ Floats 16 dp above the bottom edge and 20 dp from the sides. 64 dp tall, `Ink` f
 
 - The **selected** tab is a white pill inside the bar (48 dp tall, 4 dp inset) with an `Ink` icon and label side by side ("⌂ Home").
 - Other tabs are icon-only, `White` at 70%.
-- To the right of the bar, separated by 10 dp, sits a 64 dp **dark circular FAB** with a white icon.
+- To the right of the bar, separated by 10 dp, sits a 64 dp circular **New invoice** button.
 
-In the app: tabs **Invoices · Clients · Settings**; the FAB is **New invoice** (white "+" icon). In the second reference the centre action is a blue glossy circle with a sparkle; if Saurabh prefers the FAB in blue, use `Primary` with the glow and keep the bar black.
+In the app: tabs **Invoices · Clients · Settings**.
+
+**New invoice button: blue (recommended, awaiting Saurabh's confirmation).** A 64 dp `Primary` circle with a white "+" icon, a subtle top highlight, and the blue glow. Reasons:
+
+1. Creating an invoice is the app's main action, and section 2.4 reserves blue for the main action. Next to a black tab bar, a black button would read as just another tab.
+2. It works in dark mode. A black button on a near-black screen disappears, while blue stands out in both themes.
+3. The second reference uses exactly this: a glossy blue circle at the centre of the bottom bar.
+
+The alternative is a black circle that matches the first reference's send button. In dark mode it would need to flip to a light circle.
 
 ### 6.10 Forms (invoice editor)
 
 The references have no forms, so these follow the same language:
 
-- Fields are pills for single-line inputs (52 dp, `White` fill on `Canvas`, `Hairline` border, label above in `caption` `GreyText`) and radius-20 boxes for multi-line text.
+- Every single-line field is a full pill: 52 dp tall, `White` fill on `Canvas`, `Hairline` border, 20 dp horizontal padding, label above in `caption` `GreyText`. This includes amount, rate and quantity fields, dropdowns (client, currency) and date fields.
+- Multi-line text (notes, addresses) uses a 26 dp radius box, the roundest shape that still fits several lines.
+- In Compose, pass `shape = CircleShape` to every `OutlinedTextField` / `TextField`, and hide the default underline indicator.
 - Focused field: border becomes 1.5 dp `Primary`.
 - Line items are white cards (radius 20) with a dark round "×" to remove.
 - The running total sits in a sticky white bar at the bottom with the primary "Save" button.
@@ -335,8 +351,87 @@ The restyle in PR #4 already has the right structure, so adopting this is mostly
 | `Glass.kt` `AppBackground` | Sky gradient from section 5.1 |
 | `Glass.kt` `GlassCard` | Flatter: white, radius 24, elevation 0 on canvas |
 | `Glass.kt` `HeroCard` | White hero with two-weight headline instead of an orange glossy card |
-| `Glass.kt` `FloatingNavBar` | Black pill with white selected pill, plus separate dark FAB |
+| `Glass.kt` `FloatingNavBar` | Black pill with white selected pill, plus separate blue New invoice button |
 | `Glass.kt` `GlossyFab`, `PrimaryButton` | Blue glow version; add `DarkRoundButton` and `StatusChip` |
 | `Glass.kt` `EmptyIllustration` | Recolour now; replace with WebP illustrations later |
+| Text fields across the screens | `CircleShape` on every field (section 6.10) |
+| `Theme.kt` colour scheme | Two schemes, `lightColorScheme` and `darkColorScheme`, from sections 2 and 10, plus a `LocalAppColors` for the tokens Material has no slot for (sky gradient, status colours) |
+| Settings | Add "Appearance: System / Light / Dark" |
 
-Status colours, the PDF accent and dark mode are the three choices this document leaves to Saurabh.
+Still open for Saurabh: confirm the New invoice button colour (blue recommended, section 6.9) and the status colours (section 2.3).
+
+---
+
+## 10. Dark mode
+
+The references are light only, so this section extends them. The aim is the same calm, airy feel at night: deep blue-black instead of pure black, cards that are slightly lighter than the background, and the same blue accent.
+
+### 10.1 Behaviour
+
+- Follows the phone's system setting by default. Settings has an "Appearance" choice of System, Light or Dark.
+- The invoice PDF and its in-app preview never change (section 2.5).
+- Status bar and navigation bar icons switch to light in dark mode.
+
+### 10.2 Colour tokens
+
+| Token | Light | Dark | Notes |
+|---|---|---|---|
+| `Background` (`Canvas`) | `#F2F6F9` | `#0B0F14` | Blue-black, never pure `#000000` |
+| `Surface` (cards, inputs) | `#FFFFFF` | `#161B22` | One step lighter than the background, so cards still read as cards |
+| `SurfaceRaised` (sheets, dialogs, tab bar) | `#FFFFFF` | `#1F2630` | Elevation shows as lightness, not shadow |
+| `OnSurface` (`Ink`) | `#000203` | `#F2F6F9` | Headings and body text |
+| `GreyText` | `#6B6B6C` | `#9AA3AE` | 6.8:1 on dark cards |
+| `Grey` (icons, placeholders) | `#808081` | `#7D8590` | |
+| `Hairline` | `#E6ECF1` | `#2A323C` | Borders matter more in dark mode, where shadows don't show |
+| `Primary` | `#438BEF` | `#438BEF` | Unchanged, the brand blue |
+| `PrimaryText` (`PrimaryDeep`) | `#2F6FD6` | `#6FA6F3` | Blue text and links; the lighter shade keeps contrast on dark |
+| `PrimarySoft` | `#E3EEFD` | `#1A2C47` | Selected chip fill, info banners |
+| `Scrim` | `#000203` 40% | `#000000` 60% | |
+
+### 10.3 Sky header gradient in dark
+
+```
+0%    #1B3A66   deep blue
+45%   #121A26
+100%  #0B0F14   Background (reached at ~40% of screen height)
+```
+
+Text on the header is `OnSurface` (`#F2F6F9`) throughout. The translucent header icon buttons become `#FFFFFF` at 8% with a `#FFFFFF` 12% border.
+
+### 10.4 Components in dark
+
+| Component | Light | Dark |
+|---|---|---|
+| Cards | White on canvas, no shadow | `Surface` on `Background`, plus a 1 dp `Hairline` border |
+| Hero card | White, elevation 1 | `SurfaceRaised`, 1 dp `#FFFFFF` 6% top border to catch the light |
+| Text fields | White pill, hairline border | `Surface` pill, `Hairline` border; focus border `Primary` |
+| Neutral chip | `Canvas` fill | `#1F2630` fill |
+| Selected filter chip | `Ink` fill, white text | `#F2F6F9` fill, `#000203` text (inverted, keeps the strongest contrast) |
+| Dark round button ("open", back) | `Ink` circle, white icon | `#F2F6F9` circle, `#000203` icon (inverted, otherwise it disappears) |
+| Primary button | `Primary`, glow 35% | `Primary`, glow 25% |
+| Secondary button | White pill, hairline | `Surface` pill, `Hairline` border, `OnSurface` text |
+| Dark button ("Share PDF") | `Ink` pill | `#F2F6F9` pill, `#000203` text |
+| Floating tab bar | `Ink` pill | `SurfaceRaised` pill with `Hairline` border; selected tab stays a light `#F2F6F9` pill with dark icon and label |
+| New invoice button | `Primary` circle | `Primary` circle (unchanged, one reason to choose blue) |
+| Icon wells | `Canvas` circle | `#1F2630` circle |
+
+### 10.5 Status colours in dark
+
+| Status | Text / dot | Pill fill |
+|---|---|---|
+| Draft | `#9AA3AE` | `#1F2630` |
+| Sent | `#6FA6F3` | `#1A2C47` |
+| Partly paid | `#F0B44C` | `#3A2A10` |
+| Paid | `#4CC27E` | `#123222` |
+| Overdue | `#F07070` | `#3D1717` |
+
+### 10.6 Elevation and illustrations
+
+- Shadows are nearly invisible on dark backgrounds. Show depth with surface lightness (`Background` → `Surface` → `SurfaceRaised`) and hairline borders instead. Keep only the blue glow.
+- The glossy 3D illustrations are transparent WebP files and work on both themes. Render them without baked-in white backgrounds or white halos, and keep their floor shadow soft and semi-transparent so it reads on dark too.
+
+### 10.7 Checks before shipping dark mode
+
+- Every text token meets 4.5:1 on the surfaces it sits on (3:1 for text 18 sp+ or icons).
+- No hard-coded `Color.White` / `Color.Black` in screens; only tokens.
+- Screenshot each screen in both themes.
