@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import com.revishingstudio.invoice.core.InvoiceRepository
@@ -114,18 +115,16 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
 
     val current = nav.current
     val isTab = current == Screen.Invoices || current == Screen.Clients || current == Screen.Settings
-    // Forms sit on the plain canvas; everything else opens on the blue sky.
-    val sky = isTab || current is Screen.InvoiceDetail
     val colors = Ui.colors
 
-    // Light status bar icons over the sky and in dark mode, dark icons on the light canvas.
+    // Every screen sits on the light canvas, so the system bar icons are dark.
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as? Activity)?.window ?: return@SideEffect
             val controller = WindowCompat.getInsetsController(window, view)
-            controller.isAppearanceLightStatusBars = !colors.isDark && !sky
-            controller.isAppearanceLightNavigationBars = !colors.isDark
+            controller.isAppearanceLightStatusBars = true
+            controller.isAppearanceLightNavigationBars = true
         }
     }
 
@@ -150,12 +149,11 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
 
     CompositionLocalProvider(
         LocalActions provides actions,
-        LocalHazeState provides haze,
         LocalBottomBarPadding provides bottomBarPadding,
     ) {
         Box(Modifier.fillMaxSize()) {
             // Everything that scrolls is the blur source for the bands and the tab bar.
-            AppBackground(sky = sky, modifier = Modifier.hazeSource(haze)) {
+            AppBackground(Modifier.hazeSource(haze)) {
                 when (current) {
                     Screen.Invoices -> InvoicesScreen(nav)
                     Screen.Clients -> ClientsScreen(nav)
@@ -173,7 +171,7 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                         .align(Alignment.TopCenter)
                         .fillMaxWidth()
                         .windowInsetsTopHeight(WindowInsets.statusBars)
-                        .progressiveBlur(haze, colors.sky[0].copy(alpha = 0.55f), blurAtTop = true, blur = 20.dp),
+                        .progressiveBlur(haze, colors.background.copy(alpha = 0.55f), blurAtTop = true, blur = 20.dp),
                 )
                 // Progressive blur behind the bottom navigation only, with the tab bar on top.
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
@@ -189,7 +187,6 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                             NavItem("Settings", AppIcons.Settings, current == Screen.Settings) { nav.tab(Screen.Settings) },
                         ),
                         onNewInvoice = ::newInvoice,
-                        haze = haze,
                         modifier = Modifier.padding(top = NavBandHeight - NavBarHeight).navigationBarsPadding(),
                     )
                 }
@@ -205,10 +202,10 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                 Snackbar(
                     data,
                     modifier = Modifier.padding(horizontal = ScreenMargin, vertical = 8.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    containerColor = Glass.Smoked.tint.copy(alpha = 0.9f),
+                    shape = RoundedCornerShape(12.dp),
+                    containerColor = colors.inverse,
                     contentColor = colors.onInverse,
-                    actionColor = colors.primary,
+                    actionColor = Color(0xFF8DB4F5),
                 )
             }
         }

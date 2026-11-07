@@ -1,6 +1,5 @@
 package com.revishingstudio.invoice.ui
 
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -20,38 +19,38 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.revishingstudio.invoice.R
 
-/** Background and text colours of one invoice status pill. */
+/** Text and fill colours of one invoice status tag. */
 @Immutable
 data class StatusColors(val content: Color, val fill: Color)
 
 /**
  * Every colour in design.md. Screens use these tokens (or the Material colour scheme
- * built from them), never raw hex values.
+ * built from them), never raw hex values. Surfaces come from one cool neutral ramp;
+ * blue is the only accent and marks the primary action, the selection and key figures.
  */
 @Immutable
 data class AppColors(
-    /** Always false: the app is light only. Components keep their dark branches in case that changes. */
-    val isDark: Boolean,
     val background: Color,
     val surface: Color,
+    /** A step above the surface: inputs, the selected tab, pressed rows. */
     val surfaceRaised: Color,
+    /** Primary text. */
     val ink: Color,
+    /** Secondary text. */
     val greyText: Color,
+    /** Muted text, meta and icons. */
     val grey: Color,
     val hairline: Color,
+    /** Accent fill: primary buttons, the + button, selected states. White text on it is 4.8:1. */
     val primary: Color,
+    /** Accent used as text or ink on light surfaces. */
     val primaryText: Color,
     val primarySoft: Color,
-    /** Sky header gradient, top to bottom (the last stop is the background). */
-    val sky: List<Color>,
-    /** Text and icons drawn on the sky header. */
-    val onSky: Color,
-    /** The "dark" round buttons and selected filter chips. Inverted in dark mode. */
+    /** Dark fills: the snackbar. */
     val inverse: Color,
     val onInverse: Color,
-    val neutralChip: Color,
-    val tabBar: Color,
-    val tabBarIcon: Color,
+    /** Orange of the invoice PDF, used only where the app shows the paper invoice. */
+    val paperAccent: Color,
     val error: Color,
     val draft: StatusColors,
     val sent: StatusColors,
@@ -60,33 +59,28 @@ data class AppColors(
     val overdue: StatusColors,
 )
 
-private val Primary = Color(0xFF438BEF)
+private val Ink = Color(0xFF111827)
 
 val LightAppColors = AppColors(
-    isDark = false,
-    background = Color(0xFFF2F6F9),
+    background = Color(0xFFF5F7FA),
     surface = Color(0xFFFFFFFF),
-    surfaceRaised = Color(0xFFFFFFFF),
-    ink = Color(0xFF000203),
-    greyText = Color(0xFF6B6B6C),
-    grey = Color(0xFF808081),
-    hairline = Color(0xFFE6ECF1),
-    primary = Primary,
-    primaryText = Color(0xFF2F6FD6),
-    primarySoft = Color(0xFFE3EEFD),
-    sky = listOf(Color(0xFF3F86EC), Primary, Color(0xFFC9DDFB), Color(0xFFF2F6F9)),
-    onSky = Color.White,
-    inverse = Color(0xFF000203),
+    surfaceRaised = Color(0xFFECEFF4),
+    ink = Ink,
+    greyText = Color(0xFF4B5565),
+    grey = Color(0xFF6B7487),
+    hairline = Ink.copy(alpha = 0.08f),
+    primary = Color(0xFF2F6FD6),
+    primaryText = Color(0xFF2563C9),
+    primarySoft = Color(0xFFEAF1FC),
+    inverse = Ink,
     onInverse = Color.White,
-    neutralChip = Color(0xFFF2F6F9),
-    tabBar = Color(0xFF000203),
-    tabBarIcon = Color.White.copy(alpha = 0.7f),
-    error = Color(0xFFD23B3B),
-    draft = StatusColors(Color(0xFF6B6B6C), Color(0xFFF2F6F9)),
-    sent = StatusColors(Color(0xFF2F6FD6), Color(0xFFE3EEFD)),
-    partlyPaid = StatusColors(Color(0xFFB26B00), Color(0xFFFFF3DC)),
-    paid = StatusColors(Color(0xFF1E8E4E), Color(0xFFE2F5EA)),
-    overdue = StatusColors(Color(0xFFD23B3B), Color(0xFFFDE6E6)),
+    paperAccent = Color(0xFFFF5400),
+    error = Color(0xFFDC2626),
+    draft = StatusColors(Color(0xFF4B5565), Color(0xFFECEFF4)),
+    sent = StatusColors(Color(0xFF2559B8), Color(0xFFEAF1FC)),
+    partlyPaid = StatusColors(Color(0xFF9A5B00), Color(0xFFFBF1E0)),
+    paid = StatusColors(Color(0xFF15803D), Color(0xFFE6F4EA)),
+    overdue = StatusColors(Color(0xFFC62828), Color(0xFFFCEAEA)),
 )
 
 val LocalAppColors = staticCompositionLocalOf { LightAppColors }
@@ -105,6 +99,12 @@ val Outfit = FontFamily(
     Font(R.font.outfit_semibold, FontWeight.SemiBold),
 )
 
+/** Partner face for invoice numbers, the app's signature detail. */
+val PlexMono = FontFamily(
+    Font(R.font.ibm_plex_mono_regular, FontWeight.Normal),
+    Font(R.font.ibm_plex_mono_medium, FontWeight.Medium),
+)
+
 private fun style(size: Int, weight: FontWeight, line: Int, tracking: Double = 0.0) = TextStyle(
     fontFamily = Outfit,
     fontWeight = weight,
@@ -113,35 +113,41 @@ private fun style(size: Int, weight: FontWeight, line: Int, tracking: Double = 0
     letterSpacing = tracking.sp,
 )
 
-/** Type scale from design.md section 3. Only Regular, Medium and SemiBold are used. */
+/**
+ * Type scale from design.md section 3. Hierarchy comes from size and colour: Regular and
+ * Medium only. Negative tracking only on display sizes.
+ */
 private val AppTypography = Typography(
-    displayLarge = style(40, FontWeight.SemiBold, 46, -0.8),
-    displayMedium = style(36, FontWeight.SemiBold, 42, -0.6),
-    displaySmall = style(32, FontWeight.SemiBold, 38, -0.5), // display
-    headlineLarge = style(28, FontWeight.SemiBold, 34, -0.5),
-    headlineMedium = style(26, FontWeight.SemiBold, 32, -0.4), // headline
-    headlineSmall = style(22, FontWeight.SemiBold, 28, -0.3),
-    titleLarge = style(20, FontWeight.SemiBold, 26, -0.2), // title
-    titleMedium = style(17, FontWeight.SemiBold, 22, -0.1), // cardTitle
-    titleSmall = style(15, FontWeight.SemiBold, 20),
+    displayLarge = style(40, FontWeight.Medium, 44, -0.8),
+    displayMedium = style(36, FontWeight.Medium, 40, -0.6),
+    displaySmall = style(32, FontWeight.Medium, 36, -0.5), // key figure
+    headlineLarge = style(28, FontWeight.Medium, 32, -0.3), // page title
+    headlineMedium = style(24, FontWeight.Medium, 28),
+    headlineSmall = style(20, FontWeight.Medium, 28),
+    titleLarge = style(18, FontWeight.Medium, 24), // section and bar titles
+    titleMedium = style(16, FontWeight.Medium, 24), // card title
+    titleSmall = style(15, FontWeight.Medium, 20),
     bodyLarge = style(15, FontWeight.Normal, 22), // body
     bodyMedium = style(15, FontWeight.Normal, 22),
-    bodySmall = style(13, FontWeight.Normal, 18), // caption
+    bodySmall = style(13, FontWeight.Normal, 20), // caption
     labelLarge = style(15, FontWeight.Medium, 20), // button labels
-    labelMedium = style(12, FontWeight.Medium, 16, 0.1), // chip
-    labelSmall = style(11, FontWeight.Normal, 14, 0.2), // micro
+    labelMedium = style(12, FontWeight.Medium, 16), // tags
+    labelSmall = style(12, FontWeight.Normal, 16, 0.1), // meta
 )
 
 /** Amounts use tabular figures so columns of totals line up. */
 fun TextStyle.tabular(): TextStyle = copy(fontFeatureSettings = "tnum")
 
-/** Radii from design.md section 4.2. Buttons, chips and fields set their own full-pill shapes. */
+/** Invoice numbers like RS/26-27/031, set in mono like a serial stamp. */
+fun TextStyle.serial(): TextStyle = copy(fontFamily = PlexMono, fontWeight = FontWeight.Normal, letterSpacing = 0.sp)
+
+/** Radii from design.md section 4.2: controls 8, tags 6, cards 16, sheets 20. */
 private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(16.dp),
-    small = CircleShape,
-    medium = RoundedCornerShape(24.dp),
-    large = RoundedCornerShape(28.dp),
-    extraLarge = RoundedCornerShape(32.dp),
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(20.dp),
 )
 
 private fun schemeFor(c: AppColors) = run {
@@ -159,7 +165,7 @@ private fun schemeFor(c: AppColors) = run {
         onBackground = c.ink,
         surface = c.surface,
         onSurface = c.ink,
-        surfaceVariant = c.neutralChip,
+        surfaceVariant = c.surfaceRaised,
         onSurfaceVariant = c.greyText,
         surfaceTint = Color.Transparent,
         outline = c.hairline,
@@ -168,7 +174,7 @@ private fun schemeFor(c: AppColors) = run {
         surfaceContainerLow = Color.White,
         surfaceContainer = Color.White,
         surfaceContainerHigh = Color.White,
-        surfaceContainerHighest = c.background,
+        surfaceContainerHighest = c.surfaceRaised,
         inverseSurface = c.inverse,
         inverseOnSurface = c.onInverse,
         error = c.error,

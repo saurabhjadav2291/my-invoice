@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
@@ -77,13 +78,11 @@ private const val DAY_MILLIS = 86_400_000L
 
 /**
  * Top bar of an inner screen: a round back button, a title, and actions on the right.
- * [onSky] draws the title in white for screens that sit on the blue header.
  */
 @Composable
 fun BackTopBar(
     title: String,
     onBack: () -> Unit,
-    onSky: Boolean = false,
     modifier: Modifier = Modifier,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -96,12 +95,12 @@ fun BackTopBar(
             .heightIn(min = 56.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RoundIconButton(AppIcons.Back, "Back", onBack, style = if (onSky) RoundStyle.OnSky else RoundStyle.Dark)
-        Spacer(Modifier.width(14.dp))
+        RoundIconButton(AppIcons.Back, "Back", onBack)
+        Spacer(Modifier.width(12.dp))
         Text(
             title,
             style = MaterialTheme.typography.titleLarge,
-            color = if (onSky) c.onSky else c.ink,
+            color = c.ink,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -112,14 +111,13 @@ fun BackTopBar(
 
 /**
  * Layout of an inner screen (details and forms). The content scrolls under a pinned
- * [topBar] and an optional [bottomBar]; both sit on blurred glass made from the content
+ * [topBar] and an optional [bottomBar]; both sit on a blur of the content
  * behind them (design.md section 5.5), so nothing is cut off by a hard edge.
  * [content] gets the padding it needs to clear both bars when scrolled to an end.
  */
 @Composable
 fun InnerScaffold(
     modifier: Modifier = Modifier,
-    onSky: Boolean = false,
     topBar: @Composable () -> Unit,
     bottomBar: @Composable (HazeState) -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
@@ -130,7 +128,7 @@ fun InnerScaffold(
     var topHeight by remember { mutableStateOf(0.dp) }
     var bottomHeight by remember { mutableStateOf(0.dp) }
     val systemBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val tint = if (onSky) c.sky[0] else c.background
+    val tint = c.background
     Box(modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().hazeSource(haze)) {
             content(PaddingValues(top = topHeight, bottom = maxOf(bottomHeight, systemBottom)))
@@ -170,24 +168,24 @@ private fun FieldLabel(text: String) {
         text,
         style = MaterialTheme.typography.bodySmall,
         color = Ui.colors.greyText,
-        modifier = Modifier.padding(start = 16.dp, bottom = 6.dp),
+        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
     )
 }
 
 @Composable
 private fun fieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = Glass.Regular.tint,
-    unfocusedContainerColor = Glass.Regular.tint,
-    errorContainerColor = Glass.Regular.tint,
+    focusedContainerColor = Ui.colors.surface,
+    unfocusedContainerColor = Ui.colors.surface,
+    errorContainerColor = Ui.colors.surface,
     focusedBorderColor = Ui.colors.primary,
-    unfocusedBorderColor = Color.White.copy(alpha = 0.9f),
+    unfocusedBorderColor = Ui.colors.ink.copy(alpha = 0.14f),
     focusedTextColor = Ui.colors.ink,
     unfocusedTextColor = Ui.colors.ink,
     cursorColor = Ui.colors.primary,
     errorBorderColor = Ui.colors.error,
 )
 
-/** Glass box with 8 dp corners that looks like a text field but opens a picker. */
+/** Box with 8 dp corners that looks like a text field but opens a picker. */
 @Composable
 private fun PickerPill(onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
     val c = Ui.colors
@@ -195,7 +193,9 @@ private fun PickerPill(onClick: () -> Unit, content: @Composable RowScope.() -> 
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .glass(FormShape, shadow = false)
+            .clip(FormShape)
+            .background(c.surface)
+            .border(1.dp, c.ink.copy(alpha = 0.14f), FormShape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(start = 16.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -234,7 +234,7 @@ fun Field(
                 supportingText,
                 style = MaterialTheme.typography.labelSmall,
                 color = Ui.colors.greyText,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp),
+                modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 4.dp),
             )
         }
     }
@@ -270,10 +270,10 @@ fun <T> DropdownField(
             DropdownMenu(
                 expanded = open,
                 onDismissRequest = { open = false },
-                shape = RoundedCornerShape(16.dp),
-                containerColor = Glass.Overlay.tint,
-                border = BorderStroke(1.dp, Color.White),
-                shadowElevation = 12.dp,
+                shape = RoundedCornerShape(12.dp),
+                containerColor = c.surface,
+                border = BorderStroke(1.dp, c.hairline),
+                shadowElevation = 8.dp,
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(
@@ -315,8 +315,8 @@ fun DateField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, mod
                 })
             },
             dismissButton = { TextPill("Cancel", onClick = { open = false }, color = Ui.colors.greyText) },
-            shape = RoundedCornerShape(28.dp),
-            colors = DatePickerDefaults.colors(containerColor = Glass.Overlay.tint),
+            shape = RoundedCornerShape(20.dp),
+            colors = DatePickerDefaults.colors(containerColor = Ui.colors.surface),
         ) {
             DatePicker(state = state, colors = DatePickerDefaults.colors(containerColor = Color.Transparent))
         }
@@ -344,8 +344,8 @@ fun SwitchRow(title: String, subtitle: String?, checked: Boolean, onChange: (Boo
                 checkedTrackColor = c.primary,
                 checkedBorderColor = c.primary,
                 uncheckedThumbColor = c.grey,
-                uncheckedTrackColor = c.neutralChip,
-                uncheckedBorderColor = c.hairline,
+                uncheckedTrackColor = c.surfaceRaised,
+                uncheckedBorderColor = c.ink.copy(alpha = 0.14f),
             ),
         )
     }
@@ -363,19 +363,19 @@ fun statusColors(status: PaymentStatus): StatusColors {
     }
 }
 
-/** Soft tinted pill with a coloured dot (design.md section 2.3). */
+/** Soft tinted tag with a coloured dot (design.md section 2.3). */
 @Composable
 fun StatusChip(status: PaymentStatus) {
     val colors = statusColors(status)
     Row(
         Modifier
-            .clip(CircleShape)
+            .clip(TagShape)
             .background(colors.fill)
-            .padding(start = 10.dp, end = 12.dp, top = 5.dp, bottom = 5.dp),
+            .padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(6.dp).clip(CircleShape).background(colors.content))
-        Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(4.dp))
         Text(status.label, color = colors.content, style = MaterialTheme.typography.labelMedium)
     }
 }
@@ -400,8 +400,8 @@ fun ConfirmDialog(
             }, color = c.error)
         },
         dismissButton = { TextPill("Cancel", onClick = onDismiss, color = c.greyText) },
-        shape = RoundedCornerShape(28.dp),
-        containerColor = Glass.Overlay.tint,
+        shape = RoundedCornerShape(20.dp),
+        containerColor = c.surface,
     )
 }
 
@@ -409,7 +409,7 @@ fun ConfirmDialog(
 fun EmptyState(title: String, message: String, modifier: Modifier = Modifier) {
     Column(
         modifier.fillMaxWidth().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(title, style = MaterialTheme.typography.titleMedium, color = Ui.colors.ink)

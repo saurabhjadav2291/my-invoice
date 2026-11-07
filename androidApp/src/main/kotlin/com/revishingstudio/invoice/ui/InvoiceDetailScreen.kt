@@ -87,20 +87,19 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
     val c = Ui.colors
     InnerScaffold(
         modifier = modifier,
-        onSky = true,
         topBar = {
-            BackTopBar(inv?.number ?: "", nav::back, onSky = true) {
+            BackTopBar(inv?.number ?: "", nav::back) {
                 if (inv != null) {
-                    RoundIconButton(AppIcons.Pencil, "Edit", { nav.go(Screen.InvoiceEditor(id)) }, style = RoundStyle.OnSky)
+                    RoundIconButton(AppIcons.Pencil, "Edit", { nav.go(Screen.InvoiceEditor(id)) }, style = RoundStyle.Light)
                     Box {
-                        RoundIconButton(AppIcons.More, "More", { menuOpen = true }, style = RoundStyle.OnSky)
+                        RoundIconButton(AppIcons.More, "More", { menuOpen = true }, style = RoundStyle.Light)
                         DropdownMenu(
                             expanded = menuOpen,
                             onDismissRequest = { menuOpen = false },
-                            shape = RoundedCornerShape(16.dp),
-                            containerColor = Glass.Overlay.tint,
-                            border = BorderStroke(1.dp, Color.White),
-                            shadowElevation = 12.dp,
+                            shape = RoundedCornerShape(12.dp),
+                            containerColor = c.surface,
+                            border = BorderStroke(1.dp, c.hairline),
+                            shadowElevation = 8.dp,
                         ) {
                             if (inv.state == InvoiceState.SENT) {
                                 DropdownMenuItem(text = { Text("Move back to draft", color = c.ink) }, onClick = {
@@ -137,39 +136,36 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
         ) {
             HeroCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        inv.client.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = c.ink,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(8.dp))
+                    InvoiceNumber(inv.number, Modifier.weight(1f))
                     StatusChip(status)
                 }
+                Spacer(Modifier.height(12.dp))
+                Text(inv.client.name, style = MaterialTheme.typography.titleLarge, color = c.ink)
                 Text(
                     "Issued ${InvoiceDates.format(inv.issueDate)} · Due ${InvoiceDates.format(inv.dueDate)}",
                     style = MaterialTheme.typography.bodySmall,
+                    color = c.grey,
+                )
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    when {
+                        status == PaymentStatus.PAID -> "Paid in full"
+                        inv.paidMinor > 0 -> "Still owed of ${MoneyFormat.format(inv.totalMinor, inv.currency)}"
+                        else -> "Total"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
                     color = c.greyText,
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
                     MoneyFormat.format(if (inv.paidMinor > 0) inv.outstandingMinor else inv.totalMinor, inv.currency),
                     style = MaterialTheme.typography.displaySmall.tabular(),
                     color = c.ink,
                 )
-                Text(
-                    when {
-                        status == PaymentStatus.PAID -> "paid in full"
-                        inv.paidMinor > 0 -> "still owed of ${MoneyFormat.format(inv.totalMinor, inv.currency)}"
-                        else -> "total"
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = c.greyText,
-                )
             }
 
-            DarkButton("View / share PDF", ::sharePdf, icon = AppIcons.Send)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PrimaryButton("View or share PDF", ::sharePdf, icon = AppIcons.Send)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (inv.state == InvoiceState.DRAFT) {
                     SecondaryButton(
                         "Mark as sent",
@@ -216,14 +212,14 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
             SectionTitle("Payments")
             if (inv.payments.isEmpty()) {
                 Text(
-                    "No payments recorded yet.",
+                    "No payments recorded yet",
                     style = MaterialTheme.typography.bodyLarge,
                     color = c.greyText,
                     modifier = Modifier.padding(start = 4.dp),
                 )
             }
             inv.payments.forEach { payment ->
-                AppCard(contentPadding = PaddingValues(start = 18.dp, top = 12.dp, bottom = 12.dp, end = 12.dp)) {
+                AppCard(contentPadding = PaddingValues(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(
@@ -238,7 +234,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
                             }
                             Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = c.greyText)
                         }
-                        RoundIconButton(AppIcons.Trash, "Delete payment", { paymentToDelete = payment }, size = 40.dp)
+                        RoundIconButton(AppIcons.Trash, "Delete payment", { paymentToDelete = payment }, style = RoundStyle.Quiet)
                     }
                 }
             }
@@ -359,7 +355,7 @@ private fun RecordPaymentDialog(invoice: Invoice, onDismiss: () -> Unit, onSave:
             })
         },
         dismissButton = { TextPill("Cancel", onClick = onDismiss, color = Ui.colors.greyText) },
-        shape = RoundedCornerShape(28.dp),
-        containerColor = Ui.colors.surfaceRaised,
+        shape = RoundedCornerShape(20.dp),
+        containerColor = Ui.colors.surface,
     )
 }

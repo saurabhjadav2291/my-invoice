@@ -4,7 +4,6 @@ package com.revishingstudio.invoice.ui
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,16 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.revishingstudio.invoice.core.Currency
@@ -78,14 +70,13 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = LocalBottomBarPadding.current + 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item(key = "header") {
-            val name = profile?.ownerName?.substringBefore(' ').orEmpty()
-            SkyHeader(
-                title = greeting() + if (name.isNotBlank()) ", $name" else "",
-                subtitle = profile?.studioName?.takeIf { it.isNotBlank() } ?: "Your invoices",
-                avatar = { Avatar(logo, profile?.studioName ?: profile?.ownerName ?: "") },
+            ScreenHeader(
+                title = "Invoices",
+                subtitle = profile?.studioName?.takeIf { it.isNotBlank() } ?: profile?.ownerName,
+                avatar = logo?.let { image -> @Composable { Avatar(image, profile?.studioName ?: "") } },
             )
         }
         if (list == null) return@LazyColumn
@@ -98,7 +89,7 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
                         if (profile == null) {
                             "Start in Settings: add your details and bank account. Then add a client and create your first invoice."
                         } else {
-                            "Tap the blue + button to create your first one."
+                            "Tap + to create your first one"
                         },
                         AppIcons.Document,
                     )
@@ -112,7 +103,7 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(top = 8.dp, start = ScreenMargin, end = ScreenMargin),
+                    .padding(top = 16.dp, start = ScreenMargin, end = ScreenMargin),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 InvoiceFilter.entries.forEach { f ->
@@ -124,12 +115,12 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
         item(key = "title") {
             SectionHeader(
                 if (filter == InvoiceFilter.ALL) "All invoices" else filter.label,
-                Modifier.padding(horizontal = ScreenMargin),
+                Modifier.padding(start = ScreenMargin, end = ScreenMargin, bottom = 4.dp),
                 trailing = if (shown.size == 1) "1 invoice" else "${shown.size} invoices",
             )
         }
         if (shown.isEmpty()) {
-            item(key = "none") { EmptyState("Nothing here", "No invoices match this filter.") }
+            item(key = "none") { EmptyState("Nothing here", "No invoices match this filter") }
         }
         items(shown, key = { it.id }) { invoice ->
             InvoiceRow(invoice, today, Modifier.padding(horizontal = ScreenMargin)) { nav.go(Screen.InvoiceDetail(invoice.id)) }
@@ -137,16 +128,7 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
     }
 }
 
-private fun greeting(): String {
-    val hour = java.time.LocalTime.now().hour
-    return when {
-        hour < 12 -> "Good morning"
-        hour < 17 -> "Good afternoon"
-        else -> "Good evening"
-    }
-}
-
-/** Money still owed, per currency, across sent invoices (design.md 3.2 two-weight headline). */
+/** Money still owed, per currency, across sent invoices. The home screen's key figure. */
 @Composable
 private fun OutstandingCard(list: List<InvoiceSummary>, today: kotlinx.datetime.LocalDate, modifier: Modifier = Modifier) {
     val c = Ui.colors
@@ -159,14 +141,10 @@ private fun OutstandingCard(list: List<InvoiceSummary>, today: kotlinx.datetime.
     HeroCard(modifier) {
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
+                Text(if (owed.isEmpty()) "Nothing to collect" else "Still to collect", style = MaterialTheme.typography.bodySmall, color = c.greyText)
+                Spacer(Modifier.height(4.dp))
                 if (owed.isEmpty()) {
-                    Text(
-                        buildAnnotatedString {
-                            withStyle(SpanStyle(color = c.ink, fontWeight = FontWeight.SemiBold)) { append("All paid") }
-                            withStyle(SpanStyle(color = c.greyText, fontWeight = FontWeight.Normal)) { append("\nnothing to collect") }
-                        },
-                        style = MaterialTheme.typography.headlineMedium,
-                    )
+                    Text("All paid", style = MaterialTheme.typography.displaySmall, color = c.ink)
                 } else {
                     Currency.entries.filter { it in owed }.forEach { cur ->
                         Text(
@@ -175,15 +153,19 @@ private fun OutstandingCard(list: List<InvoiceSummary>, today: kotlinx.datetime.
                             color = c.ink,
                         )
                     }
-                    Text("still to collect", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal), color = c.greyText)
                 }
             }
-            RupeeCoin()
+            Spacer(Modifier.width(12.dp))
+            PaperInvoice(unpaid.firstOrNull()?.number ?: list.firstOrNull()?.number)
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             val waiting = unpaid.size
-            OutlineChip(if (waiting == 1) "1 unpaid invoice" else "$waiting unpaid invoices")
+            Text(
+                if (waiting == 1) "1 unpaid invoice" else "$waiting unpaid invoices",
+                style = MaterialTheme.typography.bodySmall,
+                color = c.greyText,
+            )
             if (overdue > 0) StatusPill(if (overdue == 1) "1 overdue" else "$overdue overdue", statusColors(PaymentStatus.OVERDUE))
         }
     }
@@ -193,54 +175,33 @@ private fun OutstandingCard(list: List<InvoiceSummary>, today: kotlinx.datetime.
 private fun StatusPill(text: String, colors: StatusColors) {
     Row(
         Modifier
-            .clip(CircleShape)
+            .clip(TagShape)
             .background(colors.fill)
-            .padding(start = 10.dp, end = 12.dp, top = 5.dp, bottom = 5.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(6.dp).clip(CircleShape).background(colors.content))
-        Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(4.dp))
         Text(text, color = colors.content, style = MaterialTheme.typography.labelMedium)
     }
 }
 
-/** A small glossy blue coin stamped with the rupee sign, the home screen's mascot. */
-@Composable
-private fun RupeeCoin() {
-    val c = Ui.colors
-    Box(
-        Modifier
-            .size(64.dp)
-            .shadow(12.dp, CircleShape, ambientColor = c.primary.copy(alpha = 0.35f), spotColor = c.primary.copy(alpha = 0.45f))
-            .clip(CircleShape)
-            .background(Brush.radialGradient(listOf(Color(0xFF9CC3F8), c.primary, Color(0xFF2559B8)), center = androidx.compose.ui.geometry.Offset(40f, 40f)))
-            .border(1.dp, Color.White.copy(alpha = 0.45f), CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text("₹", color = Color.White, style = MaterialTheme.typography.headlineLarge)
-    }
-}
-
+/** One invoice: number and status on top, client and date, then the amount on the right. */
 @Composable
 private fun InvoiceRow(invoice: InvoiceSummary, today: kotlinx.datetime.LocalDate, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val c = Ui.colors
     AppCard(modifier, onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlineChip(invoice.number)
-            Spacer(Modifier.weight(1f))
-            RoundIconButton(AppIcons.ArrowUpRight, "Open invoice", onClick, style = RoundStyle.Dark, size = 40.dp)
+            InvoiceNumber(invoice.number, Modifier.weight(1f))
+            StatusChip(invoice.status(today))
         }
         Spacer(Modifier.height(8.dp))
-        Text(invoice.clientName, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(
-            "Issued ${InvoiceDates.format(invoice.issueDate)}",
-            style = MaterialTheme.typography.bodySmall,
-            color = c.greyText,
-        )
-        Spacer(Modifier.height(14.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            StatusChip(invoice.status(today))
-            Spacer(Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column(Modifier.weight(1f)) {
+                Text(invoice.clientName, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Issued ${InvoiceDates.format(invoice.issueDate)}", style = MaterialTheme.typography.bodySmall, color = c.grey)
+            }
+            Spacer(Modifier.width(12.dp))
             Text(
                 MoneyFormat.format(invoice.totalMinor, invoice.currency),
                 style = MaterialTheme.typography.titleMedium.tabular(),

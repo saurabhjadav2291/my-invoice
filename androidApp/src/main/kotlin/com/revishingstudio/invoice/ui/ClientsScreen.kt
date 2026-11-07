@@ -55,10 +55,10 @@ fun ClientsScreen(nav: Navigator, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = LocalBottomBarPadding.current + 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item(key = "header") {
-            SkyHeader(
+            ScreenHeader(
                 title = "Clients",
                 subtitle = when (val n = list?.size ?: 0) {
                     0 -> "The people and companies you bill"
@@ -66,7 +66,7 @@ fun ClientsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     else -> "$n clients"
                 },
             ) {
-                RoundIconButton(AppIcons.Plus, "Add client", { nav.go(Screen.ClientEditor(null)) }, style = RoundStyle.OnSky)
+                RoundIconButton(AppIcons.Plus, "Add client", { nav.go(Screen.ClientEditor(null)) }, style = RoundStyle.Light)
             }
         }
         if (list == null) return@LazyColumn
@@ -89,8 +89,8 @@ fun ClientsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             val open = { nav.go(Screen.ClientEditor(client.id)) }
             AppCard(Modifier.padding(horizontal = ScreenMargin), onClick = open) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Avatar(null, client.name, onSky = false)
-                    Spacer(Modifier.width(14.dp))
+                    Avatar(null, client.name)
+                    Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(client.name, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         val sub = listOf(client.legalName, client.email)
@@ -100,10 +100,8 @@ fun ClientsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                             Text(sub, style = MaterialTheme.typography.bodySmall, color = c.greyText, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(12.dp))
                     OutlineChip(client.defaultCurrency.code)
-                    Spacer(Modifier.width(10.dp))
-                    RoundIconButton(AppIcons.ArrowUpRight, "Open client", open, style = RoundStyle.Dark, size = 40.dp)
                 }
             }
         }
@@ -173,18 +171,18 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Field("Name (shown in bold)", name, { name = it })
                 Field("Registered name (optional)", legalName, { legalName = it }, supportingText = "e.g. YLS Marketing Consultant Pty Ltd")
                 Field("Address", address, { address = it }, singleLine = false, minLines = 2)
             }
-            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone)
                 Field("Email", email, { email = it }, keyboardType = KeyboardType.Email)
                 Field("Tax IDs (optional)", taxIds, { taxIds = it }, supportingText = "e.g. ABN: 12345678901  ACN: 123456789, or a GSTIN")
             }
-            AppCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Usual currency", style = MaterialTheme.typography.bodySmall, color = Ui.colors.greyText, modifier = Modifier.padding(start = 16.dp))
+            AppCard(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Usual currency", style = MaterialTheme.typography.bodySmall, color = Ui.colors.greyText, modifier = Modifier.padding(start = 4.dp))
                 PillChoice(Currency.entries, currency, { it.code }, { currency = it }, Modifier.fillMaxWidth())
             }
             PrimaryButton("Save", ::save, Modifier.padding(top = 8.dp))

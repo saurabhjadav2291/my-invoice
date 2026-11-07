@@ -9,7 +9,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Brush
-import dev.chrisbanes.haze.HazeState
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.Arrangement
@@ -163,8 +164,8 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
                 TextPill("Save", ::save)
             }
         },
-        bottomBar = { haze ->
-            if (loaded) TotalBar(total, currency, if (id == null) "Create invoice" else "Save changes", ::save, haze)
+        bottomBar = {
+            if (loaded) TotalBar(total, currency, if (id == null) "Create invoice" else "Save changes", ::save)
         },
     ) { padding ->
         if (!loaded) return@InnerScaffold
@@ -176,9 +177,12 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            OutlineChip(if (id == null) "Will be numbered $number" else "Invoice $number")
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp)) {
+                Text(if (id == null) "Will be numbered " else "Invoice ", style = MaterialTheme.typography.bodySmall, color = c.greyText)
+                InvoiceNumber(number, color = c.ink)
+            }
 
-            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 DropdownField(
                     label = "Client",
                     selected = clients.firstOrNull { it.id == clientId },
@@ -191,13 +195,13 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
                     placeholder = "Choose a client",
                 )
                 Column {
-                    Text("Currency", style = MaterialTheme.typography.bodySmall, color = c.greyText, modifier = Modifier.padding(start = 16.dp, bottom = 6.dp))
+                    Text("Currency", style = MaterialTheme.typography.bodySmall, color = c.greyText, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
                     PillChoice(Currency.entries, currency, { it.code }, { currency = it }, Modifier.fillMaxWidth())
                 }
             }
 
             AppCard {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     DateField("Invoice date", issueDate, { new ->
                         issueDate = new
                         dueDate = new.plus(DatePeriod(days = dueDays))
@@ -218,7 +222,7 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
             SecondaryButton("Add item", { items += ItemInput() }, Modifier.fillMaxWidth(), icon = AppIcons.Plus)
 
             SectionTitle("On the invoice")
-            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 DropdownField(
                     label = "Bank account printed on the invoice",
                     selected = banks.firstOrNull { it.id == bankId },
@@ -236,26 +240,23 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
 
 /** Sticky bar at the bottom of the editor with the running total and the save button. */
 @Composable
-private fun TotalBar(total: Long, currency: Currency, label: String, onSave: () -> Unit, haze: HazeState) {
+private fun TotalBar(total: Long, currency: Currency, label: String, onSave: () -> Unit) {
     val c = Ui.colors
-    val shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-    // Glass made from the form scrolling behind it (design.md section 5.5).
+    // A plain white sheet with a hairline along the top. The form slides under it.
     Column(
         Modifier
             .fillMaxWidth()
-            .shadow(16.dp, shape, ambientColor = Color(0xFF0B2A5B).copy(alpha = 0.08f), spotColor = Color(0xFF0B2A5B).copy(alpha = 0.12f))
-            .clip(shape)
-            .hazeGlass(haze, Glass.Regular.tint.copy(alpha = 0.78f))
-            .border(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.9f), Color.White.copy(alpha = 0.2f))), shape)
+            .background(c.surface)
+            .drawBehind { drawLine(c.hairline, Offset(0f, 0f), Offset(size.width, 0f), 1.dp.toPx()) }
             .navigationBarsPadding()
             .imePadding()
-            .padding(start = ScreenMargin, end = ScreenMargin, top = 14.dp, bottom = 14.dp),
+            .padding(start = ScreenMargin, end = ScreenMargin, top = 12.dp, bottom = 12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Total", style = MaterialTheme.typography.bodyLarge, color = c.greyText, modifier = Modifier.weight(1f))
-            Text(MoneyFormat.format(total, currency), style = MaterialTheme.typography.headlineSmall.tabular(), color = c.ink)
+            Text(MoneyFormat.format(total, currency), style = MaterialTheme.typography.headlineMedium.tabular(), color = c.ink)
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(12.dp))
         PrimaryButton(label, onSave)
     }
 }
@@ -267,8 +268,8 @@ private fun ItemEditor(item: ItemInput, currency: Currency, canRemove: Boolean, 
         Row(verticalAlignment = Alignment.Bottom) {
             Field("Description", item.description, { item.description = it }, Modifier.weight(1f), singleLine = false)
             if (canRemove) {
-                Spacer(Modifier.width(10.dp))
-                RoundIconButton(AppIcons.Trash, "Remove item", onRemove, style = RoundStyle.Dark, size = 40.dp, modifier = Modifier.padding(bottom = 8.dp))
+                Spacer(Modifier.width(8.dp))
+                RoundIconButton(AppIcons.Trash, "Remove item", onRemove, style = RoundStyle.Quiet, modifier = Modifier.padding(bottom = 8.dp))
             }
         }
         PillChoice(
@@ -279,7 +280,7 @@ private fun ItemEditor(item: ItemInput, currency: Currency, canRemove: Boolean, 
             modifier = Modifier.fillMaxWidth(),
         )
         if (item.priced) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Field("Rate (${currency.symbol})", item.rate, { item.rate = it }, Modifier.weight(1f), keyboardType = KeyboardType.Decimal)
                 Field("Qty", item.qty, { item.qty = it }, Modifier.weight(0.6f), keyboardType = KeyboardType.Decimal)
             }

@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -161,19 +162,18 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        SkyHeader(
+        ScreenHeader(
             title = "Settings",
             subtitle = studioName.ifBlank { "Your details, numbering and bank" },
-            avatar = { Avatar(logo, studioName.ifBlank { ownerName }) },
         ) {
-            HeaderSavePill(::saveAll)
+            TextPill("Save", ::saveAll)
         }
         Column(
             Modifier.padding(horizontal = ScreenMargin),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SectionTitle("Your details", Modifier.padding(top = 0.dp))
-            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Field("Your name (as on invoice)", ownerName, { ownerName = it })
                 Field("Studio name (for the sign-off)", studioName, { studioName = it })
                 Field("Address", address, { address = it }, singleLine = false, minLines = 3)
@@ -189,21 +189,21 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                         Box(
                             Modifier
                                 .size(56.dp)
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(12.dp))
                                 .background(Color.White)
-                                .border(1.dp, c.hairline, CircleShape),
+                                .border(1.dp, c.hairline, RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Image(logo, contentDescription = "Logo", modifier = Modifier.size(40.dp))
                         }
                     }
-                    SecondaryButton(if (logoPath == null) "Choose logo" else "Change logo", { pickLogo.launch("image/*") }, height = 46.dp)
+                    SecondaryButton(if (logoPath == null) "Choose logo" else "Change logo", { pickLogo.launch("image/*") }, height = 44.dp)
                     if (logoPath != null) TextPill("Remove", { logoPath = null }, color = c.error)
                 }
             }
 
             SectionTitle("Invoice numbers")
-            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 DropdownField(
                     label = "Style",
                     selected = NumberStyle.entries.firstOrNull { it.pattern == pattern } ?: NumberStyle.CUSTOM,
@@ -242,7 +242,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Next invoice", style = MaterialTheme.typography.bodyLarge, color = c.greyText, modifier = Modifier.weight(1f).padding(start = 4.dp))
                     if (numberPreview.isSuccess) {
-                        OutlineChip(numberPreview.getOrThrow())
+                        OutlineChip(numberPreview.getOrThrow(), mono = true)
                     } else {
                         Text(numberPreview.exceptionOrNull()?.message ?: "Invalid pattern", color = c.error, style = MaterialTheme.typography.bodySmall)
                     }
@@ -293,31 +293,13 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
     }
 }
 
-/** Frosted "Save" pill on the sky header. */
-@Composable
-private fun HeaderSavePill(onClick: () -> Unit) {
-    val c = Ui.colors
-    Box(
-        Modifier
-            .height(40.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = if (c.isDark) 0.08f else 0.22f))
-            .border(1.dp, Color.White.copy(alpha = if (c.isDark) 0.12f else 0.45f), CircleShape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text("Save", style = MaterialTheme.typography.labelLarge, color = c.onSky)
-    }
-}
-
 @Composable
 private fun BankRow(bank: BankAccount, onClick: () -> Unit) {
     val c = Ui.colors
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(FormShape)
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -330,7 +312,7 @@ private fun BankRow(bank: BankAccount, onClick: () -> Unit) {
             OutlineChip("Default")
             Spacer(Modifier.width(8.dp))
         }
-        RoundIconButton(AppIcons.ArrowUpRight, "Edit bank account", onClick, style = RoundStyle.Dark, size = 36.dp)
+        Icon(AppIcons.ArrowUpRight, contentDescription = "Edit bank account", tint = c.grey, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -397,7 +379,7 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Field("Nickname (only in the app)", label, { label = it })
                 Field("Bank name", bankName, { bankName = it })
                 Field("Account name", accountName, { accountName = it })
