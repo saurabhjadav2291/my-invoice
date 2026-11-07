@@ -2,11 +2,18 @@
 
 package com.revishingstudio.invoice.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,17 +22,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -155,51 +154,56 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
         }
     }
 
+    val c = Ui.colors
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
         topBar = {
             BackTopBar(if (id == null) "New invoice" else "Edit invoice", nav::back) {
-                TextButton(onClick = ::save) { Text("Save") }
+                TextPill("Save", ::save)
             }
+        },
+        bottomBar = {
+            if (loaded) TotalBar(total, currency, if (id == null) "Create invoice" else "Save changes", ::save)
         },
     ) { padding ->
         if (!loaded) return@Scaffold
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = ScreenMargin, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                if (id == null) "Will be numbered $number" else "Invoice $number",
-                style = MaterialTheme.typography.titleMedium,
-            )
+            OutlineChip(if (id == null) "Will be numbered $number" else "Invoice $number")
 
-            DropdownField(
-                label = "Client",
-                selected = clients.firstOrNull { it.id == clientId },
-                options = clients,
-                optionLabel = { it.name },
-                onSelect = { client ->
-                    clientId = client.id
-                    if (id == null) currency = client.defaultCurrency
-                },
-                placeholder = "Choose a client",
-            )
+            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                DropdownField(
+                    label = "Client",
+                    selected = clients.firstOrNull { it.id == clientId },
+                    options = clients,
+                    optionLabel = { it.name },
+                    onSelect = { client ->
+                        clientId = client.id
+                        if (id == null) currency = client.defaultCurrency
+                    },
+                    placeholder = "Choose a client",
+                )
+                Column {
+                    Text("Currency", style = MaterialTheme.typography.bodySmall, color = c.greyText, modifier = Modifier.padding(start = 16.dp, bottom = 6.dp))
+                    PillChoice(Currency.entries, currency, { it.code }, { currency = it }, Modifier.fillMaxWidth())
+                }
+            }
 
-            DropdownField(
-                label = "Currency",
-                selected = currency,
-                options = Currency.entries,
-                optionLabel = { "${it.code} (${it.symbol})" },
-                onSelect = { currency = it },
-            )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                DateField("Invoice date", issueDate, { new ->
-                    issueDate = new
-                    dueDate = new.plus(DatePeriod(days = dueDays))
-                }, Modifier.weight(1f))
-                DateField("Due date", dueDate, { dueDate = maxOf(it, issueDate) }, Modifier.weight(1f))
+            AppCard {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    DateField("Invoice date", issueDate, { new ->
+                        issueDate = new
+                        dueDate = new.plus(DatePeriod(days = dueDays))
+                    }, Modifier.weight(1f))
+                    DateField("Due date", dueDate, { dueDate = maxOf(it, issueDate) }, Modifier.weight(1f))
+                }
             }
 
             SectionTitle("Items")
@@ -211,60 +215,84 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
                     onRemove = { items.removeAt(index) },
                 )
             }
-            OutlinedButton(onClick = { items += ItemInput() }) { Text("Add item") }
+            SecondaryButton("Add item", { items += ItemInput() }, Modifier.fillMaxWidth(), icon = AppIcons.Plus)
 
-            HeroCard(Modifier.padding(vertical = 8.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Total", style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.weight(1f))
-                    Text(MoneyFormat.format(total, currency), style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
-                }
+            SectionTitle("On the invoice")
+            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                DropdownField(
+                    label = "Bank account printed on the invoice",
+                    selected = banks.firstOrNull { it.id == bankId },
+                    options = banks,
+                    optionLabel = { "${it.label} · ${it.accountNumber}" },
+                    onSelect = { bankId = it.id },
+                    placeholder = if (banks.isEmpty()) "Add one in Settings" else "None",
+                )
+                Field("Notes (optional, printed on the invoice)", notes, { notes = it }, singleLine = false, minLines = 2)
             }
-
-            DropdownField(
-                label = "Bank account printed on the invoice",
-                selected = banks.firstOrNull { it.id == bankId },
-                options = banks,
-                optionLabel = { "${it.label} · ${it.accountNumber}" },
-                onSelect = { bankId = it.id },
-                placeholder = if (banks.isEmpty()) "Add one in Settings" else "None",
-            )
-            Field("Notes (optional, printed on the invoice)", notes, { notes = it }, singleLine = false, minLines = 2)
-
-            PrimaryButton(if (id == null) "Create invoice" else "Save changes", ::save, Modifier.padding(top = 12.dp))
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
         }
+    }
+}
+
+/** Sticky bar at the bottom of the editor with the running total and the save button. */
+@Composable
+private fun TotalBar(total: Long, currency: Currency, label: String, onSave: () -> Unit) {
+    val c = Ui.colors
+    val shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .then(if (c.isDark) Modifier else Modifier.shadow(16.dp, shape, ambientColor = Color.Black.copy(alpha = 0.06f), spotColor = Color.Black.copy(alpha = 0.10f)))
+            .clip(shape)
+            .background(c.surfaceRaised)
+            .border(1.dp, if (c.isDark) c.hairline else Color.Transparent, shape)
+            .navigationBarsPadding()
+            .imePadding()
+            .padding(start = ScreenMargin, end = ScreenMargin, top = 14.dp, bottom = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Total", style = MaterialTheme.typography.bodyLarge, color = c.greyText, modifier = Modifier.weight(1f))
+            Text(MoneyFormat.format(total, currency), style = MaterialTheme.typography.headlineSmall.tabular(), color = c.ink)
+        }
+        Spacer(Modifier.height(10.dp))
+        PrimaryButton(label, onSave)
     }
 }
 
 @Composable
 private fun ItemEditor(item: ItemInput, currency: Currency, canRemove: Boolean, onRemove: () -> Unit) {
-    GlassCard(contentPadding = PaddingValues(14.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Field("Description", item.description, { item.description = it }, Modifier.weight(1f), singleLine = false)
-                if (canRemove) {
-                    IconButton(onClick = onRemove) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Remove item", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
+    val c = Ui.colors
+    AppCard(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Field("Description", item.description, { item.description = it }, Modifier.weight(1f), singleLine = false)
+            if (canRemove) {
+                Spacer(Modifier.width(10.dp))
+                RoundIconButton(AppIcons.Trash, "Remove item", onRemove, style = RoundStyle.Dark, size = 40.dp, modifier = Modifier.padding(bottom = 8.dp))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = !item.priced, onClick = { item.priced = false }, label = { Text("Amount") }, shape = CircleShape)
-                FilterChip(selected = item.priced, onClick = { item.priced = true }, label = { Text("Rate × qty") }, shape = CircleShape)
+        }
+        PillChoice(
+            options = listOf(false, true),
+            selected = item.priced,
+            label = { if (it) "Rate × qty" else "Amount" },
+            onSelect = { item.priced = it },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (item.priced) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Field("Rate (${currency.symbol})", item.rate, { item.rate = it }, Modifier.weight(1f), keyboardType = KeyboardType.Decimal)
+                Field("Qty", item.qty, { item.qty = it }, Modifier.weight(0.6f), keyboardType = KeyboardType.Decimal)
             }
-            if (item.priced) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Field("Rate (${currency.symbol})", item.rate, { item.rate = it }, Modifier.weight(1f), keyboardType = KeyboardType.Decimal)
-                    Field("Qty", item.qty, { item.qty = it }, Modifier.weight(0.6f), keyboardType = KeyboardType.Decimal)
-                }
-                val amount = item.toLineItem().getOrNull()?.amountMinor
+            val amount = item.toLineItem().getOrNull()?.amountMinor
+            if (amount != null) {
                 Text(
-                    amount?.let { "= " + MoneyFormat.format(it, currency) } ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
+                    "= " + MoneyFormat.format(amount, currency),
+                    style = MaterialTheme.typography.titleSmall.tabular(),
+                    color = c.ink,
+                    modifier = Modifier.padding(start = 16.dp),
                 )
-            } else {
-                Field("Amount (${currency.symbol})", item.amount, { item.amount = it }, keyboardType = KeyboardType.Decimal)
             }
+        } else {
+            Field("Amount (${currency.symbol})", item.amount, { item.amount = it }, keyboardType = KeyboardType.Decimal)
         }
     }
 }

@@ -5,6 +5,8 @@ package com.revishingstudio.invoice.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
@@ -15,21 +17,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.revishingstudio.invoice.core.BusinessProfile
@@ -90,30 +84,36 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
         }
     }
 
+    val c = Ui.colors
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
         topBar = {
-            BackTopBar(inv?.number ?: "", nav::back) {
+            BackTopBar(inv?.number ?: "", nav::back, onSky = true) {
                 if (inv != null) {
-                    TextButton(onClick = { nav.go(Screen.InvoiceEditor(id)) }) { Text("Edit") }
+                    RoundIconButton(AppIcons.Pencil, "Edit", { nav.go(Screen.InvoiceEditor(id)) }, style = RoundStyle.OnSky)
                     Box {
-                        IconButton(onClick = { menuOpen = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "More") }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        RoundIconButton(AppIcons.More, "More", { menuOpen = true }, style = RoundStyle.OnSky)
+                        DropdownMenu(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false },
+                            shape = RoundedCornerShape(20.dp),
+                            containerColor = c.surfaceRaised,
+                        ) {
                             if (inv.state == InvoiceState.SENT) {
-                                DropdownMenuItem(text = { Text("Move back to draft") }, onClick = {
+                                DropdownMenuItem(text = { Text("Move back to draft", color = c.ink) }, onClick = {
                                     menuOpen = false
                                     actions.run(onDone = reload) { markDraft(id) }
                                 })
                             }
                             if (inv.state != InvoiceState.VOID) {
-                                DropdownMenuItem(text = { Text("Void invoice") }, onClick = {
+                                DropdownMenuItem(text = { Text("Void invoice", color = c.ink) }, onClick = {
                                     menuOpen = false
                                     confirmVoid = true
                                 })
                             }
                             if (inv.state == InvoiceState.DRAFT) {
-                                DropdownMenuItem(text = { Text("Delete draft") }, onClick = {
+                                DropdownMenuItem(text = { Text("Delete draft", color = c.error) }, onClick = {
                                     menuOpen = false
                                     confirmDelete = true
                                 })
@@ -126,51 +126,83 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
     ) { padding ->
         if (inv == null || status == null) return@Scaffold
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = ScreenMargin, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(inv.client.name, style = MaterialTheme.typography.headlineMedium)
+            HeroCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "Issued ${InvoiceDates.format(inv.issueDate)} · Due ${InvoiceDates.format(inv.dueDate)}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        inv.client.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = c.ink,
+                        modifier = Modifier.weight(1f),
                     )
+                    Spacer(Modifier.width(8.dp))
+                    StatusChip(status)
                 }
-                StatusChip(status)
+                Text(
+                    "Issued ${InvoiceDates.format(inv.issueDate)} · Due ${InvoiceDates.format(inv.dueDate)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.greyText,
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    MoneyFormat.format(if (inv.paidMinor > 0) inv.outstandingMinor else inv.totalMinor, inv.currency),
+                    style = MaterialTheme.typography.displaySmall.tabular(),
+                    color = c.ink,
+                )
+                Text(
+                    when {
+                        status == PaymentStatus.PAID -> "paid in full"
+                        inv.paidMinor > 0 -> "still owed of ${MoneyFormat.format(inv.totalMinor, inv.currency)}"
+                        else -> "total"
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = c.greyText,
+                )
             }
 
-            PrimaryButton("View / share PDF", ::sharePdf, Modifier.padding(top = 8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DarkButton("View / share PDF", ::sharePdf, icon = AppIcons.Send)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (inv.state == InvoiceState.DRAFT) {
-                    OutlinedButton(onClick = { actions.run("Marked as sent", onDone = reload) { markSent(id) } }, modifier = Modifier.weight(1f)) {
-                        Text("Mark as sent")
-                    }
+                    SecondaryButton(
+                        "Mark as sent",
+                        { actions.run("Marked as sent", onDone = reload) { markSent(id) } },
+                        Modifier.weight(1f),
+                    )
                 }
                 if (inv.state != InvoiceState.VOID && status != PaymentStatus.PAID) {
-                    OutlinedButton(onClick = { showPayment = true }, modifier = Modifier.weight(1f)) { Text("Record payment") }
+                    SecondaryButton("Record payment", { showPayment = true }, Modifier.weight(1f), icon = AppIcons.Payment)
                 }
             }
 
             SectionTitle("Items")
-            GlassCard {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            AppCard {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     inv.items.forEach { item ->
                         Row {
-                            Column(Modifier.weight(1f)) {
-                                Text(item.description)
+                            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(item.description, style = MaterialTheme.typography.bodyLarge, color = c.ink)
                                 if (item.rateMinor != null && item.quantityMilli != null) {
                                     Text(
                                         "${MoneyFormat.format(item.rateMinor!!, inv.currency)} × ${formatQuantity(item.quantityMilli!!)}",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = c.greyText,
                                     )
                                 }
                             }
-                            Text(MoneyFormat.format(item.amountMinor, inv.currency), fontWeight = FontWeight.SemiBold)
+                            Text(
+                                MoneyFormat.format(item.amountMinor, inv.currency),
+                                style = MaterialTheme.typography.labelLarge.tabular(),
+                                color = c.ink,
+                            )
                         }
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    HorizontalDivider(color = c.hairline)
                     AmountRow("Total", inv.totalMinor, inv.currency, bold = true)
                     if (inv.paidMinor > 0) {
                         AmountRow("Paid", inv.paidMinor, inv.currency)
@@ -181,34 +213,41 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
 
             SectionTitle("Payments")
             if (inv.payments.isEmpty()) {
-                Text("No payments recorded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp))
+                Text(
+                    "No payments recorded yet.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = c.greyText,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
             }
             inv.payments.forEach { payment ->
-                GlassCard(contentPadding = PaddingValues(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp)) {
+                AppCard(contentPadding = PaddingValues(start = 18.dp, top = 12.dp, bottom = 12.dp, end = 12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("${MoneyFormat.format(payment.amountMinor, inv.currency)} · ${payment.method.label}")
+                            Text(
+                                "${MoneyFormat.format(payment.amountMinor, inv.currency)} · ${payment.method.label}",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = c.ink,
+                            )
                             val details = buildList {
                                 add(InvoiceDates.format(payment.receivedOn))
                                 payment.inrReceivedMinor?.let { add("received ${MoneyFormat.format(it, Currency.INR)}") }
                                 if (payment.note.isNotBlank()) add(payment.note)
                             }
-                            Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = c.greyText)
                         }
-                        IconButton(onClick = { paymentToDelete = payment }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Delete payment", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        RoundIconButton(AppIcons.Trash, "Delete payment", { paymentToDelete = payment }, size = 40.dp)
                     }
                 }
             }
 
             if (inv.notes.isNotBlank()) {
                 SectionTitle("Notes")
-                GlassCard { Text(inv.notes) }
+                AppCard { Text(inv.notes, style = MaterialTheme.typography.bodyLarge, color = c.ink) }
             }
             inv.bankAccount?.let {
                 SectionTitle("Bank account on invoice")
-                GlassCard { Text("${it.bankName} · ${it.accountNumber}") }
+                AppCard { Text("${it.bankName} · ${it.accountNumber}", style = MaterialTheme.typography.bodyLarge, color = c.ink) }
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -255,9 +294,10 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
 
 @Composable
 private fun AmountRow(label: String, amount: Long, currency: Currency, bold: Boolean = false) {
+    val style = if (bold) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyLarge
     Row {
-        Text(label, Modifier.weight(1f), fontWeight = if (bold) FontWeight.SemiBold else null)
-        Text(MoneyFormat.format(amount, currency), fontWeight = if (bold) FontWeight.SemiBold else null)
+        Text(label, Modifier.weight(1f), style = style, color = Ui.colors.ink)
+        Text(MoneyFormat.format(amount, currency), style = style.tabular(), color = Ui.colors.ink)
     }
 }
 
@@ -273,7 +313,7 @@ private fun RecordPaymentDialog(invoice: Invoice, onDismiss: () -> Unit, onSave:
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Record payment") },
+        title = { Text("Record payment", style = MaterialTheme.typography.titleLarge, color = Ui.colors.ink) },
         text = {
             Column(
                 Modifier.verticalScroll(rememberScrollState()),
@@ -298,24 +338,26 @@ private fun RecordPaymentDialog(invoice: Invoice, onDismiss: () -> Unit, onSave:
                     )
                 }
                 Field("Note (optional)", note, { note = it })
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                error?.let { Text(it, color = Ui.colors.error, style = MaterialTheme.typography.bodySmall) }
             }
         },
         confirmButton = {
-            TextButton(onClick = {
+            TextPill("Save", onClick = {
                 val minor = MoneyFormat.parseToMinor(amount)
                 if (minor == null || minor <= 0) {
                     error = "Enter the amount received"
-                    return@TextButton
+                    return@TextPill
                 }
                 val inr = if (foreign && inrReceived.isNotBlank()) MoneyFormat.parseToMinor(inrReceived) else null
                 if (foreign && inrReceived.isNotBlank() && inr == null) {
                     error = "Check the rupees received"
-                    return@TextButton
+                    return@TextPill
                 }
                 onSave(Payment(receivedOn = date, amountMinor = minor, method = method, inrReceivedMinor = inr, note = note.trim()))
-            }) { Text("Save") }
+            })
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextPill("Cancel", onClick = onDismiss, color = Ui.colors.greyText) },
+        shape = RoundedCornerShape(32.dp),
+        containerColor = Ui.colors.surfaceRaised,
     )
 }

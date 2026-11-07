@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,7 +31,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,57 +49,61 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ClientsScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val actions = LocalActions.current
-    val clients by actions.repository.observeClients().collectAsStateWithLifecycle(emptyList())
+    val clients by actions.repository.observeClients().collectAsStateWithLifecycle(null)
+    val c = Ui.colors
+    val list = clients
 
-    Scaffold(
-        modifier = modifier,
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = { LargeTitleBar("Clients") },
-        floatingActionButton = {
-            GlossyFab(onClick = { nav.go(Screen.ClientEditor(null)) }, contentDescription = "New client")
-        },
-    ) { padding ->
-        if (clients.isEmpty()) {
-            IllustratedEmptyState(
-                "No clients yet",
-                "Add the people and companies you invoice. Their details appear under \"Bill to\".",
-                AppIcons.Clients,
-                Modifier.padding(padding),
-            )
-        } else {
-            LazyColumn(
-                Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 96.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+    LazyColumn(
+        modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item(key = "header") {
+            SkyHeader(
+                title = "Clients",
+                subtitle = when (val n = list?.size ?: 0) {
+                    0 -> "The people and companies you bill"
+                    1 -> "1 client"
+                    else -> "$n clients"
+                },
             ) {
-                items(clients, key = { it.id }) { client ->
-                    GlassCard(onClick = { nav.go(Screen.ClientEditor(client.id)) }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(Brush.verticalGradient(listOf(Color(0xFFFFEDE3), Palette.Peach))),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    client.name.trim().take(1).uppercase(),
-                                    color = Palette.Orange,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                            Spacer(Modifier.width(14.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(client.name, style = MaterialTheme.typography.titleMedium)
-                                val sub = listOf(client.legalName, client.email, client.defaultCurrency.code)
-                                    .filter { it.isNotBlank() }
-                                    .joinToString(" · ")
-                                Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                RoundIconButton(AppIcons.Plus, "Add client", { nav.go(Screen.ClientEditor(null)) }, style = RoundStyle.OnSky)
+            }
+        }
+        if (list == null) return@LazyColumn
+        if (list.isEmpty()) {
+            item(key = "empty") {
+                AppCard(Modifier.padding(horizontal = ScreenMargin), contentPadding = PaddingValues(vertical = 8.dp)) {
+                    IllustratedEmptyState(
+                        "No clients yet",
+                        "Add the people and companies you invoice. Their details appear under \"Bill to\".",
+                        AppIcons.Clients,
+                        actionLabel = "Add client",
+                        onAction = { nav.go(Screen.ClientEditor(null)) },
+                    )
+                }
+            }
+            return@LazyColumn
+        }
+        items(list, key = { it.id }) { client ->
+            val open = { nav.go(Screen.ClientEditor(client.id)) }
+            AppCard(Modifier.padding(horizontal = ScreenMargin), onClick = open) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Avatar(null, client.name, onSky = false)
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(client.name, style = MaterialTheme.typography.titleMedium, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        val sub = listOf(client.legalName, client.email)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" · ")
+                        if (sub.isNotBlank()) {
+                            Text(sub, style = MaterialTheme.typography.bodySmall, color = c.greyText, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
+                    Spacer(Modifier.width(10.dp))
+                    OutlineChip(client.defaultCurrency.code)
+                    Spacer(Modifier.width(10.dp))
+                    RoundIconButton(AppIcons.ArrowUpRight, "Open client", open, style = RoundStyle.Dark, size = 40.dp)
                 }
             }
         }
@@ -156,34 +161,38 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
         containerColor = Color.Transparent,
         topBar = {
             BackTopBar(if (id == null) "New client" else "Client", nav::back) {
-                TextButton(onClick = ::save) { Text("Save") }
+                TextPill("Save", ::save)
             }
         },
     ) { padding ->
         if (!loaded) return@Scaffold
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = ScreenMargin, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Field("Name (shown in bold)", name, { name = it })
-            Field("Registered name (optional)", legalName, { legalName = it }, supportingText = "e.g. YLS Marketing Consultant Pty Ltd")
-            Field("Address", address, { address = it }, singleLine = false, minLines = 2)
-            Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone)
-            Field("Email", email, { email = it }, keyboardType = KeyboardType.Email)
-            Field("Tax IDs (optional)", taxIds, { taxIds = it }, supportingText = "e.g. ABN: 12345678901  ACN: 123456789, or a GSTIN")
-            DropdownField(
-                label = "Usual currency",
-                selected = currency,
-                options = Currency.entries,
-                optionLabel = { "${it.code} (${it.symbol})" },
-                onSelect = { currency = it },
-            )
-            PrimaryButton("Save", ::save, Modifier.padding(top = 12.dp))
-            if (id != null) {
-                TextButton(onClick = { confirmArchive = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    Text("Archive client", color = MaterialTheme.colorScheme.error)
-                }
+            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Field("Name (shown in bold)", name, { name = it })
+                Field("Registered name (optional)", legalName, { legalName = it }, supportingText = "e.g. YLS Marketing Consultant Pty Ltd")
+                Field("Address", address, { address = it }, singleLine = false, minLines = 2)
             }
+            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone)
+                Field("Email", email, { email = it }, keyboardType = KeyboardType.Email)
+                Field("Tax IDs (optional)", taxIds, { taxIds = it }, supportingText = "e.g. ABN: 12345678901  ACN: 123456789, or a GSTIN")
+            }
+            AppCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Usual currency", style = MaterialTheme.typography.bodySmall, color = Ui.colors.greyText, modifier = Modifier.padding(start = 16.dp))
+                PillChoice(Currency.entries, currency, { it.code }, { currency = it }, Modifier.fillMaxWidth())
+            }
+            PrimaryButton("Save", ::save, Modifier.padding(top = 8.dp))
+            if (id != null) {
+                TextPill("Archive client", { confirmArchive = true }, color = Ui.colors.error, modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+            Spacer(Modifier.height(16.dp))
         }
     }
     if (confirmArchive && id != null) {

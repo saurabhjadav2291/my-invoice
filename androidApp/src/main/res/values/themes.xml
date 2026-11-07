@@ -1,0 +1,6 @@
+<resources>
+    <!-- Window colours shown before Compose draws, matching the app's light canvas. -->
+    <style name="Theme.MyInvoice" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/canvas</item>
+    </style>
+</resources>

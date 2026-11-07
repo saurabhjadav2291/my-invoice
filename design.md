@@ -1,6 +1,6 @@
 # My Invoice design system
 
-Status: **proposal for review**. Nothing in the app uses this yet. If it is adopted, it replaces the warm orange theme from the "glossy theme" restyle (PR #4) with a cool blue one, in light and dark.
+Status: **adopted 2026-11-07**. The Android app is styled from this document. It replaces the warm orange theme from the "glossy theme" restyle (PR #4) with a cool blue one, in light and dark.
 
 Decided so far (2026-11-07): the invoice PDF stays orange; dark mode is included (section 10); all buttons and text fields are fully rounded; the New invoice button is blue.
 
@@ -39,7 +39,7 @@ Principles:
 |---|---|---|
 | `PrimaryDeep` | `#2F6FD6` | Blue **text** on white. `#438BEF` on white is only 3.4:1, which fails for small text; this shade is 4.8:1. |
 | `PrimarySoft` | `#E3EEFD` | Selected chip fill, info banners, the tinted "SemiBold" style label in the sheet |
-| `SkyTop` | `#6FA6F3` | Top stop of the header gradient |
+| `SkyTop` | `#3F86EC` | Top stop of the header gradient |
 | `SkyMid` | `#C9DDFB` | Middle stop of the header gradient |
 | `GreyText` | `#6B6B6C` | Secondary text at 12 to 14 sp. `#808081` is 3.9:1 on white, fine for icons and 16 sp+ but not for small labels; this is 5.3:1. |
 | `Hairline` | `#E6ECF1` | Input borders and the rare divider |
@@ -148,10 +148,13 @@ The references are almost flat. Cards separate from the pale canvas by colour, n
 Every top-level screen opens with a vertical gradient that covers the status bar and roughly the top 40% of the screen, then disappears into the canvas so there is no visible edge.
 
 ```
-0%    SkyTop   #6FA6F3
-45%   SkyMid   #C9DDFB
-100%  Canvas   #F2F6F9   (reached at ~40% of screen height)
+0%    #3F86EC
+32%   Primary  #438BEF
+68%   SkyMid   #C9DDFB
+100%  Canvas   #F2F6F9   (reached at ~42% of screen height)
 ```
+
+(Changed while building: the top is a deeper blue than the first draft's `#6FA6F3`, so the white header text stays readable.)
 
 In Compose: a `Brush.verticalGradient` drawn behind the scaffold, with the status bar drawn edge-to-edge over it. The header scrolls with the content (it is not pinned), so long lists end on plain canvas.
 
@@ -261,7 +264,7 @@ The alternative considered was a black circle matching the first reference's sen
 
 The references have no forms, so these follow the same language:
 
-- Every single-line field is a full pill: 52 dp tall, `White` fill on `Canvas`, `Hairline` border, 20 dp horizontal padding, label above in `caption` `GreyText`. This includes amount, rate and quantity fields, dropdowns (client, currency) and date fields.
+- Every single-line field is a full pill: 56 dp tall, `White` fill on `Canvas`, `Hairline` border, 20 dp horizontal padding, label above in `caption` `GreyText`. This includes amount, rate and quantity fields, dropdowns (client, currency) and date fields.
 - Multi-line text (notes, addresses) uses a 26 dp radius box, the roundest shape that still fits several lines.
 - In Compose, pass `shape = CircleShape` to every `OutlinedTextField` / `TextField`, and hide the default underline indicator.
 - Focused field: border becomes 1.5 dp `Primary`.

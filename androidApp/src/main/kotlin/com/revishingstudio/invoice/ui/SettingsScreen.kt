@@ -2,14 +2,18 @@
 
 package com.revishingstudio.invoice.ui
 
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -23,12 +27,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,7 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -150,25 +150,43 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
         )
     }
 
-    Scaffold(
-        modifier = modifier,
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            LargeTitleBar("Settings") {
-                TextButton(onClick = {
-                    buildProfile()?.let { profile -> actions.run("Saved") { saveProfile(profile) } }
-                }) { Text("Save", style = MaterialTheme.typography.titleMedium) }
-            }
-        },
-    ) { padding ->
-        if (!loaded) return@Scaffold
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+    val c = Ui.colors
+    val appearanceStore = LocalAppearanceStore.current
+    val logo = rememberLogo(logoPath, logoVersion)
+    fun saveAll() {
+        buildProfile()?.let { profile -> actions.run("Saved") { saveProfile(profile) } }
+    }
+
+    if (!loaded) return
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+    ) {
+        SkyHeader(
+            title = "Settings",
+            subtitle = studioName.ifBlank { "Your details, numbering and bank" },
+            avatar = { Avatar(logo, studioName.ifBlank { ownerName }) },
         ) {
+            HeaderSavePill(::saveAll)
+        }
+        Column(
+            Modifier.padding(horizontal = ScreenMargin),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Appearance", style = MaterialTheme.typography.titleMedium, color = c.ink)
+                PillChoice(
+                    Appearance.entries,
+                    appearanceStore.appearance,
+                    { it.label },
+                    { appearanceStore.set(it) },
+                    Modifier.fillMaxWidth(),
+                )
+            }
+
             SectionTitle("Your details")
-            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Field("Your name (as on invoice)", ownerName, { ownerName = it })
                 Field("Studio name (for the sign-off)", studioName, { studioName = it })
                 Field("Address", address, { address = it }, singleLine = false, minLines = 3)
@@ -178,21 +196,27 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             }
 
             SectionTitle("Logo")
-            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            AppCard {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    val bitmap = remember(logoPath, logoVersion) {
-                        logoPath?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+                    if (logo != null) {
+                        Box(
+                            Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                                .border(1.dp, c.hairline, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Image(logo, contentDescription = "Logo", modifier = Modifier.size(40.dp))
+                        }
                     }
-                    if (bitmap != null) Image(bitmap, contentDescription = "Logo", modifier = Modifier.size(56.dp))
-                    OutlinedButton(onClick = { pickLogo.launch("image/*") }) {
-                        Text(if (logoPath == null) "Choose logo" else "Change logo")
-                    }
-                    if (logoPath != null) TextButton(onClick = { logoPath = null }) { Text("Remove") }
+                    SecondaryButton(if (logoPath == null) "Choose logo" else "Change logo", { pickLogo.launch("image/*") }, height = 46.dp)
+                    if (logoPath != null) TextPill("Remove", { logoPath = null }, color = c.error)
                 }
             }
 
             SectionTitle("Invoice numbers")
-            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 DropdownField(
                     label = "Style",
                     selected = NumberStyle.entries.firstOrNull { it.pattern == pattern } ?: NumberStyle.CUSTOM,
@@ -228,14 +252,18 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     keyboardType = KeyboardType.Number,
                     supportingText = "To continue your old series, enter the next number (e.g. 32)",
                 )
-                Text(
-                    numberPreview.fold({ "Next invoice: $it" }, { it.message ?: "Invalid pattern" }),
-                    color = if (numberPreview.isSuccess) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Next invoice", style = MaterialTheme.typography.bodyLarge, color = c.greyText, modifier = Modifier.weight(1f).padding(start = 4.dp))
+                    if (numberPreview.isSuccess) {
+                        OutlineChip(numberPreview.getOrThrow())
+                    } else {
+                        Text(numberPreview.exceptionOrNull()?.message ?: "Invalid pattern", color = c.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
             }
 
             SectionTitle("On the invoice")
-            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SwitchRow("Show due date", null, showDueDate) { showDueDate = it }
                 SwitchRow("Show \"not registered under GST\"", "Recommended while you are not GST registered", showGstNote) {
                     showGstNote = it
@@ -249,48 +277,74 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             }
 
             SectionTitle("Bank accounts")
-            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            AppCard(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 banks.forEach { bank -> BankRow(bank) { nav.go(Screen.BankEditor(bank.id)) } }
-                OutlinedButton(onClick = { nav.go(Screen.BankEditor(null)) }) { Text("Add bank account") }
+                SecondaryButton("Add bank account", { nav.go(Screen.BankEditor(null)) }, Modifier.fillMaxWidth(), icon = AppIcons.Plus, height = 48.dp)
             }
 
             SectionTitle("Preview")
-            GlassCard(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = {
-                    val profile = buildProfile() ?: return@OutlinedButton
-                    actions.run {
-                        val (sample, _) = InvoicePdfExporter.sampleInvoice()
-                        val withBank = sample.copy(bankAccount = banks.firstOrNull { it.isDefault } ?: sample.bankAccount)
-                        val file = InvoicePdfExporter.export(context, withBank, profile)
-                        withContext(Dispatchers.Main) { InvoicePdfExporter.open(context, file) }
+            SecondaryButton(
+                "Preview a sample invoice",
+                {
+                    val profile = buildProfile()
+                    if (profile != null) {
+                        actions.run {
+                            val (sample, _) = InvoicePdfExporter.sampleInvoice()
+                            val withBank = sample.copy(bankAccount = banks.firstOrNull { it.isDefault } ?: sample.bankAccount)
+                            val file = InvoicePdfExporter.export(context, withBank, profile)
+                            withContext(Dispatchers.Main) { InvoicePdfExporter.open(context, file) }
+                        }
                     }
-                }) { Text("Preview a sample invoice") }
-            }
-
-            PrimaryButton(
-                "Save settings",
-                onClick = { buildProfile()?.let { profile -> actions.run("Saved") { saveProfile(profile) } } },
-                modifier = Modifier.padding(top = 16.dp),
+                },
+                Modifier.fillMaxWidth(),
+                icon = AppIcons.Document,
             )
-            Row(Modifier.height(32.dp)) {}
+
+            PrimaryButton("Save settings", ::saveAll, Modifier.padding(top = 12.dp))
+            Spacer(Modifier.height(32.dp))
         }
+    }
+}
+
+/** Frosted "Save" pill on the sky header. */
+@Composable
+private fun HeaderSavePill(onClick: () -> Unit) {
+    val c = Ui.colors
+    Box(
+        Modifier
+            .height(40.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = if (c.isDark) 0.08f else 0.22f))
+            .border(1.dp, Color.White.copy(alpha = if (c.isDark) 0.12f else 0.45f), CircleShape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 18.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("Save", style = MaterialTheme.typography.labelLarge, color = c.onSky)
     }
 }
 
 @Composable
 private fun BankRow(bank: BankAccount, onClick: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(vertical = 8.dp, horizontal = 4.dp)) {
-        Text(
-            bank.label.ifBlank { bank.bankName } + if (bank.isDefault) "  (default)" else "",
-            style = MaterialTheme.typography.titleSmall,
-        )
-        Text(
-            "${bank.bankName} · ${bank.accountNumber}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    val c = Ui.colors
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(bank.label.ifBlank { bank.bankName }, style = MaterialTheme.typography.titleSmall, color = c.ink)
+            Text("${bank.bankName} · ${bank.accountNumber}", style = MaterialTheme.typography.bodySmall, color = c.greyText)
+        }
+        if (bank.isDefault) {
+            OutlineChip("Default")
+            Spacer(Modifier.width(8.dp))
+        }
+        RoundIconButton(AppIcons.ArrowUpRight, "Edit bank account", onClick, style = RoundStyle.Dark, size = 36.dp)
     }
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable
@@ -344,28 +398,35 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
         containerColor = Color.Transparent,
         topBar = {
             BackTopBar(if (id == null) "Add bank account" else "Bank account", nav::back) {
-                TextButton(onClick = ::save) { Text("Save") }
+                TextPill("Save", ::save)
             }
         },
     ) { padding ->
         if (!loaded) return@Scaffold
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = ScreenMargin, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Field("Nickname (only in the app)", label, { label = it })
-            Field("Bank name", bankName, { bankName = it })
-            Field("Account name", accountName, { accountName = it })
-            Field("Account number", accountNumber, { accountNumber = it }, keyboardType = KeyboardType.Number)
-            Field("IFSC code", ifsc, { ifsc = it })
-            Field("SWIFT code (for overseas payments)", swift, { swift = it })
-            SwitchRow("Use by default on new invoices", null, isDefault) { isDefault = it }
-            PrimaryButton("Save", ::save, Modifier.padding(top = 12.dp))
-            if (id != null) {
-                TextButton(onClick = { confirmDelete = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    Text("Delete this account", color = MaterialTheme.colorScheme.error)
-                }
+            AppCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Field("Nickname (only in the app)", label, { label = it })
+                Field("Bank name", bankName, { bankName = it })
+                Field("Account name", accountName, { accountName = it })
+                Field("Account number", accountNumber, { accountNumber = it }, keyboardType = KeyboardType.Number)
+                Field("IFSC code", ifsc, { ifsc = it })
+                Field("SWIFT code (for overseas payments)", swift, { swift = it })
             }
+            AppCard {
+                SwitchRow("Use by default on new invoices", null, isDefault) { isDefault = it }
+            }
+            PrimaryButton("Save", ::save, Modifier.padding(top = 8.dp))
+            if (id != null) {
+                TextPill("Delete this account", { confirmDelete = true }, color = Ui.colors.error, modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+            Spacer(Modifier.height(16.dp))
         }
     }
     if (confirmDelete && id != null) {
