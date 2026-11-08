@@ -492,7 +492,7 @@ fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Mod
     ) {
         Row(
             Modifier.weight(1f),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) { items.forEach { NavTab(it) } }
         NewInvoiceButton(onNewInvoice, Modifier.padding(start = 8.dp))
