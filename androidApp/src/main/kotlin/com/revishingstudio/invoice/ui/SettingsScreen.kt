@@ -29,6 +29,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -121,18 +123,24 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
         }
     }
 
-    val numberingResult = runCatching {
+    // Plain nullable values, not kotlin.Result: Result is an inline class, and mapping it in a
+    // composable showed the scheme object itself ("NumberingScheme(...)") instead of the number.
+    var numberingError: String? = null
+    val numbering: NumberingScheme? = try {
         NumberingScheme(pattern.trim(), prefix.trim(), reset, startAt.toIntOrNull() ?: 0)
+    } catch (e: IllegalArgumentException) {
+        numberingError = e.message ?: "Check the numbering settings"
+        null
     }
-    val numberPreview = numberingResult.map { it.format(today(), it.startAt) }
+    val numberPreview: String? = numbering?.let { scheme -> scheme.format(today(), scheme.startAt) }
 
     fun buildProfile(): BusinessProfile? {
         if (ownerName.isBlank()) {
             actions.message("Please enter your name")
             return null
         }
-        val numbering = numberingResult.getOrElse {
-            actions.message(it.message ?: "Check the numbering settings")
+        if (numbering == null) {
+            actions.message(numberingError ?: "Check the numbering settings")
             return null
         }
         return BusinessProfile(
@@ -168,22 +176,17 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
         ) {
             AppButton("Save", ::saveAll, variant = ButtonVariant.Link)
         }
-        Column(
-            Modifier.padding(horizontal = ScreenMargin),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            SectionTitle("Your details", Modifier.padding(top = 0.dp))
-            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Field("Your name (as on invoice)", ownerName, { ownerName = it })
-                Field("Studio name (for the sign-off)", studioName, { studioName = it })
-                Field("Address", address, { address = it }, singleLine = false, minLines = 3)
-                Field("PAN", pan, { pan = it })
-                Field("Email", email, { email = it }, keyboardType = KeyboardType.Email)
-                Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone)
+        Column(Modifier.padding(horizontal = ScreenMargin)) {
+            SettingsSection("Your details", first = true) {
+                Field("Your name (as on invoice)", ownerName, { ownerName = it }, placeholder = "Your full name")
+                Field("Studio name (for the sign-off)", studioName, { studioName = it }, placeholder = "e.g. Revishing Studio")
+                Field("Address", address, { address = it }, singleLine = false, minLines = 3, placeholder = "Street, city, PIN code")
+                Field("PAN", pan, { pan = it }, placeholder = "e.g. ABCDE1234F")
+                Field("Email", email, { email = it }, keyboardType = KeyboardType.Email, placeholder = "e.g. hello@yourstudio.com")
+                Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone, placeholder = "e.g. +91 98765 43210")
             }
 
-            SectionTitle("Logo")
-            AppCard {
+            SettingsSection("Logo") {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (logo != null) {
                         Box(
@@ -202,8 +205,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 }
             }
 
-            SectionTitle("Invoice numbers")
-            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SettingsSection("Invoice numbers") {
                 DropdownField(
                     label = "Style",
                     selected = NumberStyle.entries.firstOrNull { it.pattern == pattern } ?: NumberStyle.CUSTOM,
@@ -222,9 +224,10 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     "Pattern",
                     pattern,
                     { pattern = it },
+                    placeholder = "{PREFIX}/{FY}/{SEQ:3}",
                     supportingText = "{PREFIX} {FY} {FYS} {YYYY} {YY} {SEQ} or {SEQ:3}",
                 )
-                Field("Prefix", prefix, { prefix = it })
+                Field("Prefix", prefix, { prefix = it }, placeholder = "e.g. RS")
                 DropdownField(
                     label = "Restart numbering",
                     selected = reset,
@@ -236,21 +239,21 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     "Start from number",
                     startAt,
                     { startAt = it.filter(Char::isDigit) },
+                    placeholder = "1",
                     keyboardType = KeyboardType.Number,
                     supportingText = "To continue your old series, enter the next number (e.g. 32)",
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Next invoice", style = MaterialTheme.typography.bodyLarge, color = c.greyText, modifier = Modifier.weight(1f).padding(start = 4.dp))
-                    if (numberPreview.isSuccess) {
-                        OutlineChip(numberPreview.getOrThrow(), mono = true)
+                    if (numberPreview != null) {
+                        OutlineChip(numberPreview, mono = true)
                     } else {
-                        Text(numberPreview.exceptionOrNull()?.message ?: "Invalid pattern", color = c.error, style = MaterialTheme.typography.bodySmall)
+                        Text(numberingError ?: "Invalid pattern", color = c.error, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
 
-            SectionTitle("On the invoice")
-            AppCard(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SettingsSection("On the invoice") {
                 SwitchRow("Show due date", null, showDueDate) { showDueDate = it }
                 SwitchRow("Show \"not registered under GST\"", "Recommended while you are not GST registered", showGstNote) {
                     showGstNote = it
@@ -259,17 +262,17 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     "Days until due",
                     dueDays,
                     { dueDays = it.filter(Char::isDigit) },
+                    placeholder = "15",
                     keyboardType = KeyboardType.Number,
                 )
             }
 
-            SectionTitle("Bank accounts")
-            AppCard(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SettingsSection("Bank accounts") {
                 banks.forEach { bank -> BankRow(bank) { nav.go(Screen.BankEditor(bank.id)) } }
                 AppButton("Add bank account", { nav.go(Screen.BankEditor(null)) }, Modifier.fillMaxWidth(), variant = ButtonVariant.Secondary, icon = AppIcons.Plus)
             }
 
-            SectionTitle("Preview")
+            SettingsSection("Preview") {
             AppButton(
                 "Preview a sample invoice",
                 {
@@ -287,10 +290,30 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 variant = ButtonVariant.Secondary,
                 icon = AppIcons.Document,
             )
+            }
 
-            AppButton("Save settings", ::saveAll, Modifier.fillMaxWidth().padding(top = 12.dp))
+            HorizontalDivider(color = c.hairline, modifier = Modifier.padding(top = 20.dp))
+            AppButton("Save settings", ::saveAll, Modifier.fillMaxWidth().padding(top = 20.dp))
             Spacer(Modifier.height(LocalBottomBarPadding.current + 16.dp))
         }
+    }
+}
+
+/**
+ * One group of settings: a hairline above it (except the first), the heading, then the
+ * fields with 12 dp between them. No card behind it (design.md section 8, Settings).
+ */
+@Composable
+private fun SettingsSection(title: String, first: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxWidth()) {
+        if (!first) HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLarge,
+            color = Ui.colors.ink,
+            modifier = Modifier.padding(top = if (first) 0.dp else 20.dp, bottom = 12.dp),
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
     }
 }
 
@@ -381,12 +404,12 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Field("Nickname (only in the app)", label, { label = it })
-                Field("Bank name", bankName, { bankName = it })
-                Field("Account name", accountName, { accountName = it })
-                Field("Account number", accountNumber, { accountNumber = it }, keyboardType = KeyboardType.Number)
-                Field("IFSC code", ifsc, { ifsc = it })
-                Field("SWIFT code (for overseas payments)", swift, { swift = it })
+                Field("Nickname (only in the app)", label, { label = it }, placeholder = "e.g. Kotak current")
+                Field("Bank name", bankName, { bankName = it }, placeholder = "e.g. Kotak Mahindra Bank")
+                Field("Account name", accountName, { accountName = it }, placeholder = "Name on the account")
+                Field("Account number", accountNumber, { accountNumber = it }, keyboardType = KeyboardType.Number, placeholder = "e.g. 1234567890")
+                Field("IFSC code", ifsc, { ifsc = it }, placeholder = "e.g. KKBK0000123")
+                Field("SWIFT code (for overseas payments)", swift, { swift = it }, placeholder = "e.g. KKBKINBB")
             }
             AppCard {
                 SwitchRow("Use by default on new invoices", null, isDefault) { isDefault = it }

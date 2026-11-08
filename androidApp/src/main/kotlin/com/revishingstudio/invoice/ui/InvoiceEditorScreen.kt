@@ -231,7 +231,7 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
                     onSelect = { bankId = it.id },
                     placeholder = if (banks.isEmpty()) "Add one in Settings" else "None",
                 )
-                Field("Notes (optional, printed on the invoice)", notes, { notes = it }, singleLine = false, minLines = 2)
+                Field("Notes (optional, printed on the invoice)", notes, { notes = it }, singleLine = false, minLines = 2, placeholder = "e.g. Thank you for your business")
             }
             Spacer(Modifier.height(16.dp))
         }
@@ -266,7 +266,7 @@ private fun ItemEditor(item: ItemInput, currency: Currency, canRemove: Boolean, 
     val c = Ui.colors
     AppCard(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Field("Description", item.description, { item.description = it }, Modifier.weight(1f), singleLine = false)
+            Field("Description", item.description, { item.description = it }, Modifier.weight(1f), singleLine = false, placeholder = "e.g. Logo design, three concepts")
             if (canRemove) {
                 Spacer(Modifier.width(8.dp))
                 RoundIconButton(AppIcons.Trash, "Remove item", onRemove, style = RoundStyle.Quiet, modifier = Modifier.padding(bottom = 8.dp))
@@ -281,8 +281,8 @@ private fun ItemEditor(item: ItemInput, currency: Currency, canRemove: Boolean, 
         )
         if (item.priced) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Field("Rate (${currency.symbol})", item.rate, { item.rate = it }, Modifier.weight(1f), keyboardType = KeyboardType.Decimal)
-                Field("Qty", item.qty, { item.qty = it }, Modifier.weight(0.6f), keyboardType = KeyboardType.Decimal)
+                Field("Rate (${currency.symbol})", item.rate, { item.rate = it }, Modifier.weight(1f), keyboardType = KeyboardType.Decimal, placeholder = "0.00")
+                Field("Qty", item.qty, { item.qty = it }, Modifier.weight(0.6f), keyboardType = KeyboardType.Decimal, placeholder = "1")
             }
             val amount = item.toLineItem().getOrNull()?.amountMinor
             if (amount != null) {
@@ -294,7 +294,7 @@ private fun ItemEditor(item: ItemInput, currency: Currency, canRemove: Boolean, 
                 )
             }
         } else {
-            Field("Amount (${currency.symbol})", item.amount, { item.amount = it }, keyboardType = KeyboardType.Decimal)
+            Field("Amount (${currency.symbol})", item.amount, { item.amount = it }, keyboardType = KeyboardType.Decimal, placeholder = "0.00")
         }
     }
 }

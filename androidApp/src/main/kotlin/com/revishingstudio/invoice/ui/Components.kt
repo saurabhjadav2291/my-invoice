@@ -519,7 +519,7 @@ private fun NavTab(item: NavItem, modifier: Modifier = Modifier) {
         Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
         if (item.selected) {
             Spacer(Modifier.width(8.dp))
-            Text(item.label, color = tint, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+            Text(item.label, color = c.ink, style = MaterialTheme.typography.labelLarge, maxLines = 1)
         }
     }
 }

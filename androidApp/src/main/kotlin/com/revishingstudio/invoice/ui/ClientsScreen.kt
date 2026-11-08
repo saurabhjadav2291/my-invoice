@@ -172,14 +172,14 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Field("Name (shown in bold)", name, { name = it })
-                Field("Registered name (optional)", legalName, { legalName = it }, supportingText = "e.g. YLS Marketing Consultant Pty Ltd")
-                Field("Address", address, { address = it }, singleLine = false, minLines = 2)
+                Field("Name (shown in bold)", name, { name = it }, placeholder = "e.g. Acme Studio")
+                Field("Registered name (optional)", legalName, { legalName = it }, supportingText = "e.g. YLS Marketing Consultant Pty Ltd", placeholder = "Legal company name")
+                Field("Address", address, { address = it }, singleLine = false, minLines = 2, placeholder = "Street, city, postcode, country")
             }
             AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone)
-                Field("Email", email, { email = it }, keyboardType = KeyboardType.Email)
-                Field("Tax IDs (optional)", taxIds, { taxIds = it }, supportingText = "e.g. ABN: 12345678901  ACN: 123456789, or a GSTIN")
+                Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone, placeholder = "e.g. +61 400 123 456")
+                Field("Email", email, { email = it }, keyboardType = KeyboardType.Email, placeholder = "e.g. accounts@client.com")
+                Field("Tax IDs (optional)", taxIds, { taxIds = it }, supportingText = "e.g. ABN: 12345678901  ACN: 123456789, or a GSTIN", placeholder = "ABN, ACN or GSTIN")
             }
             AppCard(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Usual currency", style = MaterialTheme.typography.bodySmall, color = Ui.colors.greyText, modifier = Modifier.padding(start = 4.dp))

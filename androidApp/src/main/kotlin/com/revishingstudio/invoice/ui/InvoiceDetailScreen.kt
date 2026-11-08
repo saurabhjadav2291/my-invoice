@@ -319,7 +319,7 @@ private fun RecordPaymentDialog(invoice: Invoice, onDismiss: () -> Unit, onSave:
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 DateField("Received on", date, { date = it })
-                Field("Amount (${invoice.currency.symbol})", amount, { amount = it }, keyboardType = KeyboardType.Decimal)
+                Field("Amount (${invoice.currency.symbol})", amount, { amount = it }, keyboardType = KeyboardType.Decimal, placeholder = "0.00")
                 DropdownField(
                     label = "Method",
                     selected = method,
@@ -332,11 +332,12 @@ private fun RecordPaymentDialog(invoice: Invoice, onDismiss: () -> Unit, onSave:
                         "Rupees received (optional)",
                         inrReceived,
                         { inrReceived = it },
+                        placeholder = "Amount in ₹",
                         keyboardType = KeyboardType.Decimal,
                         supportingText = "What actually reached your bank, for your records",
                     )
                 }
-                Field("Note (optional)", note, { note = it })
+                Field("Note (optional)", note, { note = it }, placeholder = "e.g. Paid by UPI, ref 4521")
                 error?.let { Text(it, color = Ui.colors.error, style = MaterialTheme.typography.bodySmall) }
             }
         },

@@ -233,19 +233,21 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
 
 - **Invoice row:** number in mono and the status tag on the first line; client name (`titleMedium`) and "Issued 7 Nov 2026" (`grey`) on the left, the amount on the right.
 - **Client row:** avatar tile with the first letter, name and email, currency tag.
+- **Settings:** no cards. Each section (Your details, Logo, Invoice numbers, On the invoice, Bank accounts, Preview) is a `titleLarge` heading over its fields, and sections are split by a `hairline` divider with 20 dp above and below. Fields inside a section are 12 dp apart.
 
 ### 6.6 Bottom navigation
 
 A pill bar, 72 dp tall, floating 20 dp from the screen sides, drawn as a soft key from `#F9FAFB` to the track colour `#ECEEF1`, with a white rim and a 20 dp neutral lift.
 
-- Only the selected tab shows its label: a pressed-in grey pill (the same key as the selected segmented tab) holding the 24 dp icon and a `labelLarge` label side by side in `primary` blue. The other tabs are a `grey` 24 dp icon only, with no fill. The pill grows and shrinks over 200 ms, along with the colour change.
+- Only the selected tab shows its label: a pressed-in grey pill (the same key as the selected segmented tab) holding the 24 dp icon in `primary` blue and a `labelLarge` label in `ink` (decided 2026-11-08), side by side. The other tabs are a `grey` 24 dp icon only, with no fill. The pill grows and shrinks over 200 ms, along with the colour change.
 - The **+ button** sits last, at the right end of the bar: a 64 dp blue soft-key disc inside a 4 dp neutral key ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
 - Invoices, Clients and Settings share the space to the left of the +. The first tab sits 8 dp from the bar's left edge, the same gap as above and below it, so the selected pill is evenly inset.
 
 ### 6.7 Forms
 
-- Fields: 8 dp corners, drawn as an inset soft-key well (`Modifier.fieldWell()`): darker at the top, a shade under the top edge and a white rim along the bottom. No border at rest; a 2 dp `primary` border when focused. Label above in `bodySmall` `greyText`.
-- Pickers (dropdowns and dates) use the same well and open a menu or the date picker.
+- Fields: 48 dp tall (12 dp vertical, 16 dp horizontal padding), 8 dp corners, drawn as an inset soft-key well (`Modifier.fieldWell()`): darker at the top, a shade under the top edge and a white rim along the bottom. No border at rest; a 2 dp `primary` border when focused. Label above in `bodySmall` `greyText`.
+- Every blank field shows a guided placeholder in `grey`: an example of what goes there ("e.g. KKBK0000123", "Street, city, PIN code", "0.00"), never a repeat of the label.
+- Pickers (dropdowns and dates) use the same 48 dp well and open a menu or the date picker.
 - Menus: white, 12 dp corners, hairline, 8 dp shadow.
 - Dialogs and the date picker: white, 20 dp corners.
 - Messages (saved, errors, hints) appear as the alert banner (6.8) above the tab bar or the screen's bottom edge.

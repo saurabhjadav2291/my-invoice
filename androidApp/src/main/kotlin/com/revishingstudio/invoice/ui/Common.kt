@@ -33,7 +33,11 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
@@ -192,6 +196,9 @@ private fun fieldColors() = OutlinedTextFieldDefaults.colors(
  */
 fun Modifier.fieldWell(): Modifier = softKey(FormShape, Color(0xFFE9ECF0), Color(0xFFF7F8FA), shadeAlpha = 0.08f)
 
+/** Height of single-line fields and pickers (design.md section 6.7). */
+val FieldHeight = 48.dp
+
 /** Well with 8 dp corners that looks like a text field but opens a picker. */
 @Composable
 private fun PickerPill(onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
@@ -199,7 +206,7 @@ private fun PickerPill(onClick: () -> Unit, content: @Composable RowScope.() -> 
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
+            .heightIn(min = FieldHeight)
             .fieldWell()
             .clip(FormShape)
             .clickable(role = Role.Button, onClick = onClick)
@@ -220,20 +227,50 @@ fun Field(
     keyboardType: KeyboardType = KeyboardType.Text,
     supportingText: String? = null,
     isError: Boolean = false,
+    placeholder: String? = null,
 ) {
+    val c = Ui.colors
+    val colors = fieldColors()
+    val interaction = remember { MutableInteractionSource() }
     Column(modifier.fillMaxWidth()) {
         FieldLabel(label)
-        OutlinedTextField(
+        // BasicTextField with the outlined decoration, so the field can be 48 dp tall
+        // (OutlinedTextField forces 56 dp) with 12 dp vertical padding.
+        BasicTextField(
             value = value,
             onValueChange = onValueChange,
             singleLine = singleLine,
             minLines = minLines,
-            isError = isError,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            textStyle = MaterialTheme.typography.bodyLarge,
-            shape = FormShape,
-            colors = fieldColors(),
-            modifier = Modifier.fillMaxWidth().fieldWell(),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = c.ink),
+            cursorBrush = SolidColor(c.primary),
+            interactionSource = interaction,
+            modifier = Modifier.fillMaxWidth().heightIn(min = FieldHeight).fieldWell(),
+            decorationBox = { inner ->
+                OutlinedTextFieldDefaults.DecorationBox(
+                    value = value,
+                    innerTextField = inner,
+                    enabled = true,
+                    singleLine = singleLine,
+                    visualTransformation = VisualTransformation.None,
+                    interactionSource = interaction,
+                    isError = isError,
+                    placeholder = placeholder?.let { text -> @Composable { Text(text, style = MaterialTheme.typography.bodyLarge, color = c.grey, maxLines = 1) } },
+                    colors = colors,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    container = {
+                        OutlinedTextFieldDefaults.Container(
+                            enabled = true,
+                            isError = isError,
+                            interactionSource = interaction,
+                            colors = colors,
+                            shape = FormShape,
+                            focusedBorderThickness = 2.dp,
+                            unfocusedBorderThickness = 0.dp,
+                        )
+                    },
+                )
+            },
         )
         if (supportingText != null) {
             Text(
