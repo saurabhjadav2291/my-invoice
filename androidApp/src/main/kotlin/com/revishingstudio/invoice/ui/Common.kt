@@ -397,7 +397,7 @@ fun ConfirmDialog(
             AppButton(confirmLabel, variant = ButtonVariant.Link, tint = c.error, onClick = {
                 onConfirm()
                 onDismiss()
-            }, color = c.error)
+            })
         },
         dismissButton = { AppButton("Cancel", onClick = onDismiss, variant = ButtonVariant.Tertiary) },
         shape = RoundedCornerShape(20.dp),
