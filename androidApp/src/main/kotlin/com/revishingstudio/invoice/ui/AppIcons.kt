@@ -47,6 +47,24 @@ object AppIcons {
 
     val Plus: ImageVector = lineIcon("Plus", "M12 5v14", "M5 12h14")
 
+    /** Arrow pointing right: link buttons. */
+    val ArrowRight: ImageVector = lineIcon("ArrowRight", "M5 12h14", "M13 6l6 6l-6 6")
+
+    /** Circle with a tick: success banners. */
+    val CheckCircle: ImageVector = lineIcon(
+        "CheckCircle",
+        "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0z",
+        "M8 12.5l2.75 2.75l5.25 -5.5",
+    )
+
+    /** Circle with an exclamation mark: error and notice banners. */
+    val AlertCircle: ImageVector = lineIcon(
+        "AlertCircle",
+        "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0z",
+        "M12 7.5v5.5",
+        "M12 16.5v0.01",
+    )
+
     val Trash: ImageVector = lineIcon(
         "Trash",
         "M4.5 7h15",

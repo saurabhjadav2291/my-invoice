@@ -164,17 +164,18 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
                 )
             }
 
-            PrimaryButton("View or share PDF", ::sharePdf, icon = AppIcons.Send)
+            AppButton("View or share PDF", ::sharePdf, Modifier.fillMaxWidth(), icon = AppIcons.Send)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (inv.state == InvoiceState.DRAFT) {
-                    SecondaryButton(
+                    AppButton(
                         "Mark as sent",
                         { actions.run("Marked as sent", onDone = reload) { markSent(id) } },
                         Modifier.weight(1f),
+                        variant = ButtonVariant.Secondary,
                     )
                 }
                 if (inv.state != InvoiceState.VOID && status != PaymentStatus.PAID) {
-                    SecondaryButton("Record payment", { showPayment = true }, Modifier.weight(1f), icon = AppIcons.Payment)
+                    AppButton("Record payment", { showPayment = true }, Modifier.weight(1f), variant = ButtonVariant.Secondary, icon = AppIcons.Payment)
                 }
             }
 
@@ -340,21 +341,21 @@ private fun RecordPaymentDialog(invoice: Invoice, onDismiss: () -> Unit, onSave:
             }
         },
         confirmButton = {
-            TextPill("Save", onClick = {
+            AppButton("Save", variant = ButtonVariant.Link, onClick = {
                 val minor = MoneyFormat.parseToMinor(amount)
                 if (minor == null || minor <= 0) {
                     error = "Enter the amount received"
-                    return@TextPill
+                    return@AppButton
                 }
                 val inr = if (foreign && inrReceived.isNotBlank()) MoneyFormat.parseToMinor(inrReceived) else null
                 if (foreign && inrReceived.isNotBlank() && inr == null) {
                     error = "Check the rupees received"
-                    return@TextPill
+                    return@AppButton
                 }
                 onSave(Payment(receivedOn = date, amountMinor = minor, method = method, inrReceivedMinor = inr, note = note.trim()))
             })
         },
-        dismissButton = { TextPill("Cancel", onClick = onDismiss, color = Ui.colors.greyText) },
+        dismissButton = { AppButton("Cancel", onClick = onDismiss, variant = ButtonVariant.Tertiary) },
         shape = RoundedCornerShape(20.dp),
         containerColor = Ui.colors.surface,
     )

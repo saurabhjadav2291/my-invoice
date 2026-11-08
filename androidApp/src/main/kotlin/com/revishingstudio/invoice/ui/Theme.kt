@@ -41,8 +41,19 @@ data class AppColors(
     /** Muted text, meta and icons. */
     val grey: Color,
     val hairline: Color,
-    /** Accent fill: primary buttons, the + button, selected states. White text on it is 4.8:1. */
+    /** Accent fill: primary buttons, the + button, selected states, focus rings. White text on it is 5.4:1. */
     val primary: Color,
+    val primaryHover: Color,
+    val primaryPressed: Color,
+    /** Light blue wash: secondary and link buttons on hover. */
+    val primaryTint: Color,
+    val primaryTintPressed: Color,
+    /** Frosted white of secondary buttons and the tab bar. */
+    val frosted: Color,
+    /** Tertiary buttons while pressed. */
+    val surfacePressed: Color,
+    /** Neutral shadow colour; used at 6 to 10% only. */
+    val shadow: Color,
     /** Accent used as text or ink on light surfaces. */
     val primaryText: Color,
     val primarySoft: Color,
@@ -69,8 +80,15 @@ val LightAppColors = AppColors(
     greyText = Color(0xFF4B5565),
     grey = Color(0xFF6B7487),
     hairline = Ink.copy(alpha = 0.08f),
-    primary = Color(0xFF2F6FD6),
-    primaryText = Color(0xFF2563C9),
+    primary = Color(0xFF155EEF),
+    primaryHover = Color(0xFF0B4FD6),
+    primaryPressed = Color(0xFF0A45BD),
+    primaryTint = Color(0xFFEEF3FE),
+    primaryTintPressed = Color(0xFFE1EAFD),
+    frosted = Color(0xFFFBFCFD),
+    surfacePressed = Color(0xFFE2E6EC),
+    shadow = Ink,
+    primaryText = Color(0xFF155EEF),
     primarySoft = Color(0xFFEAF1FC),
     inverse = Ink,
     onInverse = Color.White,

@@ -161,7 +161,7 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
         modifier = modifier,
         topBar = {
             BackTopBar(if (id == null) "New invoice" else "Edit invoice", nav::back) {
-                TextPill("Save", ::save)
+                AppButton("Save", ::save, variant = ButtonVariant.Link)
             }
         },
         bottomBar = {
@@ -219,7 +219,7 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
                     onRemove = { items.removeAt(index) },
                 )
             }
-            SecondaryButton("Add item", { items += ItemInput() }, Modifier.fillMaxWidth(), icon = AppIcons.Plus)
+            AppButton("Add item", { items += ItemInput() }, Modifier.fillMaxWidth(), variant = ButtonVariant.Secondary, icon = AppIcons.Plus)
 
             SectionTitle("On the invoice")
             AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -257,7 +257,7 @@ private fun TotalBar(total: Long, currency: Currency, label: String, onSave: () 
             Text(MoneyFormat.format(total, currency), style = MaterialTheme.typography.headlineMedium.tabular(), color = c.ink)
         }
         Spacer(Modifier.height(12.dp))
-        PrimaryButton(label, onSave)
+        AppButton(label, onSave, Modifier.fillMaxWidth())
     }
 }
 

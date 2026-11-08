@@ -1,8 +1,10 @@
 # My Invoice design system
 
-Status: **adopted 2026-11-07, revised the same evening with an Unslop pass.** The Android app follows this document. The app is light only, and the invoice PDF keeps its own orange design.
+Status: **adopted 2026-11-07, revised the same evening with an Unslop pass, and on 2026-11-08 with Saurabh's references for the buttons, bottom navigation, segmented tabs and alert banner.** The Android app follows this document. The app is light only, and the invoice PDF keeps its own orange design.
 
-Decided so far (2026-11-07): the PDF stays orange; the app is light only; text fields and form buttons have 8 dp corners; empty states have no background block; content fades into a progressive blur at the status bar and behind the bottom navigation. Saurabh then chose the full Unslop pass: the liquid glass, gloss and skeuomorphic styling were replaced with plain surfaces, hairlines and one blue accent. The blur bands stayed.
+Decided so far (2026-11-07): the PDF stays orange; the app is light only; text fields have 8 dp corners (form buttons did too until the 2026-11-08 pill buttons); empty states have no background block; content fades into a progressive blur at the status bar and behind the bottom navigation. Saurabh then chose the full Unslop pass: the liquid glass, gloss and skeuomorphic styling were replaced with plain surfaces, hairlines and one blue accent. The blur bands stayed.
+
+Update 2026-11-08: buttons follow Saurabh's button spec (section 6.3). They are pill shaped in four variants with soft, lightly neumorphic surfaces, and focus is a crisp blue outline, never a glow. The tab bar, segmented tabs and alert banner follow his reference images. Text fields keep their 8 dp corners.
 
 Unslop is by Damir Sokolovsky ([@heydamir](https://x.com/heydamir)), CC BY 4.0.
 
@@ -44,9 +46,14 @@ Principles:
 
 | Token | Hex | Role |
 |---|---|---|
-| `primary` | `#2F6FD6` | Primary button, the + button, focused field border. White text on it is 4.8:1. |
-| `primaryText` | `#2563C9` | Blue text on light surfaces, such as Save in a top bar (5.7:1) |
+| `primary` | `#155EEF` | Primary button, the + button, selected tab, focus rings, link text. White text on it is 5.4:1. |
+| `primaryHover` | `#0B4FD6` | Primary button on hover, link text on hover |
+| `primaryPressed` | `#0A45BD` | Primary button and + button while pressed |
+| `primaryTint` | `#EEF3FE` | Secondary and link buttons on hover (`#E1EAFD` pressed) |
+| `primaryText` | `#155EEF` | Blue text on light surfaces |
 | `primarySoft` | `#EAF1FC` | The Sent status fill |
+| `frosted` | `#FBFCFD` | Secondary buttons, the tab bar and banners (with a white-to-frosted gradient) |
+| `surfacePressed` | `#E2E6EC` | Tertiary buttons while pressed |
 | `inverse` | `#111827` | Selected filter chip, snackbar, dark button |
 | `paperAccent` | `#FF5400` | The PDF orange. Used only on the paper invoice: the rule on the hero card, the paper sheet and the empty-state illustration. |
 
@@ -125,17 +132,17 @@ Everything sits on a 4 dp grid.
 | Element | Radius |
 |---|---|
 | Tags (status, currency, number preview), segmented-control segments | 6 dp |
-| Text fields, pickers, buttons, filter chips, tabs, menus items | 8 dp |
-| Segmented-control track | 10 dp (6 + 4 padding) |
+| Text fields, pickers, menu items | 8 dp |
+| Every button with a text label, segmented tabs and their track, the tab bar | pill (fully round) |
 | Logo tile, avatar, menus | 12 dp |
-| Cards, the tab bar, the + button | 16 dp |
-| Hero card, dialogs, date picker | 20 dp |
+| Cards | 16 dp |
+| Hero card, dialogs, date picker, alert banner | 20 dp |
 | Round icon buttons (back, delete) | circle |
 
 ### 4.3 Elevation
 
 - Cards on the canvas: hairline, no shadow.
-- Floating things (tab bar, + button, hero card, paper sheet): shadow 12 dp, ink at 6% ambient and 10 to 12% spot.
+- Floating things (hero card, paper sheet): shadow 12 dp, ink at 6% ambient and 10 to 12% spot.
 - Menus: 8 dp shadow plus a hairline.
 
 ---
@@ -153,7 +160,7 @@ Content never ends in a hard cut where it meets the status bar or the tab bar.
 | Edge | Band | Blur | Tint |
 |---|---|---|---|
 | Top (tab screens) | The status bar only | 0 at its lower edge, rising to 20 dp at the top | `background`, 0% to 55% towards the edge |
-| Bottom (tab screens) | Behind the tab bar, about 100 dp including the gesture bar | 0 at the top, rising to 24 dp at the bottom | `background`, 0% to 60% towards the edge |
+| Bottom (tab screens) | Behind the tab bar, about 108 dp plus the gesture bar | 0 at the top, rising to 24 dp at the bottom | `background`, 0% to 60% towards the edge |
 | Inner screens | The pinned back bar | 20 dp, masked out over its lower 30% | `background`, 90% fading to 0 |
 
 - The editor's total bar is a plain white sheet with a hairline along the top. The form scrolls under it.
@@ -177,22 +184,29 @@ White, 20 dp corners, floating shadow, with a 4 dp `paperAccent` rule along the 
 
 ### 6.3 Buttons
 
-All text buttons have 8 dp corners and are 48 dp tall. Press is a 0.98 scale over 120 ms.
+One component, `AppButton` in `ui/Buttons.kt`, with four variants. Screens never style their own buttons.
 
-| Kind | Look | Use |
-|---|---|---|
-| Primary | `primary` fill, white label | One per screen: Save, Create invoice, View or share PDF |
-| Secondary | White, hairline, `ink` label, `greyText` icon | Add item, Record payment, Mark as sent, Choose logo |
-| Dark | `inverse` fill | Kept for a strong second action; not used now |
-| Text | `primaryText` label, no fill | Save in top bars, dialog buttons |
-| Round icon | 40 dp circle, white with hairline (or `surfaceRaised` for the quiet style), 18 dp `greyText` icon | Back, add client, delete item or payment |
+Global rules:
 
-### 6.4 Tags and chips
+- Pill shaped. Height 48 dp (link 40 dp), horizontal padding 20 dp (link 12 dp), 18 dp icons with an 8 dp gap.
+- Transitions take 200 ms on the app curve.
+- Focus is never a glow or a blur. It is a crisp 2 dp `primary` outline.
+- Pressed: scale 0.98 and a darker fill. Disabled: 40% opacity, no hover or press.
+
+| Variant | Default | Hover | Focused | Use |
+|---|---|---|---|---|
+| Primary | `primary` fill, white label and icon, 2 dp soft neutral lift | `primaryHover`, lift rises to 6 dp | Default fill, 3 dp white gap, then a 2 dp blue ring outside | One per screen: Save, Create invoice, View or share PDF, Save settings |
+| Secondary | `frosted` fill, `ink` label, blue icon, hairline border (ink 10%), 2 dp lift | `primaryTint` fill, 4 dp lift | White-ish fill with a 2 dp blue border | Record payment, Mark as sent, Add item, Add bank account, Choose logo, Preview a sample invoice |
+| Tertiary | Transparent, `greyText` label and icon | `surfaceRaised` fill | Transparent with a 2 dp blue border | Cancel in dialogs; destructive actions in red (Archive client, Delete this account, Remove) |
+| Link | `primary` text, optional trailing arrow | `primaryHover` text on a `primaryTint` wash | 2 dp blue border | Save in top bars, OK and Save in dialogs, inline actions |
+
+Round icon buttons (back, add client, delete) stay 40 dp circles, white with a hairline or `surfaceRaised` for the quiet style, with an 18 dp `greyText` icon.
+
+### 6.4 Tags and segmented tabs
 
 - **Status tag:** 6 dp corners, status fill, a 6 dp dot and the label in `labelMedium`.
 - **Quiet tag:** `surfaceRaised`, `greyText`, 6 dp corners. Currency codes, "Default", and the next-number preview (in mono).
-- **Filter chip:** 36 dp tall, 8 dp corners, white with hairline; selected is `inverse` with white text.
-- **Segmented control:** `surfaceRaised` track with 4 dp padding; the selected segment is white with a hairline.
+- **Segmented tabs:** a pale pill track (`#ECEEF1`) with a white top rim, a faint lift and 4 dp padding. The chosen option is pressed into it: a 36 dp grey pill (`#DFE2E7` to `#D5D9DF`), a soft shade under its top edge and a white 1.5 dp rim. Labels are `labelLarge`, `ink` when chosen and `greyText` otherwise. Used for the invoice filters on the home screen (sized to their labels, scrolling sideways) and for currency and "Amount / Rate × qty" choices (equal widths).
 
 ### 6.5 Cards and rows
 
@@ -201,9 +215,13 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
 - **Invoice row:** number in mono and the status tag on the first line; client name (`titleMedium`) and "Issued 7 Nov 2026" (`grey`) on the left, the amount on the right.
 - **Client row:** avatar tile with the first letter, name and email, currency tag.
 
-### 6.6 Tab bar
+### 6.6 Bottom navigation
 
-A white floating bar with 16 dp corners, 64 dp tall, hairline and floating shadow, with the blue + tile (64 dp, 16 dp corners) beside it. The selected tab is a `surfaceRaised` segment with 8 dp corners, its icon and label in `ink`. Other tabs show only their icon in `grey`.
+A frosted white pill bar, 72 dp tall, floating 20 dp from the screen sides, with a white-to-`#F3F5F8` gradient, a white top rim and a soft neutral shadow.
+
+- Tabs show a 24 dp icon above a `labelMedium` label. The selected tab is `primary` blue; the others are `grey`. Colour changes take 200 ms.
+- The **+ button** sits in the middle of the bar: a 64 dp `primary` disc inside a 4 dp white ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
+- Invoices and Clients sit to the left of the +, Settings to the right. Each side takes half the remaining width, so the + stays centred.
 
 ### 6.7 Forms
 
@@ -211,11 +229,19 @@ A white floating bar with 16 dp corners, 64 dp tall, hairline and floating shado
 - Pickers (dropdowns and dates) look like fields and open a menu or the date picker.
 - Menus: white, 12 dp corners, hairline, 8 dp shadow.
 - Dialogs and the date picker: white, 20 dp corners.
-- Snackbar: `inverse`, 12 dp corners, light blue action text.
+- Messages (saved, errors, hints) appear as the alert banner (6.8) above the tab bar or the screen's bottom edge.
 
-### 6.8 Icons
+### 6.8 Alert banner
 
-The project's own line icon set (`AppIcons.kt`), 18 dp in buttons and rows, 20 dp in the tab bar, coloured with the text role (`greyText` or `grey`). No emoji.
+A frosted white card with 20 dp corners, a hairline and a soft neutral shadow, with 20 dp side padding and 16 dp vertical padding.
+
+- Left: a 32 dp line icon in the status colour. Success is a ticked circle in the Paid green, errors a circle with "!" in the error red, hints the same in `primary` blue.
+- Then 16 dp, the message in `titleMedium` `ink`, and under it the time in `bodySmall` `grey`.
+- Used for every confirmation ("Payment recorded"), error and hint. It replaces the old dark snackbar.
+
+### 6.9 Icons
+
+The project's own line icon set (`AppIcons.kt`), 18 dp in buttons and rows, 24 dp in the tab bar, 32 dp in banners, coloured with the text role (`greyText` or `grey`). No emoji.
 
 ---
 
@@ -232,7 +258,7 @@ No background block. The illustration, title, one line of help and an optional b
 ## 8. Motion
 
 - One easing curve, `CubicBezierEasing(0.22, 1, 0.36, 1)` (`AppEasing`).
-- Press: 0.98 scale over 120 ms. Colour changes (pressed card, selected chip or tab): 150 ms.
+- Buttons, tabs and the + button: 200 ms for colour, lift and the 0.98 press scale. Pressed cards: 150 ms.
 - No looping animation, no springs, nothing animates layout size.
 
 ---
@@ -242,7 +268,8 @@ No background block. The illustration, title, one line of help and an optional b
 | File | What |
 |---|---|
 | `ui/Theme.kt` | `AppColors` tokens, Outfit and IBM Plex Mono, type scale, `tabular()` and `serial()` |
-| `ui/Components.kt` | `Modifier.surface`, `progressiveBlur`, `ScreenHeader`, `AppCard`, `HeroCard`, buttons, chips, `FloatingNavBar`, `PaperInvoice`, empty states |
+| `ui/Buttons.kt` | `AppButton` with `ButtonVariant.Primary`, `Secondary`, `Tertiary` and `Link` |
+| `ui/Components.kt` | `Modifier.surface`, `progressiveBlur`, `ScreenHeader`, `AppCard`, `HeroCard`, icon buttons, `PillChoice` (segmented tabs), `AlertBanner`, `FloatingNavBar`, `PaperInvoice`, empty states |
 | `ui/Common.kt` | `InnerScaffold` (pinned back bar with blur), fields, pickers, dialogs, status tags |
-| `ui/InvoiceAppUi.kt` | Blur source, status-bar and tab-bar blur bands, snackbar |
+| `ui/InvoiceAppUi.kt` | Blur source, status-bar and tab-bar blur bands, alert banners (`BannerVisuals`) |
 | `res/font/` | `outfit_*.ttf`, `ibm_plex_mono_regular.ttf`, `ibm_plex_mono_medium.ttf` |

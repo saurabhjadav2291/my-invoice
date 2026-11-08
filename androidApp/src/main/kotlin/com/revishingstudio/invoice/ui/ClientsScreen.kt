@@ -158,7 +158,7 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
         modifier = modifier,
         topBar = {
             BackTopBar(if (id == null) "New client" else "Client", nav::back) {
-                TextPill("Save", ::save)
+                AppButton("Save", ::save, variant = ButtonVariant.Link)
             }
         },
     ) { padding ->
@@ -185,9 +185,9 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
                 Text("Usual currency", style = MaterialTheme.typography.bodySmall, color = Ui.colors.greyText, modifier = Modifier.padding(start = 4.dp))
                 PillChoice(Currency.entries, currency, { it.code }, { currency = it }, Modifier.fillMaxWidth())
             }
-            PrimaryButton("Save", ::save, Modifier.padding(top = 8.dp))
+            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 8.dp))
             if (id != null) {
-                TextPill("Archive client", { confirmArchive = true }, color = Ui.colors.error, modifier = Modifier.align(Alignment.CenterHorizontally))
+                AppButton("Archive client", { confirmArchive = true }, Modifier.align(Alignment.CenterHorizontally), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
             }
             Spacer(Modifier.height(16.dp))
         }

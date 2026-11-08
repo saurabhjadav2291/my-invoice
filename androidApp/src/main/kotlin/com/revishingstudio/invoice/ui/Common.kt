@@ -309,12 +309,12 @@ fun DateField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, mod
         DatePickerDialog(
             onDismissRequest = { open = false },
             confirmButton = {
-                TextPill("OK", onClick = {
+                AppButton("OK", variant = ButtonVariant.Link, onClick = {
                     state.selectedDateMillis?.let { onChange(LocalDate.fromEpochDays(it / DAY_MILLIS)) }
                     open = false
                 })
             },
-            dismissButton = { TextPill("Cancel", onClick = { open = false }, color = Ui.colors.greyText) },
+            dismissButton = { AppButton("Cancel", onClick = { open = false }, variant = ButtonVariant.Tertiary) },
             shape = RoundedCornerShape(20.dp),
             colors = DatePickerDefaults.colors(containerColor = Ui.colors.surface),
         ) {
@@ -394,12 +394,12 @@ fun ConfirmDialog(
         title = { Text(title, style = MaterialTheme.typography.titleLarge, color = c.ink) },
         text = { Text(message, style = MaterialTheme.typography.bodyLarge, color = c.greyText) },
         confirmButton = {
-            TextPill(confirmLabel, onClick = {
+            AppButton(confirmLabel, variant = ButtonVariant.Link, tint = c.error, onClick = {
                 onConfirm()
                 onDismiss()
             }, color = c.error)
         },
-        dismissButton = { TextPill("Cancel", onClick = onDismiss, color = c.greyText) },
+        dismissButton = { AppButton("Cancel", onClick = onDismiss, variant = ButtonVariant.Tertiary) },
         shape = RoundedCornerShape(20.dp),
         containerColor = c.surface,
     )

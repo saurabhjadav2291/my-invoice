@@ -17,7 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarVisuals
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalView
@@ -88,15 +89,29 @@ class Actions(
             val result = runCatching { withContext(Dispatchers.IO) { repository.block() } }
             result.onSuccess {
                 onDone()
-                successMessage?.let { snackbar.showSnackbar(it) }
+                successMessage?.let { snackbar.showSnackbar(BannerVisuals(it, BannerKind.Success)) }
             }
-            result.onFailure { snackbar.showSnackbar(it.message ?: "Something went wrong") }
+            result.onFailure {
+                snackbar.showSnackbar(BannerVisuals(it.message ?: "Something went wrong", BannerKind.Error))
+            }
         }
     }
 
+    /** A hint for the person, e.g. a missing field. */
     fun message(text: String) {
-        scope.launch { snackbar.showSnackbar(text) }
+        scope.launch { snackbar.showSnackbar(BannerVisuals(text, BannerKind.Notice)) }
     }
+}
+
+/** What the alert banner shows: the message, its kind and a quiet second line (the time by default). */
+class BannerVisuals(
+    override val message: String,
+    val kind: BannerKind,
+    val detail: String = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")),
+) : SnackbarVisuals {
+    override val actionLabel: String? = null
+    override val withDismissAction: Boolean = false
+    override val duration: SnackbarDuration = SnackbarDuration.Short
 }
 
 val LocalActions = staticCompositionLocalOf<Actions> { error("Actions not provided") }
@@ -187,7 +202,7 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                             NavItem("Settings", AppIcons.Settings, current == Screen.Settings) { nav.tab(Screen.Settings) },
                         ),
                         onNewInvoice = ::newInvoice,
-                        modifier = Modifier.padding(top = NavBandHeight - NavBarHeight).navigationBarsPadding(),
+                        modifier = Modifier.padding(top = NavBandHeight - NavBarRowHeight).navigationBarsPadding(),
                     )
                 }
             }
@@ -199,24 +214,20 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                     .navigationBarsPadding()
                     .imePadding(),
             ) { data ->
-                Snackbar(
-                    data,
+                val visuals = data.visuals as? BannerVisuals
+                AlertBanner(
+                    title = data.visuals.message,
+                    subtitle = visuals?.detail,
+                    kind = visuals?.kind ?: BannerKind.Notice,
                     modifier = Modifier.padding(horizontal = ScreenMargin, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    containerColor = colors.inverse,
-                    contentColor = colors.onInverse,
-                    actionColor = Color(0xFF8DB4F5),
                 )
             }
         }
     }
 }
 
-/** Height of the tab bar row: 8 dp above, the 64 dp bar, 12 dp below. */
-private val NavBarHeight = 84.dp
-
-/** The blur band behind the tab bar reaches a little above it (about 100 dp in all). */
-private val NavBandHeight = 100.dp
+/** The blur band behind the tab bar reaches a little above it (about 108 dp in all). */
+private val NavBandHeight = 108.dp
 
 /** Bottom padding a tab screen adds so its content can rest above the tab bar. */
 val LocalBottomBarPadding = compositionLocalOf { 0.dp }

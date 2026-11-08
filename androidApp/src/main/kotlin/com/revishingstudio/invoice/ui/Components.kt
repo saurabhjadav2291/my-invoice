@@ -44,6 +44,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
@@ -263,116 +265,8 @@ fun InvoiceNumber(number: String, modifier: Modifier = Modifier, color: Color = 
 }
 
 // ---------------------------------------------------------------------------
-// Buttons (design.md section 6.8). Text buttons have 8 dp corners.
+// Icon buttons. Buttons with a text label are AppButton in Buttons.kt.
 // ---------------------------------------------------------------------------
-
-@Composable
-private fun pressScale(interaction: MutableInteractionSource): Float {
-    val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.98f else 1f, tween(120, easing = AppEasing), label = "press")
-    return scale
-}
-
-/** Solid blue button for the one main action on a screen. */
-@Composable
-fun PrimaryButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
-    height: Dp = 48.dp,
-) {
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        modifier
-            .fillMaxWidth()
-            .height(height)
-            .scale(pressScale(interaction))
-            .clip(FormShape)
-            .background(Ui.colors.primary)
-            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(text, color = Color.White, style = MaterialTheme.typography.labelLarge, maxLines = 1)
-    }
-}
-
-/** White button with a hairline, for secondary actions. */
-@Composable
-fun SecondaryButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
-    height: Dp = 48.dp,
-    contentColor: Color = Ui.colors.ink,
-) {
-    val c = Ui.colors
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    Row(
-        modifier
-            .height(height)
-            .scale(pressScale(interaction))
-            .surface(FormShape, color = if (pressed) c.surfaceRaised else c.surface)
-            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = c.greyText, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(text, color = contentColor, style = MaterialTheme.typography.labelLarge, maxLines = 1)
-    }
-}
-
-/** Ink button, for a strong action next to a blue one. */
-@Composable
-fun DarkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector? = null) {
-    val c = Ui.colors
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .scale(pressScale(interaction))
-            .clip(FormShape)
-            .background(c.inverse)
-            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = c.onInverse, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(text, color = c.onInverse, style = MaterialTheme.typography.labelLarge)
-    }
-}
-
-/** A text-only button, e.g. "Save" in a top bar or a dialog. Blue text by default. */
-@Composable
-fun TextPill(text: String, onClick: () -> Unit, color: Color = Ui.colors.primaryText, modifier: Modifier = Modifier) {
-    Box(
-        modifier
-            .heightIn(min = 40.dp)
-            .clip(FormShape)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(text, color = color, style = MaterialTheme.typography.labelLarge)
-    }
-}
 
 /** Light: white with a hairline. Quiet: the raised surface, for small in-card actions. */
 enum class RoundStyle { Light, Quiet }
@@ -415,73 +309,67 @@ private fun Color.compositeOn(background: Color): Color {
     )
 }
 
-/** The blue + button beside the tab bar: a flat accent tile, the one bright control on screen. */
-@Composable
-fun NewInvoiceButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val interaction = remember { MutableInteractionSource() }
-    Box(
-        modifier
-            .size(64.dp)
-            .scale(pressScale(interaction))
-            .shadow(12.dp, CardShape, ambientColor = ShadowColor.copy(alpha = 0.06f), spotColor = ShadowColor.copy(alpha = 0.12f))
-            .clip(CardShape)
-            .background(Ui.colors.primary)
-            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(Icons.Filled.Add, contentDescription = "New invoice", tint = Color.White, modifier = Modifier.size(28.dp))
-    }
-}
-
 // ---------------------------------------------------------------------------
-// Choices
+// Segmented tabs (design.md section 6.4)
 // ---------------------------------------------------------------------------
 
-/** Filter chip: ink when selected, white with a hairline otherwise. */
-@Composable
-fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val c = Ui.colors
-    val text by animateColorAsState(if (selected) c.onInverse else c.greyText, tween(150, easing = AppEasing), label = "chip text")
-    val fill by animateColorAsState(if (selected) c.inverse else c.surface, tween(150, easing = AppEasing), label = "chip fill")
-    Box(
-        modifier
-            .height(36.dp)
-            .surface(FormShape, color = fill)
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
-            .padding(horizontal = 12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, color = text, style = MaterialTheme.typography.labelLarge)
-    }
-}
+private val TrackColor = Color(0xFFECEEF1)
+private val KeyTop = Color(0xFFDFE2E7)
+private val KeyBottom = Color(0xFFD5D9DF)
 
-/** Segmented control: the chosen segment is white on the raised track. */
+/**
+ * Soft segmented tabs: a pale pill track, and the chosen option pressed into it as a
+ * grey pill with a white rim. With [fill] the options share the width equally; without it
+ * each option sizes to its label (for a row that scrolls).
+ */
 @Composable
-fun <T> PillChoice(options: List<T>, selected: T, label: (T) -> String, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
+fun <T> PillChoice(
+    options: List<T>,
+    selected: T,
+    label: (T) -> String,
+    onSelect: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    fill: Boolean = true,
+) {
     val c = Ui.colors
     Row(
         modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(c.surfaceRaised)
+            .shadow(4.dp, CircleShape, ambientColor = c.shadow.copy(alpha = 0.05f), spotColor = c.shadow.copy(alpha = 0.08f))
+            .background(TrackColor, CircleShape)
+            .border(1.dp, Brush.verticalGradient(listOf(Color.White, Color.White.copy(alpha = 0.2f))), CircleShape)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         options.forEach { option ->
             val isSelected = option == selected
+            val text by animateColorAsState(if (isSelected) c.ink else c.greyText, tween(200, easing = AppEasing), label = "tab text")
             Box(
                 Modifier
-                    .weight(1f)
+                    .then(if (fill) Modifier.weight(1f) else Modifier)
                     .height(36.dp)
-                    .then(if (isSelected) Modifier.surface(TagShape) else Modifier.clip(TagShape))
-                    .selectable(selected = isSelected, onClick = { onSelect(option) }, role = Role.RadioButton),
+                    .then(
+                        if (isSelected) {
+                            Modifier
+                                .background(Brush.verticalGradient(listOf(KeyTop, KeyBottom)), CircleShape)
+                                .drawWithContent {
+                                    drawContent()
+                                    // Pressed in: a soft shade under the top edge.
+                                    drawRoundRect(
+                                        Brush.verticalGradient(listOf(c.shadow.copy(alpha = 0.10f), Color.Transparent), endY = 8.dp.toPx()),
+                                        cornerRadius = CornerRadius(size.height / 2),
+                                    )
+                                }
+                                .border(1.5.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f), Color.White)), CircleShape)
+                        } else {
+                            Modifier
+                        },
+                    )
+                    .clip(CircleShape)
+                    .selectable(selected = isSelected, onClick = { onSelect(option) }, role = Role.Tab)
+                    .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    label(option),
-                    color = if (isSelected) c.ink else c.greyText,
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                )
+                Text(label(option), color = text, style = MaterialTheme.typography.labelLarge, maxLines = 1)
             }
         }
     }
@@ -507,57 +395,118 @@ fun OutlineChip(text: String, modifier: Modifier = Modifier, mono: Boolean = fal
 }
 
 // ---------------------------------------------------------------------------
-// Floating tab bar (design.md section 6.9)
+// Alert banner (design.md section 6.8)
+// ---------------------------------------------------------------------------
+
+enum class BannerKind { Success, Error, Notice }
+
+/**
+ * Frosted white banner with a coloured line icon, a message and a quiet second line,
+ * e.g. "Payment recorded" over "20:31 · Invoice RS/26-27/031". Used for confirmations
+ * and errors.
+ */
+@Composable
+fun AlertBanner(title: String, subtitle: String?, kind: BannerKind, modifier: Modifier = Modifier) {
+    val c = Ui.colors
+    val (icon, tint) = when (kind) {
+        BannerKind.Success -> AppIcons.CheckCircle to c.paid.content
+        BannerKind.Error -> AppIcons.AlertCircle to c.error
+        BannerKind.Notice -> AppIcons.AlertCircle to c.primary
+    }
+    Row(
+        modifier
+            .fillMaxWidth()
+            .shadow(16.dp, RoundedCornerShape(20.dp), ambientColor = c.shadow.copy(alpha = 0.06f), spotColor = c.shadow.copy(alpha = 0.10f))
+            .background(Brush.verticalGradient(listOf(Color.White, c.frosted)), RoundedCornerShape(20.dp))
+            .border(1.dp, c.hairline, RoundedCornerShape(20.dp))
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(32.dp))
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = c.ink)
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = c.grey)
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Bottom navigation (design.md section 6.6)
 // ---------------------------------------------------------------------------
 
 class NavItem(val label: String, val icon: ImageVector, val selected: Boolean, val onClick: () -> Unit)
 
-/** White floating tab bar with the selected tab on the raised surface, and the blue + tile. */
+/** Height of the bar row: 8 dp above, the 72 dp bar, 12 dp below. */
+val NavBarRowHeight = 92.dp
+
+/**
+ * Frosted white pill bar. Tabs show an icon over a label, blue when selected and grey
+ * otherwise. The raised blue + button sits in the middle, with the first tabs on its left
+ * and the rest on its right.
+ */
 @Composable
 fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Modifier = Modifier) {
     val c = Ui.colors
+    val split = (items.size + 1) / 2
     Row(
         modifier
             .fillMaxWidth()
-            .padding(start = ScreenMargin, end = ScreenMargin, top = 8.dp, bottom = 12.dp),
+            .padding(start = ScreenMargin, end = ScreenMargin, top = 8.dp, bottom = 12.dp)
+            .height(72.dp)
+            .shadow(20.dp, CircleShape, ambientColor = c.shadow.copy(alpha = 0.06f), spotColor = c.shadow.copy(alpha = 0.12f))
+            .background(Brush.verticalGradient(listOf(Color.White, c.frosted, Color(0xFFF3F5F8))), CircleShape)
+            .border(1.dp, Brush.verticalGradient(listOf(Color.White, c.shadow.copy(alpha = 0.06f))), CircleShape)
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            Modifier
-                .weight(1f)
-                .height(64.dp)
-                .surface(CardShape, floating = true)
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            items.forEach { item ->
-                val fill by animateColorAsState(if (item.selected) c.surfaceRaised else c.surface, tween(150, easing = AppEasing), label = "tab")
-                Row(
-                    Modifier
-                        .then(if (item.selected) Modifier.weight(1.6f) else Modifier.weight(1f))
-                        .fillMaxHeight()
-                        .clip(FormShape)
-                        .background(fill)
-                        .selectable(selected = item.selected, onClick = item.onClick, role = Role.Tab),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        item.icon,
-                        contentDescription = if (item.selected) null else item.label,
-                        tint = if (item.selected) c.ink else c.grey,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    if (item.selected) {
-                        Spacer(Modifier.width(8.dp))
-                        Text(item.label, color = c.ink, style = MaterialTheme.typography.labelLarge, maxLines = 1)
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.width(12.dp))
-        NewInvoiceButton(onNewInvoice)
+        Row(Modifier.weight(1f)) { items.take(split).forEach { NavTab(it, Modifier.weight(1f)) } }
+        NewInvoiceButton(onNewInvoice, Modifier.padding(horizontal = 8.dp))
+        Row(Modifier.weight(1f)) { items.drop(split).forEach { NavTab(it, Modifier.weight(1f)) } }
+    }
+}
+
+@Composable
+private fun NavTab(item: NavItem, modifier: Modifier = Modifier) {
+    val c = Ui.colors
+    val tint by animateColorAsState(if (item.selected) c.primary else c.grey, tween(200, easing = AppEasing), label = "tab")
+    Column(
+        modifier
+            .height(56.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .selectable(selected = item.selected, onClick = item.onClick, role = Role.Tab),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.height(4.dp))
+        Text(item.label, color = tint, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+    }
+}
+
+/** The raised blue + in the middle of the tab bar: a blue disc in a white ring, no glow. */
+@Composable
+fun NewInvoiceButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = Ui.colors
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, tween(200, easing = AppEasing), label = "plus press")
+    val fill by animateColorAsState(if (pressed) c.primaryPressed else c.primary, tween(200, easing = AppEasing), label = "plus fill")
+    Box(
+        modifier
+            .size(64.dp)
+            .scale(scale)
+            .shadow(10.dp, CircleShape, ambientColor = c.shadow.copy(alpha = 0.08f), spotColor = c.shadow.copy(alpha = 0.16f))
+            .background(Color.White, CircleShape)
+            .padding(4.dp)
+            .background(fill, CircleShape)
+            .clip(CircleShape)
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(AppIcons.Plus, contentDescription = "New invoice", tint = Color.White, modifier = Modifier.size(28.dp))
     }
 }
 
@@ -672,7 +621,7 @@ fun IllustratedEmptyState(
         Text(message, style = MaterialTheme.typography.bodyLarge, color = Ui.colors.greyText, textAlign = TextAlign.Center)
         if (actionLabel != null) {
             Spacer(Modifier.height(24.dp))
-            SecondaryButton(actionLabel, onAction, Modifier.widthIn(min = 160.dp), icon = Icons.Filled.Add)
+            AppButton(actionLabel, onAction, Modifier.widthIn(min = 160.dp), variant = ButtonVariant.Secondary, icon = AppIcons.Plus)
         }
     }
 }

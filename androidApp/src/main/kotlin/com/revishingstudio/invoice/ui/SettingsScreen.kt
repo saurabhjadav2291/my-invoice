@@ -166,7 +166,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             title = "Settings",
             subtitle = studioName.ifBlank { "Your details, numbering and bank" },
         ) {
-            TextPill("Save", ::saveAll)
+            AppButton("Save", ::saveAll, variant = ButtonVariant.Link)
         }
         Column(
             Modifier.padding(horizontal = ScreenMargin),
@@ -197,8 +197,8 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                             Image(logo, contentDescription = "Logo", modifier = Modifier.size(40.dp))
                         }
                     }
-                    SecondaryButton(if (logoPath == null) "Choose logo" else "Change logo", { pickLogo.launch("image/*") }, height = 44.dp)
-                    if (logoPath != null) TextPill("Remove", { logoPath = null }, color = c.error)
+                    AppButton(if (logoPath == null) "Choose logo" else "Change logo", { pickLogo.launch("image/*") }, variant = ButtonVariant.Secondary)
+                    if (logoPath != null) AppButton("Remove", { logoPath = null }, variant = ButtonVariant.Tertiary, tint = c.error)
                 }
             }
 
@@ -266,11 +266,11 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             SectionTitle("Bank accounts")
             AppCard(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 banks.forEach { bank -> BankRow(bank) { nav.go(Screen.BankEditor(bank.id)) } }
-                SecondaryButton("Add bank account", { nav.go(Screen.BankEditor(null)) }, Modifier.fillMaxWidth(), icon = AppIcons.Plus, height = 48.dp)
+                AppButton("Add bank account", { nav.go(Screen.BankEditor(null)) }, Modifier.fillMaxWidth(), variant = ButtonVariant.Secondary, icon = AppIcons.Plus)
             }
 
             SectionTitle("Preview")
-            SecondaryButton(
+            AppButton(
                 "Preview a sample invoice",
                 {
                     val profile = buildProfile()
@@ -284,10 +284,11 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     }
                 },
                 Modifier.fillMaxWidth(),
+                variant = ButtonVariant.Secondary,
                 icon = AppIcons.Document,
             )
 
-            PrimaryButton("Save settings", ::saveAll, Modifier.padding(top = 12.dp))
+            AppButton("Save settings", ::saveAll, Modifier.fillMaxWidth().padding(top = 12.dp))
             Spacer(Modifier.height(LocalBottomBarPadding.current + 16.dp))
         }
     }
@@ -366,7 +367,7 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
         modifier = modifier,
         topBar = {
             BackTopBar(if (id == null) "Add bank account" else "Bank account", nav::back) {
-                TextPill("Save", ::save)
+                AppButton("Save", ::save, variant = ButtonVariant.Link)
             }
         },
     ) { padding ->
@@ -390,9 +391,9 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
             AppCard {
                 SwitchRow("Use by default on new invoices", null, isDefault) { isDefault = it }
             }
-            PrimaryButton("Save", ::save, Modifier.padding(top = 8.dp))
+            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 8.dp))
             if (id != null) {
-                TextPill("Delete this account", { confirmDelete = true }, color = Ui.colors.error, modifier = Modifier.align(Alignment.CenterHorizontally))
+                AppButton("Delete this account", { confirmDelete = true }, Modifier.align(Alignment.CenterHorizontally), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
             }
             Spacer(Modifier.height(16.dp))
         }

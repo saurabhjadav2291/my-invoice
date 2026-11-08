@@ -103,12 +103,9 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(top = 16.dp, start = ScreenMargin, end = ScreenMargin),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(top = 16.dp, bottom = 4.dp, start = ScreenMargin, end = ScreenMargin),
             ) {
-                InvoiceFilter.entries.forEach { f ->
-                    FilterPill(f.label, selected = filter == f, onClick = { filter = f })
-                }
+                PillChoice(InvoiceFilter.entries, filter, { it.label }, { filter = it }, fill = false)
             }
         }
         val shown = list.filter { filter.matches(it.status(today)) }
