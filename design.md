@@ -169,6 +169,23 @@ Content never ends in a hard cut where it meets the status bar or the tab bar.
 
 ---
 
+### 5.3 Soft keys
+
+**Decided 2026-11-08:** buttons looked flat, so every control takes the look of the active tab in the segmented selector. One shared modifier, `Modifier.softKey()` in `Components.kt`, draws it:
+
+- A vertical gradient from a lighter top to the base colour.
+- A soft shade just under the top edge: ink at 8 to 18%, fading out over 8 dp. It deepens while pressed.
+- A 1.5 dp white rim, 50% white along the top and full white along the bottom.
+- Raised keys add a small neutral lift (`keyShadow`). Nothing is ever coloured or glowing.
+
+| Element | Top | Bottom | Rim | Lift |
+|---|---|---|---|---|
+| Neutral key (secondary button, icon buttons) | `#F9FAFB` | `#E4E7EC` | full | 2 to 4 dp |
+| Primary button and the + disc | `primary` mixed with 18% white | `primary` | 55% to 60% | 2 dp, 6 dp on hover |
+| Selected segmented tab, selected nav tab | `#DFE2E7` | `#D5D9DF` | full | none (pressed in) |
+| Tab bar and segmented track | `#F9FAFB` / `#ECEEF1` | `#ECEEF1` | full | 20 dp for the tab bar, 4 dp for the track |
+| Text field and picker well (inset) | `#E9ECF0` | `#F7F8FA` | full | none |
+
 ## 6. Components
 
 ### 6.1 Screen header (tab screens)
@@ -195,12 +212,14 @@ Global rules:
 
 | Variant | Default | Hover | Focused | Use |
 |---|---|---|---|---|
-| Primary | `primary` fill, white label and icon, 2 dp soft neutral lift | `primaryHover`, lift rises to 6 dp | Default fill, 3 dp white gap, then a 2 dp blue ring outside | One per screen: Save, Create invoice, View or share PDF, Save settings |
-| Secondary | `frosted` fill, `ink` label, blue icon, hairline border (ink 10%), 2 dp lift | `primaryTint` fill, 4 dp lift | White-ish fill with a 2 dp blue border | Record payment, Mark as sent, Add item, Add bank account, Choose logo, Preview a sample invoice |
+| Primary | `primary` soft key (5.3), white label and icon, 2 dp soft neutral lift | `primaryHover`, lift rises to 6 dp | Default fill, 3 dp white gap, then a 2 dp blue ring outside | One per screen: Save, Create invoice, View or share PDF, Save settings |
+| Secondary | Neutral soft key, `ink` label, blue icon, 2 dp lift | Soft key in `primaryTint`, 4 dp lift | White-ish fill with a 2 dp blue border | Record payment, Mark as sent, Add item, Add bank account, Choose logo, Preview a sample invoice |
 | Tertiary | Transparent, `greyText` label and icon | `surfaceRaised` fill | Transparent with a 2 dp blue border | Cancel in dialogs; destructive actions in red (Archive client, Delete this account, Remove) |
 | Link | `primary` text, optional trailing arrow | `primaryHover` text on a `primaryTint` wash | 2 dp blue border | Save in top bars, OK and Save in dialogs, inline actions |
 
-Round icon buttons (back, add client, delete) stay 40 dp circles, white with a hairline or `surfaceRaised` for the quiet style, with an 18 dp `greyText` icon.
+Round icon buttons (back, add client, delete) stay 40 dp circles drawn as neutral soft keys, with an 18 dp `greyText` icon. The light style adds a 3 dp lift; the quiet style sits flat. Pressed: the key darkens and scales to 0.96.
+
+Tertiary and link buttons stay flat until hovered, as the spec asks for no unnecessary shadows.
 
 ### 6.4 Tags and segmented tabs
 
@@ -217,16 +236,16 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
 
 ### 6.6 Bottom navigation
 
-A frosted white pill bar, 72 dp tall, floating 20 dp from the screen sides, with a white-to-`#F3F5F8` gradient, a white top rim and a soft neutral shadow.
+A pill bar, 72 dp tall, floating 20 dp from the screen sides, drawn as a soft key from `#F9FAFB` to the track colour `#ECEEF1`, with a white rim and a 20 dp neutral lift.
 
-- Tabs show a 24 dp icon above a `labelMedium` label. The selected tab is `primary` blue; the others are `grey`. Colour changes take 200 ms.
-- The **+ button** sits in the middle of the bar: a 64 dp `primary` disc inside a 4 dp white ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
+- Tabs show a 24 dp icon above a `labelMedium` label. The selected tab sits in a pressed-in grey pill, the same key as the selected segmented tab, with its icon and label in `primary` blue. The others are `grey` with no fill. Colour changes take 200 ms.
+- The **+ button** sits in the middle of the bar: a 64 dp blue soft-key disc inside a 4 dp neutral key ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
 - Invoices and Clients sit to the left of the +, Settings to the right. Each side takes half the remaining width, so the + stays centred.
 
 ### 6.7 Forms
 
-- Fields: 8 dp corners, white, field border at rest, `primary` border when focused. Label above in `bodySmall` `greyText`.
-- Pickers (dropdowns and dates) look like fields and open a menu or the date picker.
+- Fields: 8 dp corners, drawn as an inset soft-key well (`Modifier.fieldWell()`): darker at the top, a shade under the top edge and a white rim along the bottom. No border at rest; a 2 dp `primary` border when focused. Label above in `bodySmall` `greyText`.
+- Pickers (dropdowns and dates) use the same well and open a menu or the date picker.
 - Menus: white, 12 dp corners, hairline, 8 dp shadow.
 - Dialogs and the date picker: white, 20 dp corners.
 - Messages (saved, errors, hints) appear as the alert banner (6.8) above the tab bar or the screen's bottom edge.

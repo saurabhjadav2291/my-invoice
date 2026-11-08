@@ -174,18 +174,25 @@ private fun FieldLabel(text: String) {
 
 @Composable
 private fun fieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = Ui.colors.surface,
-    unfocusedContainerColor = Ui.colors.surface,
-    errorContainerColor = Ui.colors.surface,
+    // The well itself is drawn by Modifier.fieldWell(); the field only adds the focus ring.
+    focusedContainerColor = Color.Transparent,
+    unfocusedContainerColor = Color.Transparent,
+    errorContainerColor = Color.Transparent,
     focusedBorderColor = Ui.colors.primary,
-    unfocusedBorderColor = Ui.colors.ink.copy(alpha = 0.14f),
+    unfocusedBorderColor = Color.Transparent,
     focusedTextColor = Ui.colors.ink,
     unfocusedTextColor = Ui.colors.ink,
     cursorColor = Ui.colors.primary,
     errorBorderColor = Ui.colors.error,
 )
 
-/** Box with 8 dp corners that looks like a text field but opens a picker. */
+/**
+ * Text fields are soft wells: the segmented-tab key turned inside out, darker at the top
+ * with the white rim along the bottom, 8 dp corners (design.md section 6.7).
+ */
+fun Modifier.fieldWell(): Modifier = softKey(FormShape, Color(0xFFE9ECF0), Color(0xFFF7F8FA), shadeAlpha = 0.08f)
+
+/** Well with 8 dp corners that looks like a text field but opens a picker. */
 @Composable
 private fun PickerPill(onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
     val c = Ui.colors
@@ -193,9 +200,8 @@ private fun PickerPill(onClick: () -> Unit, content: @Composable RowScope.() -> 
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
+            .fieldWell()
             .clip(FormShape)
-            .background(c.surface)
-            .border(1.dp, c.ink.copy(alpha = 0.14f), FormShape)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(start = 16.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -227,7 +233,7 @@ fun Field(
             textStyle = MaterialTheme.typography.bodyLarge,
             shape = FormShape,
             colors = fieldColors(),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().fieldWell(),
         )
         if (supportingText != null) {
             Text(
@@ -344,7 +350,7 @@ fun SwitchRow(title: String, subtitle: String?, checked: Boolean, onChange: (Boo
                 checkedTrackColor = c.primary,
                 checkedBorderColor = c.primary,
                 uncheckedThumbColor = c.grey,
-                uncheckedTrackColor = c.surfaceRaised,
+                uncheckedTrackColor = TrackColor,
                 uncheckedBorderColor = c.ink.copy(alpha = 0.14f),
             ),
         )

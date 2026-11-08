@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -73,11 +74,11 @@ private fun buttonColors(variant: ButtonVariant, hovered: Boolean, pressed: Bool
             fill = when {
                 pressed -> c.primaryTintPressed
                 hovered -> c.primaryTint
-                else -> c.frosted
+                else -> KeyBottom
             },
             content = tint ?: c.ink,
             icon = tint ?: c.primary,
-            border = if (focused) c.primary else c.ink.copy(alpha = 0.10f),
+            border = if (focused) c.primary else Color.Transparent,
         )
         ButtonVariant.Tertiary -> ButtonColors(
             fill = when {
@@ -178,8 +179,20 @@ fun AppButton(
                     Modifier
                 },
             )
-            .background(fill, CircleShape)
-            .border(if (focused && enabled && variant != ButtonVariant.Primary) 2.dp else 1.dp, border, CircleShape)
+            .then(
+                when (variant) {
+                    // The soft key of the active segmented tab: gradient, top shade, white rim.
+                    ButtonVariant.Primary -> Modifier.softKey(CircleShape, lerp(fill, Color.White, 0.18f), fill, rimAlpha = 0.55f, shadeAlpha = if (pressed) 0.18f else 0.10f)
+                    ButtonVariant.Secondary -> Modifier.softKey(
+                        CircleShape,
+                        lerp(fill, Color.White, 0.8f),
+                        fill,
+                        shadeAlpha = if (pressed) 0.14f else 0.08f,
+                    )
+                    else -> Modifier.background(fill, CircleShape)
+                },
+            )
+            .then(if (focused && enabled && variant != ButtonVariant.Primary) Modifier.border(2.dp, border, CircleShape) else Modifier)
             .clickable(
                 interactionSource = interaction,
                 indication = null,

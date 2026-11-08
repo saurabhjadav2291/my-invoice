@@ -53,6 +53,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
@@ -82,6 +85,51 @@ val CardShape = RoundedCornerShape(16.dp)
 val AppEasing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
 
 private val ShadowColor = Color(0xFF111827)
+
+/** Neutral key colours, from the active segmented tab (design.md section 5.3). */
+val KeyTop = Color(0xFFF9FAFB)
+val KeyBottom = Color(0xFFE4E7EC)
+
+/** Pale track behind segmented tabs and the tab bar. */
+val TrackColor = Color(0xFFECEEF1)
+
+/**
+ * The soft key look of the active segmented tab, shared by buttons, icon buttons, the tab
+ * bar and fields (design.md section 5.3): a vertical gradient from [top] to [bottom], a
+ * soft shade under the top edge, and a white rim that is brightest along the bottom.
+ * [inset] darkens the top instead, for wells such as text fields and the tab track.
+ */
+fun Modifier.softKey(
+    shape: Shape,
+    top: Color,
+    bottom: Color,
+    rim: Boolean = true,
+    rimAlpha: Float = 1f,
+    shadeAlpha: Float = 0.10f,
+): Modifier = this
+    .background(Brush.verticalGradient(listOf(top, bottom)), shape)
+    .drawBehind {
+        val outline = shape.createOutline(size, layoutDirection, this)
+        drawOutline(
+            outline,
+            Brush.verticalGradient(listOf(ShadowColor.copy(alpha = shadeAlpha), Color.Transparent), endY = 8.dp.toPx()),
+        )
+    }
+    .then(
+        if (rim) {
+            Modifier.border(
+                1.5.dp,
+                Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f * rimAlpha), Color.White.copy(alpha = rimAlpha))),
+                shape,
+            )
+        } else {
+            Modifier
+        },
+    )
+
+/** A soft lift under a key: small and neutral, never coloured. */
+fun Modifier.keyShadow(shape: Shape, elevation: Dp = 4.dp): Modifier =
+    shadow(elevation, shape, ambientColor = ShadowColor.copy(alpha = 0.06f), spotColor = ShadowColor.copy(alpha = 0.12f))
 
 /**
  * A plain raised surface: white, a hairline, and a soft neutral shadow when [floating].
@@ -284,15 +332,16 @@ fun RoundIconButton(
     val c = Ui.colors
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val fill = when {
-        pressed -> c.hairline.copy(alpha = 0.14f).compositeOn(c.surfaceRaised)
-        style == RoundStyle.Quiet -> c.surfaceRaised
-        else -> c.surface
-    }
+    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, tween(200, easing = AppEasing), label = "icon press")
+    val top = if (pressed) KeyBottom else KeyTop
+    val bottom = if (pressed) KeyBottom.compositeOver(0.04f) else KeyBottom
     Box(
         modifier
             .size(size)
-            .then(if (style == RoundStyle.Light) Modifier.surface(CircleShape, color = fill) else Modifier.clip(CircleShape).background(fill))
+            .scale(scale)
+            .then(if (style == RoundStyle.Light) Modifier.keyShadow(CircleShape, 3.dp) else Modifier)
+            .softKey(CircleShape, top, bottom, shadeAlpha = if (pressed) 0.16f else 0.10f)
+            .clip(CircleShape)
             .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -300,22 +349,12 @@ fun RoundIconButton(
     }
 }
 
-private fun Color.compositeOn(background: Color): Color {
-    val a = alpha
-    return Color(
-        red = red * a + background.red * (1 - a),
-        green = green * a + background.green * (1 - a),
-        blue = blue * a + background.blue * (1 - a),
-    )
-}
+/** This colour with a little ink mixed in, for pressed keys. */
+fun Color.compositeOver(ink: Float): Color = lerp(this, ShadowColor, ink)
 
 // ---------------------------------------------------------------------------
 // Segmented tabs (design.md section 6.4)
 // ---------------------------------------------------------------------------
-
-private val TrackColor = Color(0xFFECEEF1)
-private val KeyTop = Color(0xFFDFE2E7)
-private val KeyBottom = Color(0xFFD5D9DF)
 
 /**
  * Soft segmented tabs: a pale pill track, and the chosen option pressed into it as a
@@ -349,17 +388,7 @@ fun <T> PillChoice(
                     .height(36.dp)
                     .then(
                         if (isSelected) {
-                            Modifier
-                                .background(Brush.verticalGradient(listOf(KeyTop, KeyBottom)), CircleShape)
-                                .drawWithContent {
-                                    drawContent()
-                                    // Pressed in: a soft shade under the top edge.
-                                    drawRoundRect(
-                                        Brush.verticalGradient(listOf(c.shadow.copy(alpha = 0.10f), Color.Transparent), endY = 8.dp.toPx()),
-                                        cornerRadius = CornerRadius(size.height / 2),
-                                    )
-                                }
-                                .border(1.5.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f), Color.White)), CircleShape)
+                            Modifier.softKey(CircleShape, Color(0xFFDFE2E7), Color(0xFFD5D9DF))
                         } else {
                             Modifier
                         },
@@ -456,9 +485,8 @@ fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Mod
             .fillMaxWidth()
             .padding(start = ScreenMargin, end = ScreenMargin, top = 8.dp, bottom = 12.dp)
             .height(72.dp)
-            .shadow(20.dp, CircleShape, ambientColor = c.shadow.copy(alpha = 0.06f), spotColor = c.shadow.copy(alpha = 0.12f))
-            .background(Brush.verticalGradient(listOf(Color.White, c.frosted, Color(0xFFF3F5F8))), CircleShape)
-            .border(1.dp, Brush.verticalGradient(listOf(Color.White, c.shadow.copy(alpha = 0.06f))), CircleShape)
+            .keyShadow(CircleShape, 20.dp)
+            .softKey(CircleShape, KeyTop, TrackColor, shadeAlpha = 0.04f)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -474,8 +502,10 @@ private fun NavTab(item: NavItem, modifier: Modifier = Modifier) {
     val tint by animateColorAsState(if (item.selected) c.primary else c.grey, tween(200, easing = AppEasing), label = "tab")
     Column(
         modifier
+            .padding(horizontal = 2.dp)
             .height(56.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .then(if (item.selected) Modifier.softKey(CircleShape, Color(0xFFDFE2E7), Color(0xFFD5D9DF)) else Modifier)
+            .clip(CircleShape)
             .selectable(selected = item.selected, onClick = item.onClick, role = Role.Tab),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -498,10 +528,10 @@ fun NewInvoiceButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
         modifier
             .size(64.dp)
             .scale(scale)
-            .shadow(10.dp, CircleShape, ambientColor = c.shadow.copy(alpha = 0.08f), spotColor = c.shadow.copy(alpha = 0.16f))
-            .background(Color.White, CircleShape)
+            .keyShadow(CircleShape, 10.dp)
+            .softKey(CircleShape, KeyTop, KeyBottom, shadeAlpha = 0.04f)
             .padding(4.dp)
-            .background(fill, CircleShape)
+            .softKey(CircleShape, lerp(fill, Color.White, 0.18f), fill, rimAlpha = 0.6f, shadeAlpha = 0.14f)
             .clip(CircleShape)
             .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
