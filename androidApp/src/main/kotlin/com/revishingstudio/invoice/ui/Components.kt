@@ -1,6 +1,7 @@
 package com.revishingstudio.invoice.ui
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -59,6 +60,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -472,14 +475,11 @@ class NavItem(val label: String, val icon: ImageVector, val selected: Boolean, v
 val NavBarRowHeight = 92.dp
 
 /**
- * Frosted white pill bar. Tabs show an icon over a label, blue when selected and grey
- * otherwise. The raised blue + button sits in the middle, with the first tabs on its left
- * and the rest on its right.
+ * Frosted white pill bar. The selected tab is a grey pill with its icon and label side by
+ * side in blue; the other tabs show only a grey icon. The raised blue + button sits last.
  */
 @Composable
 fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Modifier = Modifier) {
-    val c = Ui.colors
-    val split = (items.size + 1) / 2
     Row(
         modifier
             .fillMaxWidth()
@@ -487,12 +487,15 @@ fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Mod
             .height(72.dp)
             .keyShadow(CircleShape, 20.dp)
             .softKey(CircleShape, KeyTop, TrackColor, shadeAlpha = 0.04f)
-            .padding(horizontal = 8.dp),
+            .padding(start = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(Modifier.weight(1f)) { items.take(split).forEach { NavTab(it, Modifier.weight(1f)) } }
-        NewInvoiceButton(onNewInvoice, Modifier.padding(horizontal = 8.dp))
-        Row(Modifier.weight(1f)) { items.drop(split).forEach { NavTab(it, Modifier.weight(1f)) } }
+        Row(
+            Modifier.weight(1f),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) { items.forEach { NavTab(it) } }
+        NewInvoiceButton(onNewInvoice, Modifier.padding(start = 8.dp))
     }
 }
 
@@ -500,23 +503,28 @@ fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Mod
 private fun NavTab(item: NavItem, modifier: Modifier = Modifier) {
     val c = Ui.colors
     val tint by animateColorAsState(if (item.selected) c.primary else c.grey, tween(200, easing = AppEasing), label = "tab")
-    Column(
+    Row(
         modifier
-            .padding(horizontal = 2.dp)
             .height(56.dp)
+            .widthIn(min = 56.dp)
+            .animateContentSize(tween(200, easing = AppEasing))
             .then(if (item.selected) Modifier.softKey(CircleShape, Color(0xFFDFE2E7), Color(0xFFD5D9DF)) else Modifier)
             .clip(CircleShape)
-            .selectable(selected = item.selected, onClick = item.onClick, role = Role.Tab),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+            .selectable(selected = item.selected, onClick = item.onClick, role = Role.Tab)
+            .semantics { contentDescription = item.label }
+            .padding(horizontal = if (item.selected) 16.dp else 0.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
-        Spacer(Modifier.height(4.dp))
-        Text(item.label, color = tint, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+        if (item.selected) {
+            Spacer(Modifier.width(8.dp))
+            Text(item.label, color = tint, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        }
     }
 }
 
-/** The raised blue + in the middle of the tab bar: a blue disc in a white ring, no glow. */
+/** The raised blue + at the end of the tab bar: a blue disc in a white ring, no glow. */
 @Composable
 fun NewInvoiceButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = Ui.colors

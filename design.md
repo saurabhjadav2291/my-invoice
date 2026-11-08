@@ -238,9 +238,9 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
 
 A pill bar, 72 dp tall, floating 20 dp from the screen sides, drawn as a soft key from `#F9FAFB` to the track colour `#ECEEF1`, with a white rim and a 20 dp neutral lift.
 
-- Tabs show a 24 dp icon above a `labelMedium` label. The selected tab sits in a pressed-in grey pill, the same key as the selected segmented tab, with its icon and label in `primary` blue. The others are `grey` with no fill. Colour changes take 200 ms.
-- The **+ button** sits in the middle of the bar: a 64 dp blue soft-key disc inside a 4 dp neutral key ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
-- Invoices and Clients sit to the left of the +, Settings to the right. Each side takes half the remaining width, so the + stays centred.
+- Only the selected tab shows its label: a pressed-in grey pill (the same key as the selected segmented tab) holding the 24 dp icon and a `labelLarge` label side by side in `primary` blue. The other tabs are a `grey` 24 dp icon only, with no fill. The pill grows and shrinks over 200 ms, along with the colour change.
+- The **+ button** sits last, at the right end of the bar: a 64 dp blue soft-key disc inside a 4 dp neutral key ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
+- Invoices, Clients and Settings share the space to the left of the +, evenly spaced.
 
 ### 6.7 Forms
 
