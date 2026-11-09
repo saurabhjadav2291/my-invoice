@@ -145,12 +145,13 @@ fun InnerScaffold(
                 .hazeEffect(haze) {
                     blurRadius = 20.dp
                     noiseFactor = 0f
-                    // Solid enough behind the title to read it, fading out at the lower edge.
+                    // Near-solid canvas behind the title and back button so scrolled text never reads
+                    // through them; only the last fifth of the bar fades into the content.
                     tints = listOf(
-                        HazeTint(Brush.verticalGradient(0f to tint.copy(alpha = 0.9f), 0.7f to tint.copy(alpha = 0.7f), 1f to Color.Transparent)),
+                        HazeTint(Brush.verticalGradient(0f to tint.copy(alpha = 0.97f), 0.8f to tint.copy(alpha = 0.95f), 1f to Color.Transparent)),
                     )
-                    fallbackTint = HazeTint(Brush.verticalGradient(0f to tint, 0.7f to tint.copy(alpha = 0.92f), 1f to Color.Transparent))
-                    mask = Brush.verticalGradient(0.7f to Color.Black, 1f to Color.Transparent)
+                    fallbackTint = HazeTint(Brush.verticalGradient(0f to tint, 0.8f to tint, 1f to Color.Transparent))
+                    mask = Brush.verticalGradient(0.8f to Color.Black, 1f to Color.Transparent)
                 },
         ) { topBar() }
         Box(

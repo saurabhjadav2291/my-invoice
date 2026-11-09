@@ -161,7 +161,7 @@ Content never ends in a hard cut where it meets the status bar or the tab bar.
 |---|---|---|---|
 | Top (tab screens) | The status bar only | 0 at its lower edge, rising to 20 dp at the top | `background`, 0% to 55% towards the edge |
 | Bottom (tab screens) | Behind the tab bar, about 108 dp plus the gesture bar | 0 at the top, rising to 24 dp at the bottom | `background`, 0% to 60% towards the edge |
-| Inner screens | The pinned back bar | 20 dp, masked out over its lower 30% | `background`, 90% fading to 0 |
+| Inner screens | The pinned back bar | 20 dp, masked out over its lower 20% | `background`, 97% (near solid, so scrolled text never reads through the title) fading to 0 over the last 20% |
 
 - The editor's total bar is a plain white sheet with a hairline along the top. The form scrolls under it.
 - Lists add bottom padding equal to the band, so the last row can rest above the tab bar.
