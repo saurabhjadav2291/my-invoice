@@ -1,11 +1,11 @@
 package com.revishingstudio.invoice.core.pdf
 
-/** The font weights bundled with the app (Inter). */
+/** The font weights bundled with the app (Geist). */
 enum class FontWeight(val fileName: String) {
-    REGULAR("Inter-Regular.ttf"),
-    MEDIUM("Inter-Medium.ttf"),
-    SEMIBOLD("Inter-SemiBold.ttf"),
-    BOLD("Inter-Bold.ttf"),
+    REGULAR("Geist-Regular.ttf"),
+    MEDIUM("Geist-Medium.ttf"),
+    SEMIBOLD("Geist-SemiBold.ttf"),
+    BOLD("Geist-Bold.ttf"),
 }
 
 /**
@@ -14,7 +14,7 @@ enum class FontWeight(val fileName: String) {
  */
 object InvoiceFonts {
     const val RESOURCE_DIR = "/fonts/"
-    const val ITALIC_FILE = "Inter-Italic.ttf"
+    const val ITALIC_FILE = "Geist-Italic.ttf"
 
     fun fileFor(weight: FontWeight, italic: Boolean): String =
         if (italic) ITALIC_FILE else weight.fileName

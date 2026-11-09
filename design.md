@@ -79,7 +79,7 @@ Used as a small dot plus a soft tag, never as large fills.
 
 ### 2.5 The invoice PDF
 
-The PDF keeps its orange accent (`#FF5400`) and Inter, so new invoices match the ones already sent. The app theme never changes it.
+The PDF keeps its orange accent (`#FF5400`). Since 2026-11-09 it is set in Geist, like the app (it used Inter before). The app theme never changes it.
 
 ---
 
