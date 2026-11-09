@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -304,7 +305,8 @@ fun AccountDetailsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 Field("Phone", form.phone, { form.phone = it }, keyboardType = KeyboardType.Phone, placeholder = "e.g. +91 98765 43210")
             }
             AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 24.dp))
-            Spacer(Modifier.height(16.dp))
+            // Room above the gesture bar, on top of the scaffold padding, so the last button never sits on it.
+            Spacer(Modifier.navigationBarsPadding().height(32.dp))
         }
     }
 }
@@ -510,7 +512,8 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
             if (savedDetails) {
                 AppButton("Cancel", ::cancelEdit, Modifier.fillMaxWidth().padding(top = 8.dp), variant = ButtonVariant.Tertiary)
             }
-            Spacer(Modifier.height(16.dp))
+            // Room above the gesture bar, on top of the scaffold padding, so the last button never sits on it.
+            Spacer(Modifier.navigationBarsPadding().height(32.dp))
         }
     }
     if (confirmRemove) {
@@ -586,7 +589,8 @@ private fun BusinessSummary(
             variant = ButtonVariant.Tertiary,
             tint = c.error,
         )
-        Spacer(Modifier.height(16.dp))
+        // Room above the gesture bar, on top of the scaffold padding, so the last button never sits on it.
+        Spacer(Modifier.navigationBarsPadding().height(32.dp))
     }
 }
 
@@ -724,7 +728,8 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
             if (id != null) {
                 AppButton("Delete this account", { confirmDelete = true }, Modifier.align(Alignment.CenterHorizontally), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
             }
-            Spacer(Modifier.height(16.dp))
+            // Room above the gesture bar, on top of the scaffold padding, so the last button never sits on it.
+            Spacer(Modifier.navigationBarsPadding().height(32.dp))
         }
     }
     if (confirmDelete && id != null) {
