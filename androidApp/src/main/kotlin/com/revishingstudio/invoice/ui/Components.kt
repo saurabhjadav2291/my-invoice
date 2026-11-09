@@ -1,7 +1,16 @@
 package com.revishingstudio.invoice.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -613,7 +622,24 @@ fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Mod
         ) {
             // The selected pill takes the width it needs; each other tab shares the rest
             // equally, with its icon centred in its slot (decided 2026-11-09).
-            items.forEach { item -> NavTab(item, if (item.selected) Modifier else Modifier.weight(1f)) }
+            // Every slot animates its width together, so the row always adds up and nothing
+            // jumps while the selection moves (decided 2026-11-09).
+            BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+                val total = maxWidth
+                val density = LocalDensity.current
+                val measurer = rememberTextMeasurer()
+                val labelStyle = MaterialTheme.typography.labelLarge
+                val selected = items.firstOrNull { it.selected }
+                val selectedWidth = if (selected == null) 0.dp else {
+                    val text = with(density) { measurer.measure(selected.label, labelStyle).size.width.toDp() }
+                    (TabPadding * 2 + 24.dp + 8.dp + text).coerceAtMost(total - 48.dp * (items.size - 1))
+                }
+                val others = items.size - (if (selected == null) 0 else 1)
+                val otherWidth = if (others == 0) 0.dp else (total - selectedWidth) / others
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    items.forEach { item -> NavTab(item, if (item.selected) selectedWidth else otherWidth) }
+                }
+            }
         }
         Spacer(Modifier.width(12.dp))
         NewInvoiceButton(onNewInvoice)
@@ -630,27 +656,47 @@ private fun Modifier.navDropShadow(): Modifier = this
     .dropShadow(CircleShape, Shadow(radius = 24.dp, color = ShadowColor, offset = DpOffset(0.dp, 8.dp), alpha = 0.10f))
     .dropShadow(CircleShape, Shadow(radius = 3.dp, color = ShadowColor, offset = DpOffset(0.dp, 1.dp), alpha = 0.08f))
 
+private val TabPadding = 14.dp
+
+/**
+ * One tab of the bottom bar. The selected pill is always drawn as a full pill at the slot's
+ * current width: it fades and stretches in as the slot widens, and the label slides open
+ * inside it, so it never shows a square or clipped corner mid-transition.
+ */
 @Composable
-private fun NavTab(item: NavItem, modifier: Modifier = Modifier) {
+private fun NavTab(item: NavItem, width: Dp) {
     val c = Ui.colors
-    val tint by animateColorAsState(if (item.selected) c.primary else c.grey, tween(200, easing = AppEasing), label = "tab")
-    Row(
-        modifier
+    val spec = tween<Float>(260, easing = AppEasing)
+    val tint by animateColorAsState(if (item.selected) c.primary else c.grey, tween(260, easing = AppEasing), label = "tab")
+    val slot by animateDpAsState(width, tween(260, easing = AppEasing), label = "tab width")
+    val pill by animateFloatAsState(if (item.selected) 1f else 0f, spec, label = "tab pill")
+    Box(
+        Modifier
+            .width(slot)
             .height(56.dp)
-            .widthIn(min = 48.dp)
-            .animateContentSize(tween(200, easing = AppEasing))
-            .then(if (item.selected) Modifier.softKey(CircleShape, Color(0xFFDFE2E7), Color(0xFFD5D9DF)) else Modifier)
             .clip(CircleShape)
             .selectable(selected = item.selected, onClick = item.onClick, role = Role.Tab)
-            .semantics { contentDescription = item.label }
-            .padding(horizontal = if (item.selected) 14.dp else 0.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+            .semantics { contentDescription = item.label },
+        contentAlignment = Alignment.Center,
     ) {
-        Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
-        if (item.selected) {
-            Spacer(Modifier.width(8.dp))
-            Text(item.label, color = c.ink, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        Box(
+            Modifier
+                .matchParentSize()
+                .graphicsLayer { alpha = pill }
+                .softKey(CircleShape, Color(0xFFDFE2E7), Color(0xFFD5D9DF)),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+            AnimatedVisibility(
+                visible = item.selected,
+                enter = expandHorizontally(tween(260, easing = AppEasing), expandFrom = Alignment.Start) + fadeIn(spec),
+                exit = shrinkHorizontally(tween(260, easing = AppEasing), shrinkTowards = Alignment.Start) + fadeOut(tween(120)),
+            ) {
+                Row {
+                    Spacer(Modifier.width(8.dp))
+                    Text(item.label, color = c.ink, style = MaterialTheme.typography.labelLarge, maxLines = 1, softWrap = false)
+                }
+            }
         }
     }
 }
