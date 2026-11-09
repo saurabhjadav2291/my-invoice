@@ -426,9 +426,9 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
                         Box(
                             Modifier
                                 .size(56.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(SmoothShape(12.dp))
                                 .background(Color.White)
-                                .border(1.dp, c.hairline, RoundedCornerShape(12.dp)),
+                                .border(1.dp, c.hairline, SmoothShape(12.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Image(logo, contentDescription = "Logo", modifier = Modifier.size(40.dp))
@@ -554,9 +554,9 @@ private fun BusinessSummary(
                 Box(
                     Modifier
                         .size(56.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(SmoothShape(12.dp))
                         .background(Color.White)
-                        .border(1.dp, c.hairline, RoundedCornerShape(12.dp)),
+                        .border(1.dp, c.hairline, SmoothShape(12.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Image(logo, contentDescription = "Logo", modifier = Modifier.size(40.dp))

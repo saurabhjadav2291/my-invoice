@@ -315,7 +315,7 @@ fun <T> DropdownField(
             DropdownMenu(
                 expanded = open,
                 onDismissRequest = { open = false },
-                shape = RoundedCornerShape(12.dp),
+                shape = SmoothShape(12.dp),
                 containerColor = c.surface,
                 border = BorderStroke(1.dp, c.hairline),
                 shadowElevation = 8.dp,
@@ -360,7 +360,7 @@ fun DateField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, mod
                 })
             },
             dismissButton = { AppButton("Cancel", onClick = { open = false }, variant = ButtonVariant.Tertiary) },
-            shape = RoundedCornerShape(20.dp),
+            shape = SmoothShape(20.dp),
             colors = DatePickerDefaults.colors(containerColor = Ui.colors.surface),
         ) {
             DatePicker(state = state, colors = DatePickerDefaults.colors(containerColor = Color.Transparent))
@@ -445,7 +445,7 @@ fun ConfirmDialog(
             })
         },
         dismissButton = { AppButton("Cancel", onClick = onDismiss, variant = ButtonVariant.Tertiary) },
-        shape = RoundedCornerShape(20.dp),
+        shape = SmoothShape(20.dp),
         containerColor = c.surface,
     )
 }

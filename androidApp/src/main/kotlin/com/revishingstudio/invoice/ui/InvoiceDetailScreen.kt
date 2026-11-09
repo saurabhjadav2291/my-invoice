@@ -96,7 +96,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
                         DropdownMenu(
                             expanded = menuOpen,
                             onDismissRequest = { menuOpen = false },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = SmoothShape(12.dp),
                             containerColor = c.surface,
                             border = BorderStroke(1.dp, c.hairline),
                             shadowElevation = 8.dp,
@@ -357,7 +357,7 @@ private fun RecordPaymentDialog(invoice: Invoice, onDismiss: () -> Unit, onSave:
             })
         },
         dismissButton = { AppButton("Cancel", onClick = onDismiss, variant = ButtonVariant.Tertiary) },
-        shape = RoundedCornerShape(20.dp),
+        shape = SmoothShape(20.dp),
         containerColor = Ui.colors.surface,
     )
 }

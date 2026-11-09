@@ -92,13 +92,13 @@ val ScreenMargin = 20.dp
 
 /** Corner radius of text fields and form buttons (design.md section 4.2). */
 val FormCorner = 8.dp
-val FormShape = RoundedCornerShape(FormCorner)
+val FormShape = SmoothShape(FormCorner)
 
 /** Tags: status, invoice numbers, currency codes. */
-val TagShape = RoundedCornerShape(6.dp)
+val TagShape = SmoothShape(6.dp)
 
 /** Cards and the tab bar. */
-val CardShape = RoundedCornerShape(16.dp)
+val CardShape = SmoothShape(16.dp)
 
 /** One easing curve for every transition (design.md section 9). */
 val AppEasing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
@@ -345,7 +345,7 @@ fun ScreenHeader(
 @Composable
 fun Avatar(logo: ImageBitmap?, name: String, size: Dp = 44.dp) {
     val c = Ui.colors
-    val shape = RoundedCornerShape(12.dp)
+    val shape = SmoothShape(12.dp)
     Box(
         Modifier
             .size(size)
@@ -398,7 +398,7 @@ fun HeroCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() 
     Column(
         modifier
             .fillMaxWidth()
-            .surface(RoundedCornerShape(20.dp), floating = true),
+            .surface(SmoothShape(20.dp), floating = true),
     ) {
         Box(Modifier.fillMaxWidth().height(4.dp).background(c.paperAccent))
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 20.dp), content = content)
@@ -561,9 +561,9 @@ fun AlertBanner(title: String, subtitle: String?, kind: BannerKind, modifier: Mo
     Row(
         modifier
             .fillMaxWidth()
-            .shadow(16.dp, RoundedCornerShape(20.dp), ambientColor = c.shadow.copy(alpha = 0.06f), spotColor = c.shadow.copy(alpha = 0.10f))
-            .background(Brush.verticalGradient(listOf(Color.White, c.frosted)), RoundedCornerShape(20.dp))
-            .border(1.dp, c.hairline, RoundedCornerShape(20.dp))
+            .shadow(16.dp, SmoothShape(20.dp), ambientColor = c.shadow.copy(alpha = 0.06f), spotColor = c.shadow.copy(alpha = 0.10f))
+            .background(Brush.verticalGradient(listOf(Color.White, c.frosted)), SmoothShape(20.dp))
+            .border(1.dp, c.hairline, SmoothShape(20.dp))
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -697,7 +697,7 @@ fun PaperInvoice(number: String?, modifier: Modifier = Modifier, stacked: Boolea
                     .offset(x = 4.dp, y = 2.dp)
                     .size(width = 72.dp, height = 96.dp)
                     .rotate(6f)
-                    .surface(RoundedCornerShape(4.dp), color = Ui.colors.background),
+                    .surface(SmoothShape(4.dp), color = Ui.colors.background),
             )
         }
         PaperSheet(
@@ -713,7 +713,7 @@ fun PaperInvoice(number: String?, modifier: Modifier = Modifier, stacked: Boolea
 @Composable
 private fun PaperSheet(number: String?, modifier: Modifier = Modifier) {
     val c = Ui.colors
-    Column(modifier.surface(RoundedCornerShape(4.dp), floating = true).padding(8.dp)) {
+    Column(modifier.surface(SmoothShape(4.dp), floating = true).padding(8.dp)) {
         Box(Modifier.width(24.dp).height(4.dp).background(c.paperAccent))
         Spacer(Modifier.height(8.dp))
         if (number != null) {
@@ -733,7 +733,7 @@ private fun PaperSheet(number: String?, modifier: Modifier = Modifier) {
 
 @Composable
 private fun Line(widthDp: Int, color: Color = Ui.colors.surfaceRaised) {
-    Box(Modifier.width(widthDp.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(color))
+    Box(Modifier.width(widthDp.dp).height(4.dp).clip(SmoothShape(2.dp)).background(color))
 }
 
 /** A flat paper sheet with the screen's icon: the empty-state illustration. */
@@ -747,14 +747,14 @@ fun EmptyIllustration(icon: ImageVector, modifier: Modifier = Modifier) {
                 .offset(x = 12.dp, y = 4.dp)
                 .size(width = 96.dp, height = 120.dp)
                 .rotate(6f)
-                .surface(RoundedCornerShape(8.dp), color = c.background),
+                .surface(SmoothShape(8.dp), color = c.background),
         )
         Column(
             Modifier
                 .align(Alignment.Center)
                 .size(width = 96.dp, height = 120.dp)
                 .rotate(-3f)
-                .surface(RoundedCornerShape(8.dp), floating = true)
+                .surface(SmoothShape(8.dp), floating = true)
                 .padding(12.dp),
         ) {
             Box(Modifier.width(32.dp).height(4.dp).background(c.paperAccent))

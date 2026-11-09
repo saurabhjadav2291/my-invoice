@@ -139,6 +139,8 @@ Everything sits on a 4 dp grid.
 | Hero card, dialogs, date picker, alert banner | 20 dp |
 | Round icon buttons (back, delete) | circle |
 
+Every corner with a radius uses **70% corner smoothing** (decided 2026-11-09), the same squircle curve as Figma's corner smoothing: `SmoothShape(radius)` in `ui/SmoothShape.kt`. Pills and circles stay fully round. Material's own fallback shapes (`AppShapes` in `Theme.kt`) stay plain rounded because Material requires that type; every shape the app sets itself is smoothed.
+
 ### 4.3 Elevation
 
 - Cards on the canvas: hairline, no shadow.
