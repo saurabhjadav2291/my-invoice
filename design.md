@@ -260,7 +260,7 @@ Two separate pieces floating 20 dp from the screen sides (decided 2026-11-09): t
 
 - Only the selected tab shows its label: a pressed-in grey pill (the same key as the selected segmented tab) holding the 24 dp icon in `primary` blue and a `labelLarge` label in `ink` (decided 2026-11-08), side by side. The other tabs are a `grey` 24 dp icon only, with no fill. The pill grows and shrinks over 200 ms, along with the colour change.
 - The **+ button** stands on its own to the right of the pill, as tall as it: a 72 dp blue soft-key disc inside a 4 dp neutral key ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
-- Invoices, Clients and Settings share the pill. The first and last tabs sit 8 dp from its ends, the same gap as above and below, so the selected pill is evenly inset. Icon-only tabs are at least 48 dp wide; the selected pill has 14 dp side padding.
+- Invoices, Clients and Settings share the pill. The first and last tabs sit 8 dp from its ends, the same gap as above and below, so the selected pill is evenly inset. The selected pill takes the width it needs; the other tabs split the remaining space equally, each icon centred in its slot (decided 2026-11-09). Icon-only tabs are at least 48 dp wide; the selected pill has 14 dp side padding.
 
 ### 6.7 Forms
 

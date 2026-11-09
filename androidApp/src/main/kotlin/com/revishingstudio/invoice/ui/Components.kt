@@ -609,9 +609,12 @@ fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Mod
                 .navDropShadow()
                 .softKey(CircleShape, KeyTop, TrackColor, shadeAlpha = 0.04f)
                 .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-        ) { items.forEach { NavTab(it) } }
+        ) {
+            // The selected pill takes the width it needs; each other tab shares the rest
+            // equally, with its icon centred in its slot (decided 2026-11-09).
+            items.forEach { item -> NavTab(item, if (item.selected) Modifier else Modifier.weight(1f)) }
+        }
         Spacer(Modifier.width(12.dp))
         NewInvoiceButton(onNewInvoice)
     }
