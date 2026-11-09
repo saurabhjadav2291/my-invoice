@@ -37,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -175,14 +177,14 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
                 .verticalScroll(rememberScrollState())
                 .padding(padding)
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp, bottom = 16.dp)) {
                 Text(if (id == null) "Will be numbered " else "Invoice ", style = MaterialTheme.typography.bodySmall, color = c.greyText)
                 InvoiceNumber(number, color = c.ink)
             }
 
-            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            // No cards: sections split by hairlines, as in Business info (design.md section 6.5).
+            SettingsSection("Client and currency", first = true) {
                 DropdownField(
                     label = "Client",
                     selected = clients.firstOrNull { it.id == clientId },
@@ -200,7 +202,7 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
                 }
             }
 
-            AppCard {
+            SettingsSection("Dates") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     DateField("Invoice date", issueDate, { new ->
                         issueDate = new
@@ -210,19 +212,21 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
                 }
             }
 
-            SectionTitle("Items")
-            items.forEachIndexed { index, item ->
-                ItemEditor(
-                    item = item,
-                    currency = currency,
-                    canRemove = items.size > 1,
-                    onRemove = { items.removeAt(index) },
-                )
+            SettingsSection("Items") {
+                items.forEachIndexed { index, item ->
+                    if (index > 0) HorizontalDivider(color = c.hairline, modifier = Modifier.padding(vertical = 4.dp))
+                    ItemEditor(
+                        number = index + 1,
+                        item = item,
+                        currency = currency,
+                        canRemove = items.size > 1,
+                        onRemove = { items.removeAt(index) },
+                    )
+                }
+                AppButton("Add item", { items += ItemInput() }, Modifier.fillMaxWidth(), variant = ButtonVariant.Secondary, icon = AppIcons.Plus)
             }
-            AppButton("Add item", { items += ItemInput() }, Modifier.fillMaxWidth(), variant = ButtonVariant.Secondary, icon = AppIcons.Plus)
 
-            SectionTitle("On the invoice")
-            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SettingsSection("On the invoice") {
                 DropdownField(
                     label = "Bank account printed on the invoice",
                     selected = banks.firstOrNull { it.id == bankId },
@@ -233,7 +237,7 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
                 )
                 Field("Notes (optional, printed on the invoice)", notes, { notes = it }, singleLine = false, minLines = 2, placeholder = "e.g. Thank you for your business")
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
@@ -262,16 +266,15 @@ private fun TotalBar(total: Long, currency: Currency, label: String, onSave: () 
 }
 
 @Composable
-private fun ItemEditor(item: ItemInput, currency: Currency, canRemove: Boolean, onRemove: () -> Unit) {
+private fun ItemEditor(number: Int, item: ItemInput, currency: Currency, canRemove: Boolean, onRemove: () -> Unit) {
     val c = Ui.colors
-    AppCard(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Field("Description", item.description, { item.description = it }, Modifier.weight(1f), singleLine = false, placeholder = "e.g. Logo design, three concepts")
-            if (canRemove) {
-                Spacer(Modifier.width(8.dp))
-                RoundIconButton(AppIcons.Trash, "Remove item", onRemove, style = RoundStyle.Quiet, modifier = Modifier.padding(bottom = 8.dp))
-            }
+    // One item, no card: a small "Item 1" heading with the remove button, then its fields.
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)) {
+            Text("Item $number", style = MaterialTheme.typography.titleSmall, color = c.greyText, modifier = Modifier.weight(1f).padding(start = 4.dp))
+            if (canRemove) RoundIconButton(AppIcons.Trash, "Remove item $number", onRemove, style = RoundStyle.Quiet)
         }
+        Field("Description", item.description, { item.description = it }, singleLine = false, placeholder = "e.g. Logo design, three concepts")
         PillChoice(
             options = listOf(false, true),
             selected = item.priced,
