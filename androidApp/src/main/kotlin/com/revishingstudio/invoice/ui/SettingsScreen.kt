@@ -613,7 +613,7 @@ private fun InfoRow(label: String, value: String, mono: Boolean = false) {
  * fields with 12 dp between them. No card behind it (design.md section 6.5, Settings).
  */
 @Composable
-private fun SettingsSection(title: String, first: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+fun SettingsSection(title: String, first: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         if (!first) HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
         Text(

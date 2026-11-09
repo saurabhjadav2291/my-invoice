@@ -23,11 +23,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -169,27 +171,27 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
                 .verticalScroll(rememberScrollState())
                 .padding(padding)
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            // No cards: sections split by hairlines, as in Business info (design.md section 6.5).
+            SettingsSection("Client", first = true) {
                 Field("Name (shown in bold)", name, { name = it }, placeholder = "e.g. Acme Studio")
                 Field("Registered name (optional)", legalName, { legalName = it }, supportingText = "e.g. YLS Marketing Consultant Pty Ltd", placeholder = "Legal company name")
                 Field("Address", address, { address = it }, singleLine = false, minLines = 2, placeholder = "Street, city, postcode, country")
             }
-            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SettingsSection("Contact and tax") {
                 Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone, placeholder = "e.g. +61 400 123 456")
                 Field("Email", email, { email = it }, keyboardType = KeyboardType.Email, placeholder = "e.g. accounts@client.com")
                 Field("Tax IDs (optional)", taxIds, { taxIds = it }, supportingText = "e.g. ABN: 12345678901  ACN: 123456789, or a GSTIN", placeholder = "ABN, ACN or GSTIN")
             }
-            AppCard(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Usual currency", style = MaterialTheme.typography.bodySmall, color = Ui.colors.greyText, modifier = Modifier.padding(start = 4.dp))
+            SettingsSection("Usual currency") {
                 PillChoice(Currency.entries, currency, { it.code }, { currency = it }, Modifier.fillMaxWidth())
             }
-            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 8.dp))
+            HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
+            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 20.dp))
             if (id != null) {
-                AppButton("Archive client", { confirmArchive = true }, Modifier.align(Alignment.CenterHorizontally), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
+                AppButton("Archive client", { confirmArchive = true }, Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.navigationBarsPadding().height(32.dp))
         }
     }
     if (confirmArchive && id != null) {
