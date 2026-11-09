@@ -151,7 +151,7 @@ Everything sits on a 4 dp grid.
 
 ### 5.1 Canvas
 
-Every screen sits on a sky-to-canvas background (decided 2026-11-09, from Saurabh's background image): `#80B3F7` at the top, through `#A1CDF9` (20%), `#D9ECFB` (40%) and `#EEF5FB` (50%), reaching the `background` canvas `#F5F7FA` at 60% of the screen height and staying there. It is drawn in code against the window height (`rememberBackgroundBrush`) and does not scroll. The pinned back bar of inner screens and the status-bar blur band use the same gradient, so they blend into it.
+Every screen sits on a sky-to-canvas background (decided 2026-11-09, from Saurabh's lighter background image): `#B5D3F9` at the top, through `#C9E1FA` (20%), `#E7F2FB` (40%) and `#F2F6FA` (50%), reaching the `background` canvas `#F5F7FA` at 60% of the screen height and staying there. It is drawn in code against the window height (`rememberBackgroundBrush`) and does not scroll. The pinned back bar of inner screens and the status-bar blur band use the same gradient, so they blend into it.
 
 ### 5.2 Progressive blur at the top and bottom
 

@@ -187,20 +187,20 @@ fun Modifier.progressiveBlur(state: HazeState, tint: Color, blurAtTop: Boolean, 
 /**
  * The app background (design.md section 5.1, decided 2026-11-09): soft sky blue at the top
  * that fades into the canvas by 60% of the screen height, then plain canvas. Recreated in code
- * from Saurabh's background image so it stays crisp on every screen size.
+ * from Saurabh's (lighter, second) background image so it stays crisp on every screen size.
  */
 private val BackgroundStops = arrayOf(
-    0.0f to Color(0xFF80B3F7),
-    0.1f to Color(0xFF8ABAF7),
-    0.2f to Color(0xFFA1CDF9),
-    0.3f to Color(0xFFBCDEFA),
-    0.4f to Color(0xFFD9ECFB),
-    0.5f to Color(0xFFEEF5FB),
+    0.0f to Color(0xFFB5D3F9),
+    0.1f to Color(0xFFBBD7F9),
+    0.2f to Color(0xFFC9E1FA),
+    0.3f to Color(0xFFD8EAFB),
+    0.4f to Color(0xFFE7F2FB),
+    0.5f to Color(0xFFF2F6FA),
     0.6f to Color(0xFFF5F7FA),
 )
 
 /** The colour at the very top of the background, for the status bar blur band. */
-val BackgroundTop = Color(0xFF80B3F7)
+val BackgroundTop = Color(0xFFB5D3F9)
 
 /**
  * The background gradient measured against the window height, so a bar pinned to the top of
