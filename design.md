@@ -242,11 +242,11 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
 
 ### 6.6 Bottom navigation
 
-A pill bar, 72 dp tall, floating 20 dp from the screen sides, drawn as a soft key from `#F9FAFB` to the track colour `#ECEEF1`, with a white rim and a subtle ink drop shadow (decided 2026-11-09): 24 dp blur at 10% offset 8 dp down, plus a 3 dp contact shadow at 8% offset 1 dp. Never a coloured glow.
+Two separate pieces floating 20 dp from the screen sides (decided 2026-11-09): the tab pill, 72 dp tall and filling the width, then a 12 dp gap, then the + disc, also 72 dp. The pill is drawn as a soft key from `#F9FAFB` to the track colour `#ECEEF1`, with a white rim and a subtle ink drop shadow (decided 2026-11-09): 24 dp blur at 10% offset 8 dp down, plus a 3 dp contact shadow at 8% offset 1 dp. Never a coloured glow. The + disc casts the same shadow.
 
 - Only the selected tab shows its label: a pressed-in grey pill (the same key as the selected segmented tab) holding the 24 dp icon in `primary` blue and a `labelLarge` label in `ink` (decided 2026-11-08), side by side. The other tabs are a `grey` 24 dp icon only, with no fill. The pill grows and shrinks over 200 ms, along with the colour change.
-- The **+ button** sits last, at the right end of the bar: a 64 dp blue soft-key disc inside a 4 dp neutral key ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
-- Invoices, Clients and Settings share the space to the left of the +. The first tab sits 8 dp from the bar's left edge, the same gap as above and below it, so the selected pill is evenly inset.
+- The **+ button** stands on its own to the right of the pill, as tall as it: a 72 dp blue soft-key disc inside a 4 dp neutral key ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
+- Invoices, Clients and Settings share the pill. The first and last tabs sit 8 dp from its ends, the same gap as above and below, so the selected pill is evenly inset. Icon-only tabs are at least 48 dp wide; the selected pill has 14 dp side padding.
 
 ### 6.7 Forms
 

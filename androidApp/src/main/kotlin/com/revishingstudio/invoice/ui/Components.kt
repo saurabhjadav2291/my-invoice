@@ -483,27 +483,39 @@ val NavBarRowHeight = 92.dp
  */
 @Composable
 fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Modifier = Modifier) {
+    // Two separate pieces (decided 2026-11-09): the tab pill, then the + disc of the same
+    // height beside it with a 12 dp gap.
     Row(
         modifier
             .fillMaxWidth()
             .padding(start = ScreenMargin, end = ScreenMargin, top = 8.dp, bottom = 12.dp)
-            .height(72.dp)
-            // Subtle drop shadow (design.md section 6.6): a soft, low ink shadow cast downward
-            // plus a tight contact shadow at the edge. Ink only, never a coloured glow.
-            .dropShadow(CircleShape, Shadow(radius = 24.dp, color = ShadowColor, offset = DpOffset(0.dp, 8.dp), alpha = 0.10f))
-            .dropShadow(CircleShape, Shadow(radius = 3.dp, color = ShadowColor, offset = DpOffset(0.dp, 1.dp), alpha = 0.08f))
-            .softKey(CircleShape, KeyTop, TrackColor, shadeAlpha = 0.04f)
-            .padding(start = 8.dp, end = 4.dp),
+            .height(NavBarHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            Modifier.weight(1f),
+            Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .navDropShadow()
+                .softKey(CircleShape, KeyTop, TrackColor, shadeAlpha = 0.04f)
+                .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) { items.forEach { NavTab(it) } }
-        NewInvoiceButton(onNewInvoice, Modifier.padding(start = 8.dp))
+        Spacer(Modifier.width(12.dp))
+        NewInvoiceButton(onNewInvoice)
     }
 }
+
+private val NavBarHeight = 72.dp
+
+/**
+ * Subtle drop shadow of the tab pill and the + disc (design.md section 6.6): a soft, low ink
+ * shadow cast downward plus a tight contact shadow at the edge. Ink only, never a coloured glow.
+ */
+private fun Modifier.navDropShadow(): Modifier = this
+    .dropShadow(CircleShape, Shadow(radius = 24.dp, color = ShadowColor, offset = DpOffset(0.dp, 8.dp), alpha = 0.10f))
+    .dropShadow(CircleShape, Shadow(radius = 3.dp, color = ShadowColor, offset = DpOffset(0.dp, 1.dp), alpha = 0.08f))
 
 @Composable
 private fun NavTab(item: NavItem, modifier: Modifier = Modifier) {
@@ -512,13 +524,13 @@ private fun NavTab(item: NavItem, modifier: Modifier = Modifier) {
     Row(
         modifier
             .height(56.dp)
-            .widthIn(min = 56.dp)
+            .widthIn(min = 48.dp)
             .animateContentSize(tween(200, easing = AppEasing))
             .then(if (item.selected) Modifier.softKey(CircleShape, Color(0xFFDFE2E7), Color(0xFFD5D9DF)) else Modifier)
             .clip(CircleShape)
             .selectable(selected = item.selected, onClick = item.onClick, role = Role.Tab)
             .semantics { contentDescription = item.label }
-            .padding(horizontal = if (item.selected) 16.dp else 0.dp),
+            .padding(horizontal = if (item.selected) 14.dp else 0.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -530,7 +542,7 @@ private fun NavTab(item: NavItem, modifier: Modifier = Modifier) {
     }
 }
 
-/** The raised blue + at the end of the tab bar: a blue disc in a white ring, no glow. */
+/** The raised blue + beside the tab bar, as tall as the bar: a blue disc in a white ring, no glow. */
 @Composable
 fun NewInvoiceButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = Ui.colors
@@ -540,9 +552,9 @@ fun NewInvoiceButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val fill by animateColorAsState(if (pressed) c.primaryPressed else c.primary, tween(200, easing = AppEasing), label = "plus fill")
     Box(
         modifier
-            .size(64.dp)
+            .size(NavBarHeight)
             .scale(scale)
-            .keyShadow(CircleShape, 10.dp)
+            .navDropShadow()
             .softKey(CircleShape, KeyTop, KeyBottom, shadeAlpha = 0.04f)
             .padding(4.dp)
             .softKey(CircleShape, lerp(fill, Color.White, 0.18f), fill, rimAlpha = 0.6f, shadeAlpha = 0.14f)
