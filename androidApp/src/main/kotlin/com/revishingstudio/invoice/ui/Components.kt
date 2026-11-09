@@ -54,6 +54,18 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import android.graphics.BlurMaskFilter
+import android.os.Build
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.addOutline
+import androidx.compose.ui.graphics.asAndroidPath
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -136,34 +148,68 @@ fun Modifier.softKey(
 
 /**
  * Liquid glass (design.md section 5.4, decided 2026-11-09) for the back button and other
- * round icon buttons, the Settings option icons and secondary buttons: a translucent white
- * fill, brighter at the top like light catching the surface, so the sky gradient or any
- * coloured surface shows through; a hairline rim that is bright white along the top and a
- * faint ink line along the bottom for definition on the pale canvas. No shadow (it would
- * show through the clear fill as a grey smudge) and never a glow. [pressed] lets more of the
- * background through with a hint of ink.
+ * round icon buttons, the Settings option icons and secondary buttons. It keeps the depth of
+ * the soft key (a lift under it, a shade under the top edge, a white rim) but the body is
+ * translucent, so the sky gradient or any coloured surface shows through:
+ *  - a soft ink shadow below, drawn only outside the shape so it never smudges through the
+ *    clear fill;
+ *  - a translucent body, near-white at the top to a clear cool grey at the bottom;
+ *  - a faint ink shade inside the top edge, as on the soft keys;
+ *  - a 1.5 dp rim, bright white at the top and bottom edges where light catches the glass,
+ *    clearer at the sides.
+ * Never a glow. [pressed] lowers the lift and lets more of the background through.
  */
-fun Modifier.glass(shape: Shape, pressed: Boolean = false): Modifier = this
+fun Modifier.glass(shape: Shape, pressed: Boolean = false, lift: Dp = 3.dp): Modifier = this
+    .drawBehind { drawGlassShadow(shape, if (pressed) lift / 2 else lift, if (pressed) 0.10f else 0.16f) }
     .background(
         Brush.verticalGradient(
             if (pressed) {
-                listOf(Color.White.copy(alpha = 0.40f), Color.White.copy(alpha = 0.22f))
+                listOf(Color.White.copy(alpha = 0.50f), KeyBottom.copy(alpha = 0.50f))
             } else {
-                listOf(Color.White.copy(alpha = 0.72f), Color.White.copy(alpha = 0.34f))
+                listOf(Color.White.copy(alpha = 0.78f), KeyBottom.copy(alpha = 0.42f))
             },
         ),
         shape,
     )
-    .then(if (pressed) Modifier.background(ShadowColor.copy(alpha = 0.04f), shape) else Modifier)
+    .drawBehind {
+        val outline = shape.createOutline(size, layoutDirection, this)
+        drawOutline(
+            outline,
+            Brush.verticalGradient(
+                listOf(ShadowColor.copy(alpha = if (pressed) 0.12f else 0.06f), Color.Transparent),
+                endY = 8.dp.toPx(),
+            ),
+        )
+    }
     .border(
-        1.dp,
+        1.5.dp,
         Brush.verticalGradient(
             0f to Color.White.copy(alpha = 0.95f),
-            0.5f to Color.White.copy(alpha = 0.45f),
-            1f to ShadowColor.copy(alpha = 0.10f),
+            0.5f to Color.White.copy(alpha = 0.35f),
+            1f to Color.White.copy(alpha = 0.90f),
         ),
         shape,
     )
+
+/**
+ * A blurred ink copy of [shape], [lift] below it, clipped to outside the shape so a
+ * translucent body above it stays clear. Blur needs Android 9; older phones skip the shadow.
+ */
+private fun DrawScope.drawGlassShadow(shape: Shape, lift: Dp, alpha: Float) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return
+    val outline = shape.createOutline(size, layoutDirection, this)
+    val path = Path().apply { addOutline(outline) }
+    val paint = android.graphics.Paint().apply {
+        isAntiAlias = true
+        color = ShadowColor.copy(alpha = alpha).toArgb()
+        maskFilter = BlurMaskFilter((lift * 2).toPx(), BlurMaskFilter.Blur.NORMAL)
+    }
+    clipPath(path, ClipOp.Difference) {
+        translate(top = lift.toPx()) {
+            drawIntoCanvas { it.nativeCanvas.drawPath(path.asAndroidPath(), paint) }
+        }
+    }
+}
 
 /** A soft lift under a key: small and neutral, never coloured. */
 fun Modifier.keyShadow(shape: Shape, elevation: Dp = 4.dp): Modifier =

@@ -190,10 +190,13 @@ Content never ends in a hard cut where it meets the status bar or the tab bar.
 
 Decided 2026-11-09. Round icon buttons (back, add client, edit, delete), the Settings option icons and secondary buttons are translucent glass, so the sky gradient or any coloured surface shows through them (`Modifier.glass` in `Components.kt`):
 
-- Fill: white at 72% at the top fading to 34% at the bottom, like light catching the top of the surface.
-- Rim: 1 dp, bright white (95%) along the top, 45% at the middle, a faint ink line (10%) along the bottom for definition on the pale canvas.
-- No shadow (it would show through the clear fill as a grey smudge) and never a glow.
-- Pressed: the fill drops to 40% to 22% with a 4% ink veil, plus the usual scale.
+It keeps the depth of the soft keys (5.3), only the body turns clear (revised 2026-11-09 after the first, flat version lost the glass feel):
+
+- Lift: a soft ink shadow 3 dp below (16%, 6 dp blur), drawn only outside the shape so it never smudges through the clear body. Android 9 and later; older phones skip it.
+- Body: white at 78% at the top to cool grey `#E4E7EC` at 42% at the bottom.
+- Top shade: a faint ink shade (6%) inside the top 8 dp, as on the soft keys.
+- Rim: 1.5 dp, bright white at the top (95%) and bottom (90%) edges where light catches the glass, clearer (35%) at the sides.
+- Never a glow. Pressed: half the lift, a clearer body (50% / 50%), a deeper top shade, and the usual scale.
 
 The page background is a smooth gradient, so a translucent fill reads the same as a live backdrop blur; a real blur can be added later if glass ever sits over busy content.
 
