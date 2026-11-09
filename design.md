@@ -16,7 +16,7 @@ Unslop is by Damir Sokolovsky ([@heydamir](https://x.com/heydamir)), CC BY 4.0.
 - **Character.** Exact, unhurried, a little warm.
 - **World.** A studio desk: paper invoices, bank slips, ink.
 - **Moments.** The "Still to collect" figure on the home screen, with a small paper invoice beside it, and the invoice details card, drawn like the paper invoice with its orange rule.
-- **Signature.** Invoice numbers like `RS/26-27/031` are set in IBM Plex Mono everywhere, like a serial stamp.
+- **Signature.** Invoice numbers like `RS/26-27/031` are set in Geist Mono everywhere, like a serial stamp.
 
 Principles:
 
@@ -85,9 +85,9 @@ The PDF keeps its orange accent (`#FF5400`) and Inter, so new invoices match the
 
 ## 3. Typography
 
-**Interface:** [Outfit](https://fonts.google.com/specimen/Outfit), Regular 400 and Medium 500. SemiBold is bundled but not used in the scale. Hierarchy comes from size and colour, not weight.
+**Interface:** [Geist](https://vercel.com/font) (decided 2026-11-09), Regular 400 and Medium 500. SemiBold is bundled but not used in the scale. Hierarchy comes from size and colour, not weight.
 
-**Serial:** [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono) Regular, only for invoice numbers (`TextStyle.serial()`).
+**Serial:** [Geist Mono](https://vercel.com/font) Regular, only for invoice numbers (`TextStyle.serial()`).
 
 ### 3.1 Scale (sp)
 
@@ -288,7 +288,7 @@ No background block. The illustration, title, one line of help and an optional b
 
 | File | What |
 |---|---|
-| `ui/Theme.kt` | `AppColors` tokens, Outfit and IBM Plex Mono, type scale, `tabular()` and `serial()` |
+| `ui/Theme.kt` | `AppColors` tokens, Geist and Geist Mono, type scale, `tabular()` and `serial()` |
 | `ui/Buttons.kt` | `AppButton` with `ButtonVariant.Primary`, `Secondary`, `Tertiary` and `Link` |
 | `ui/Components.kt` | `Modifier.surface`, `progressiveBlur`, `ScreenHeader`, `AppCard`, `HeroCard`, icon buttons, `PillChoice` (segmented tabs), `AlertBanner`, `FloatingNavBar`, `PaperInvoice`, empty states |
 | `ui/Common.kt` | `InnerScaffold` (pinned back bar with blur), fields, pickers, dialogs, status tags |

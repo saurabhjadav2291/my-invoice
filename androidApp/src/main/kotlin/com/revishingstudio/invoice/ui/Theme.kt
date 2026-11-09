@@ -111,20 +111,20 @@ object Ui {
         get() = LocalAppColors.current
 }
 
-val Outfit = FontFamily(
-    Font(R.font.outfit_regular, FontWeight.Normal),
-    Font(R.font.outfit_medium, FontWeight.Medium),
-    Font(R.font.outfit_semibold, FontWeight.SemiBold),
+val Geist = FontFamily(
+    Font(R.font.geist_regular, FontWeight.Normal),
+    Font(R.font.geist_medium, FontWeight.Medium),
+    Font(R.font.geist_semibold, FontWeight.SemiBold),
 )
 
 /** Partner face for invoice numbers, the app's signature detail. */
-val PlexMono = FontFamily(
-    Font(R.font.ibm_plex_mono_regular, FontWeight.Normal),
-    Font(R.font.ibm_plex_mono_medium, FontWeight.Medium),
+val GeistMono = FontFamily(
+    Font(R.font.geist_mono_regular, FontWeight.Normal),
+    Font(R.font.geist_mono_medium, FontWeight.Medium),
 )
 
 private fun style(size: Int, weight: FontWeight, line: Int, tracking: Double = 0.0) = TextStyle(
-    fontFamily = Outfit,
+    fontFamily = Geist,
     fontWeight = weight,
     fontSize = size.sp,
     lineHeight = line.sp,
@@ -157,7 +157,7 @@ private val AppTypography = Typography(
 fun TextStyle.tabular(): TextStyle = copy(fontFeatureSettings = "tnum")
 
 /** Invoice numbers like RS/26-27/031, set in mono like a serial stamp. */
-fun TextStyle.serial(): TextStyle = copy(fontFamily = PlexMono, fontWeight = FontWeight.Normal, letterSpacing = 0.sp)
+fun TextStyle.serial(): TextStyle = copy(fontFamily = GeistMono, fontWeight = FontWeight.Normal, letterSpacing = 0.sp)
 
 /** Radii from design.md section 4.2: controls 8, tags 6, cards 16, sheets 20. */
 private val AppShapes = Shapes(
