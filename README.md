@@ -59,6 +59,10 @@ The Inter fonts (SIL Open Font License) are bundled in `core/src/jvmMain/resourc
 ./gradlew :core:jvmTest -PexcludeAndroid=true   # core only, no Android SDK needed
 ```
 
-Every push and pull request is built on GitHub Actions. The debug APK is
+Every push and pull request is built on GitHub Actions. Builds are signed with
+one permanent key from the repository secrets `KEYSTORE_BASE64` (the keystore,
+base64-encoded, alias `myinvoice`) and `KEYSTORE_PASSWORD`, so each new APK
+installs as an update over the previous one. Without those secrets the build
+falls back to a throwaway debug key. The debug APK is
 attached to each run under **Artifacts** and can be installed on a phone
 directly.
