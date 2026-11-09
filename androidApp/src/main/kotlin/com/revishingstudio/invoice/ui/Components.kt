@@ -44,6 +44,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
@@ -485,7 +488,10 @@ fun FloatingNavBar(items: List<NavItem>, onNewInvoice: () -> Unit, modifier: Mod
             .fillMaxWidth()
             .padding(start = ScreenMargin, end = ScreenMargin, top = 8.dp, bottom = 12.dp)
             .height(72.dp)
-            .keyShadow(CircleShape, 20.dp)
+            // Subtle drop shadow (design.md section 6.6): a soft, low ink shadow cast downward
+            // plus a tight contact shadow at the edge. Ink only, never a coloured glow.
+            .dropShadow(CircleShape, Shadow(radius = 24.dp, color = ShadowColor, offset = DpOffset(0.dp, 8.dp), alpha = 0.10f))
+            .dropShadow(CircleShape, Shadow(radius = 3.dp, color = ShadowColor, offset = DpOffset(0.dp, 1.dp), alpha = 0.08f))
             .softKey(CircleShape, KeyTop, TrackColor, shadeAlpha = 0.04f)
             .padding(start = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,

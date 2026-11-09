@@ -242,7 +242,7 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
 
 ### 6.6 Bottom navigation
 
-A pill bar, 72 dp tall, floating 20 dp from the screen sides, drawn as a soft key from `#F9FAFB` to the track colour `#ECEEF1`, with a white rim and a 20 dp neutral lift.
+A pill bar, 72 dp tall, floating 20 dp from the screen sides, drawn as a soft key from `#F9FAFB` to the track colour `#ECEEF1`, with a white rim and a subtle ink drop shadow (decided 2026-11-09): 24 dp blur at 10% offset 8 dp down, plus a 3 dp contact shadow at 8% offset 1 dp. Never a coloured glow.
 
 - Only the selected tab shows its label: a pressed-in grey pill (the same key as the selected segmented tab) holding the 24 dp icon in `primary` blue and a `labelLarge` label in `ink` (decided 2026-11-08), side by side. The other tabs are a `grey` 24 dp icon only, with no fill. The pill grows and shrinks over 200 ms, along with the colour change.
 - The **+ button** sits last, at the right end of the bar: a 64 dp blue soft-key disc inside a 4 dp neutral key ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
