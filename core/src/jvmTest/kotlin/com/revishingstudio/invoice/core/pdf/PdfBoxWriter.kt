@@ -11,7 +11,7 @@ import java.io.File
 import java.io.OutputStream
 
 /**
- * Writes invoice PDFs with Apache PDFBox and the bundled Inter fonts. Used by
+ * Writes invoice PDFs with Apache PDFBox and the bundled Geist fonts. Used by
  * tests to check the layout; a macOS app can move it into its own code later.
  */
 class PdfBoxWriter : PdfDocumentWriter, AutoCloseable {
