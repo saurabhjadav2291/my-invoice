@@ -186,6 +186,17 @@ Content never ends in a hard cut where it meets the status bar or the tab bar.
 | Tab bar and segmented track | `#F9FAFB` / `#ECEEF1` | `#ECEEF1` | full | 20 dp for the tab bar, 4 dp for the track |
 | Text field and picker well (inset) | `#E9ECF0` | `#F7F8FA` | full | none |
 
+### 5.4 Liquid glass
+
+Decided 2026-11-09. Round icon buttons (back, add client, edit, delete), the Settings option icons and secondary buttons are translucent glass, so the sky gradient or any coloured surface shows through them (`Modifier.glass` in `Components.kt`):
+
+- Fill: white at 72% at the top fading to 34% at the bottom, like light catching the top of the surface.
+- Rim: 1 dp, bright white (95%) along the top, 45% at the middle, a faint ink line (10%) along the bottom for definition on the pale canvas.
+- No shadow (it would show through the clear fill as a grey smudge) and never a glow.
+- Pressed: the fill drops to 40% to 22% with a 4% ink veil, plus the usual scale.
+
+The page background is a smooth gradient, so a translucent fill reads the same as a live backdrop blur; a real blur can be added later if glass ever sits over busy content.
+
 ## 6. Components
 
 ### 6.1 Screen header (tab screens)
@@ -213,11 +224,11 @@ Global rules:
 | Variant | Default | Hover | Focused | Use |
 |---|---|---|---|---|
 | Primary | `primary` soft key (5.3), white label and icon, 2 dp soft neutral lift | `primaryHover`, lift rises to 6 dp | Default fill, 3 dp white gap, then a 2 dp blue ring outside | One per screen: Save, Create invoice, View or share PDF, Save settings |
-| Secondary | Neutral soft key, `ink` label, blue icon, 2 dp lift | Soft key in `primaryTint`, 4 dp lift | White-ish fill with a 2 dp blue border | Record payment, Mark as sent, Add item, Add bank account, Choose logo, Preview a sample invoice |
+| Secondary | Liquid glass (5.4), `ink` label, blue icon, no lift | Glass | Glass with a 2 dp blue border | Record payment, Mark as sent, Add item, Add bank account, Choose logo, Preview a sample invoice |
 | Tertiary | Transparent, `greyText` label and icon | `surfaceRaised` fill | Transparent with a 2 dp blue border | Cancel in dialogs; destructive actions in red (Archive client, Delete this account, Remove) |
 | Link | `primary` text, optional trailing arrow | `primaryHover` text on a `primaryTint` wash | 2 dp blue border | Save in top bars, OK and Save in dialogs, inline actions |
 
-Round icon buttons (back, add client, delete) stay 40 dp circles drawn as neutral soft keys, with an 18 dp `greyText` icon. The light style adds a 3 dp lift; the quiet style sits flat. Pressed: the key darkens and scales to 0.96.
+Round icon buttons (back, add client, edit, delete) stay 40 dp circles in liquid glass (5.4), with an 18 dp `greyText` icon. Pressed: the glass clears a little and scales to 0.96.
 
 Tertiary and link buttons stay flat until hovered, as the spec asks for no unnecessary shadows.
 
@@ -233,7 +244,7 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
 
 - **Invoice row:** number in mono and the status tag on the first line; client name (`titleMedium`) and "Issued 7 Nov 2026" (`grey`) on the left, the amount on the right.
 - **Client row:** avatar tile with the first letter, name and email, currency tag.
-- **Settings (decided 2026-11-09):** the tab is a short list, not a form. Three rows split by hairlines, each a 40 dp raised soft-key circle (as the round icon buttons) with a `greyText` icon, a `titleMedium` title, one `bodySmall` grey line of what is inside, and a chevron:
+- **Settings (decided 2026-11-09):** the tab is a short list, not a form. Three rows split by hairlines, each a 40 dp liquid-glass circle (as the round icon buttons) with a `greyText` icon, a `titleMedium` title, one `bodySmall` grey line of what is inside, and a chevron:
   - **Account details** opens a screen with your name, email and phone (sign-in and backup will go here when they exist).
   - **Business info** opens a screen with studio name, address, PAN, logo, invoice numbers, on-the-invoice options and bank accounts.
     Once saved it opens read-only (label over value, "Not added" in grey) so nothing changes by accident. **Edit info** (primary, also an Edit link in the top bar) turns the fields on, with Save and Cancel. **Remove business details** (tertiary, red, with a confirm) clears studio name, address, PAN and logo; name, numbering and bank accounts stay.

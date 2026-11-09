@@ -134,6 +134,37 @@ fun Modifier.softKey(
         },
     )
 
+/**
+ * Liquid glass (design.md section 5.4, decided 2026-11-09) for the back button and other
+ * round icon buttons, the Settings option icons and secondary buttons: a translucent white
+ * fill, brighter at the top like light catching the surface, so the sky gradient or any
+ * coloured surface shows through; a hairline rim that is bright white along the top and a
+ * faint ink line along the bottom for definition on the pale canvas. No shadow (it would
+ * show through the clear fill as a grey smudge) and never a glow. [pressed] lets more of the
+ * background through with a hint of ink.
+ */
+fun Modifier.glass(shape: Shape, pressed: Boolean = false): Modifier = this
+    .background(
+        Brush.verticalGradient(
+            if (pressed) {
+                listOf(Color.White.copy(alpha = 0.40f), Color.White.copy(alpha = 0.22f))
+            } else {
+                listOf(Color.White.copy(alpha = 0.72f), Color.White.copy(alpha = 0.34f))
+            },
+        ),
+        shape,
+    )
+    .then(if (pressed) Modifier.background(ShadowColor.copy(alpha = 0.04f), shape) else Modifier)
+    .border(
+        1.dp,
+        Brush.verticalGradient(
+            0f to Color.White.copy(alpha = 0.95f),
+            0.5f to Color.White.copy(alpha = 0.45f),
+            1f to ShadowColor.copy(alpha = 0.10f),
+        ),
+        shape,
+    )
+
 /** A soft lift under a key: small and neutral, never coloured. */
 fun Modifier.keyShadow(shape: Shape, elevation: Dp = 4.dp): Modifier =
     shadow(elevation, shape, ambientColor = ShadowColor.copy(alpha = 0.06f), spotColor = ShadowColor.copy(alpha = 0.12f))
@@ -375,14 +406,11 @@ fun RoundIconButton(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.96f else 1f, tween(200, easing = AppEasing), label = "icon press")
-    val top = if (pressed) KeyBottom else KeyTop
-    val bottom = if (pressed) KeyBottom.compositeOver(0.04f) else KeyBottom
     Box(
         modifier
             .size(size)
             .scale(scale)
-            .then(if (style == RoundStyle.Light) Modifier.keyShadow(CircleShape, 3.dp) else Modifier)
-            .softKey(CircleShape, top, bottom, shadeAlpha = if (pressed) 0.16f else 0.10f)
+            .glass(CircleShape, pressed)
             .clip(CircleShape)
             .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,

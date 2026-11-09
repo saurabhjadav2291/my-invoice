@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
  * app is an [AppButton]; screens never style their own.
  *
  * - [ButtonVariant.Primary]: main, high-emphasis action. One per screen.
- * - [ButtonVariant.Secondary]: supporting action, frosted white with a soft lift.
+ * - [ButtonVariant.Secondary]: supporting action, translucent liquid glass.
  * - [ButtonVariant.Tertiary]: low-emphasis utility action, no fill until hovered.
  * - [ButtonVariant.Link]: inline text action, blue, optionally with an arrow.
  */
@@ -134,7 +134,7 @@ fun AppButton(
     val lift by animateDpAsState(
         when (variant) {
             ButtonVariant.Primary -> if (hovered && active) 6.dp else 2.dp
-            ButtonVariant.Secondary -> if (hovered && active) 4.dp else 2.dp
+            // Secondary is glass: no shadow, it would show through the clear fill.
             else -> 0.dp
         },
         tween(200, easing = AppEasing),
@@ -183,12 +183,8 @@ fun AppButton(
                 when (variant) {
                     // The soft key of the active segmented tab: gradient, top shade, white rim.
                     ButtonVariant.Primary -> Modifier.softKey(CircleShape, lerp(fill, Color.White, 0.18f), fill, rimAlpha = 0.55f, shadeAlpha = if (pressed) 0.18f else 0.10f)
-                    ButtonVariant.Secondary -> Modifier.softKey(
-                        CircleShape,
-                        lerp(fill, Color.White, 0.8f),
-                        fill,
-                        shadeAlpha = if (pressed) 0.14f else 0.08f,
-                    )
+                    // Liquid glass (design.md section 5.4), the same as the round icon buttons.
+                    ButtonVariant.Secondary -> Modifier.glass(CircleShape, pressed = pressed && active)
                     else -> Modifier.background(fill, CircleShape)
                 },
             )

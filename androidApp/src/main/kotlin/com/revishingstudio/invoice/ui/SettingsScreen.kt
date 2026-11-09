@@ -244,12 +244,11 @@ private fun SettingsOption(
                 .padding(vertical = 14.dp, horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // The same raised soft key as the round icon buttons (design.md section 5.3).
+            // The same liquid glass as the round icon buttons (design.md section 5.4).
             Box(
                 Modifier
                     .size(40.dp)
-                    .keyShadow(CircleShape, 3.dp)
-                    .softKey(CircleShape, KeyTop, KeyBottom, shadeAlpha = 0.10f),
+                    .glass(CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, contentDescription = null, tint = c.greyText, modifier = Modifier.size(18.dp))
