@@ -48,6 +48,8 @@ sealed interface Screen {
     data object Invoices : Screen
     data object Clients : Screen
     data object Settings : Screen
+    data object AccountDetails : Screen
+    data object BusinessInfo : Screen
     data class InvoiceDetail(val id: Long) : Screen
     /** id = null creates a new invoice. */
     data class InvoiceEditor(val id: Long?) : Screen
@@ -158,8 +160,9 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
     fun newInvoice() {
         when {
             profile == null -> {
-                actions.message("First add your details in Settings")
+                actions.message("First add your name in Account details")
                 nav.tab(Screen.Settings)
+                nav.go(Screen.AccountDetails)
             }
             clients.isNullOrEmpty() -> {
                 actions.message("First add a client")
@@ -185,6 +188,8 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                     Screen.Invoices -> InvoicesScreen(nav)
                     Screen.Clients -> ClientsScreen(nav)
                     Screen.Settings -> SettingsScreen(nav)
+                    Screen.AccountDetails -> AccountDetailsScreen(nav)
+                    Screen.BusinessInfo -> BusinessInfoScreen(nav)
                     is Screen.InvoiceDetail -> InvoiceDetailScreen(current.id, nav)
                     is Screen.InvoiceEditor -> InvoiceEditorScreen(current.id, nav)
                     is Screen.ClientEditor -> ClientEditorScreen(current.id, nav)

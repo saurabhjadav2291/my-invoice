@@ -104,6 +104,24 @@ object AppIcons {
         "M10.3 3.6a1.7 1.7 0 0 1 3.4 0a1.7 1.7 0 0 0 2.6 1.1a1.7 1.7 0 0 1 2.4 2.4a1.7 1.7 0 0 0 1.1 2.6a1.7 1.7 0 0 1 0 3.4a1.7 1.7 0 0 0 -1.1 2.6a1.7 1.7 0 0 1 -2.4 2.4a1.7 1.7 0 0 0 -2.6 1.1a1.7 1.7 0 0 1 -3.4 0a1.7 1.7 0 0 0 -2.6 -1.1a1.7 1.7 0 0 1 -2.4 -2.4a1.7 1.7 0 0 0 -1.1 -2.6a1.7 1.7 0 0 1 0 -3.4a1.7 1.7 0 0 0 1.1 -2.6a1.7 1.7 0 0 1 2.4 -2.4a1.7 1.7 0 0 0 2.6 -1.1z",
     )
 
+    /** One person: account details. */
+    val Person: ImageVector = lineIcon(
+        "Person",
+        "M8.25 7.5a3.75 3.75 0 1 0 7.5 0a3.75 3.75 0 1 0 -7.5 0z",
+        "M5 20.5v-1a5 5 0 0 1 5 -5h4a5 5 0 0 1 5 5v1",
+    )
+
+    /** Briefcase: business info. */
+    val Briefcase: ImageVector = lineIcon(
+        "Briefcase",
+        "M6 7.5h12a2.5 2.5 0 0 1 2.5 2.5v8a2.5 2.5 0 0 1 -2.5 2.5h-12a2.5 2.5 0 0 1 -2.5 -2.5v-8a2.5 2.5 0 0 1 2.5 -2.5z",
+        "M9 7.5v-1.5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1.5",
+        "M3.5 13h17",
+    )
+
+    /** Chevron pointing right: "opens another screen" on list rows. */
+    val ChevronRight: ImageVector = lineIcon("ChevronRight", "M9.5 6l6 6l-6 6")
+
     private fun lineIcon(name: String, vararg paths: String, width: Float = 1.75f): ImageVector {
         val builder = ImageVector.Builder(
             name = name,

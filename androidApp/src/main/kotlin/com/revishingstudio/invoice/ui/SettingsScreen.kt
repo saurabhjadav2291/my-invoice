@@ -42,6 +42,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.revishingstudio.invoice.core.BankAccount
@@ -65,32 +68,31 @@ private fun resetLabel(reset: NumberReset) = when (reset) {
     NumberReset.NEVER -> "Never"
 }
 
-@Composable
-fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
-    val actions = LocalActions.current
-    val context = LocalContext.current
-    val banks by actions.repository.observeBankAccounts().collectAsStateWithLifecycle(emptyList())
+/**
+ * Everything the business profile holds, as editable text. Account details and Business info
+ * each edit their own part of one of these and save the whole profile, so the other part
+ * keeps its saved values.
+ */
+private class ProfileForm {
+    var loaded by mutableStateOf(false)
+    var ownerName by mutableStateOf("")
+    var studioName by mutableStateOf("")
+    var address by mutableStateOf("")
+    var pan by mutableStateOf("")
+    var email by mutableStateOf("")
+    var phone by mutableStateOf("")
+    var logoPath by mutableStateOf<String?>(null)
+    var logoVersion by mutableStateOf(0)
+    var showGstNote by mutableStateOf(true)
+    var showDueDate by mutableStateOf(true)
+    var dueDays by mutableStateOf("15")
+    var pattern by mutableStateOf(NumberingScheme.DEFAULT_PATTERN)
+    var prefix by mutableStateOf("RS")
+    var reset by mutableStateOf(NumberReset.FINANCIAL_YEAR)
+    var startAt by mutableStateOf("1")
 
-    var loaded by remember { mutableStateOf(false) }
-    var ownerName by remember { mutableStateOf("") }
-    var studioName by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var pan by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var logoPath by remember { mutableStateOf<String?>(null) }
-    var logoVersion by remember { mutableStateOf(0) }
-    var showGstNote by remember { mutableStateOf(true) }
-    var showDueDate by remember { mutableStateOf(true) }
-    var dueDays by remember { mutableStateOf("15") }
-    var pattern by remember { mutableStateOf(NumberingScheme.DEFAULT_PATTERN) }
-    var prefix by remember { mutableStateOf("RS") }
-    var reset by remember { mutableStateOf(NumberReset.FINANCIAL_YEAR) }
-    var startAt by remember { mutableStateOf("1") }
-
-    LaunchedEffect(Unit) {
-        val profile = withContext(Dispatchers.IO) { actions.repository.profile() }
-        profile?.let { p ->
+    fun load(p: BusinessProfile?) {
+        if (p != null) {
             ownerName = p.ownerName
             studioName = p.studioName
             address = p.address
@@ -109,38 +111,26 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
         loaded = true
     }
 
-    val pickLogo = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
-            val target = File(context.filesDir, "logo")
-            runCatching {
-                context.contentResolver.openInputStream(uri)!!.use { input ->
-                    target.outputStream().use { input.copyTo(it) }
-                }
-            }.onSuccess {
-                logoPath = target.absolutePath
-                logoVersion++
-            }.onFailure { actions.message("Could not read that image") }
-        }
-    }
-
-    // Plain nullable values, not kotlin.Result: Result is an inline class, and mapping it in a
-    // composable showed the scheme object itself ("NumberingScheme(...)") instead of the number.
-    var numberingError: String? = null
-    val numbering: NumberingScheme? = try {
-        NumberingScheme(pattern.trim(), prefix.trim(), reset, startAt.toIntOrNull() ?: 0)
+    /**
+     * The numbering scheme, or why it is invalid. Plain nullable values, not kotlin.Result:
+     * Result is an inline class, and mapping it in a composable showed the scheme object
+     * itself ("NumberingScheme(...)") instead of the number.
+     */
+    fun numbering(): Pair<NumberingScheme?, String?> = try {
+        NumberingScheme(pattern.trim(), prefix.trim(), reset, startAt.toIntOrNull() ?: 0) to null
     } catch (e: IllegalArgumentException) {
-        numberingError = e.message ?: "Check the numbering settings"
-        null
+        null to (e.message ?: "Check the numbering settings")
     }
-    val numberPreview: String? = numbering?.let { scheme -> scheme.format(today(), scheme.startAt) }
 
-    fun buildProfile(): BusinessProfile? {
+    /** The profile to save, or null after telling the person what is missing. */
+    fun build(actions: Actions, missingName: String): BusinessProfile? {
         if (ownerName.isBlank()) {
-            actions.message("Please enter your name")
+            actions.message(missingName)
             return null
         }
-        if (numbering == null) {
-            actions.message(numberingError ?: "Check the numbering settings")
+        val (scheme, error) = numbering()
+        if (scheme == null) {
+            actions.message(error ?: "Check the numbering settings")
             return null
         }
         return BusinessProfile(
@@ -154,17 +144,46 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             showGstNote = showGstNote,
             showDueDate = showDueDate,
             defaultDueDays = dueDays.toIntOrNull()?.coerceIn(0, 365) ?: 15,
-            numbering = numbering,
+            numbering = scheme,
         )
     }
+}
 
-    val c = Ui.colors
-    val logo = rememberLogo(logoPath, logoVersion)
-    fun saveAll() {
-        buildProfile()?.let { profile -> actions.run("Saved") { saveProfile(profile) } }
+@Composable
+private fun rememberProfileForm(): ProfileForm {
+    val actions = LocalActions.current
+    val form = remember { ProfileForm() }
+    LaunchedEffect(Unit) {
+        form.load(withContext(Dispatchers.IO) { actions.repository.profile() })
+    }
+    return form
+}
+
+/**
+ * The Settings tab: a short list of places to go, not the fields themselves
+ * (design.md section 6.5, Settings).
+ */
+@Composable
+fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
+    val actions = LocalActions.current
+    val context = LocalContext.current
+    val profile by actions.repository.observeProfile().collectAsStateWithLifecycle(null)
+    val banks by actions.repository.observeBankAccounts().collectAsStateWithLifecycle(emptyList())
+
+    fun previewInvoice() {
+        val saved = profile
+        if (saved == null) {
+            actions.message("First add your name in Account details")
+            return
+        }
+        actions.run {
+            val (sample, _) = InvoicePdfExporter.sampleInvoice()
+            val withBank = sample.copy(bankAccount = banks.firstOrNull { it.isDefault } ?: sample.bankAccount)
+            val file = InvoicePdfExporter.export(context, withBank, saved)
+            withContext(Dispatchers.Main) { InvoicePdfExporter.open(context, file) }
+        }
     }
 
-    if (!loaded) return
     Column(
         modifier
             .fillMaxSize()
@@ -172,18 +191,169 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
     ) {
         ScreenHeader(
             title = "Settings",
-            subtitle = studioName.ifBlank { "Your details, numbering and bank" },
-        ) {
-            AppButton("Save", ::saveAll, variant = ButtonVariant.Link)
-        }
+            subtitle = profile?.studioName?.ifBlank { null } ?: profile?.ownerName ?: "Set up your details to start invoicing",
+        )
         Column(Modifier.padding(horizontal = ScreenMargin)) {
-            SettingsSection("Your details", first = true) {
-                Field("Your name (as on invoice)", ownerName, { ownerName = it }, placeholder = "Your full name")
-                Field("Studio name (for the sign-off)", studioName, { studioName = it }, placeholder = "e.g. Revishing Studio")
-                Field("Address", address, { address = it }, singleLine = false, minLines = 3, placeholder = "Street, city, PIN code")
-                Field("PAN", pan, { pan = it }, placeholder = "e.g. ABCDE1234F")
-                Field("Email", email, { email = it }, keyboardType = KeyboardType.Email, placeholder = "e.g. hello@yourstudio.com")
-                Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone, placeholder = "e.g. +91 98765 43210")
+            SettingsOption(
+                icon = AppIcons.Person,
+                title = "Account details",
+                subtitle = profile?.let { p -> listOf(p.ownerName, p.email).filter { it.isNotBlank() }.joinToString(" · ") }
+                    ?.ifBlank { null } ?: "Your name, email and phone",
+                first = true,
+            ) { nav.go(Screen.AccountDetails) }
+            SettingsOption(
+                icon = AppIcons.Briefcase,
+                title = "Business info",
+                subtitle = "Studio, address, PAN, logo, invoice numbers and bank",
+            ) { nav.go(Screen.BusinessInfo) }
+            SettingsOption(
+                icon = AppIcons.Document,
+                title = "Preview invoice",
+                subtitle = "See a sample invoice with your details",
+            ) { previewInvoice() }
+            HorizontalDivider(color = Ui.colors.hairline)
+            Spacer(Modifier.height(LocalBottomBarPadding.current + 16.dp))
+        }
+    }
+}
+
+/** One row of the Settings list: icon tile, title, a quiet line of what is inside, chevron. */
+@Composable
+private fun SettingsOption(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    first: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val c = Ui.colors
+    Column(Modifier.fillMaxWidth()) {
+        if (!first) HorizontalDivider(color = c.hairline)
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(FormShape)
+                .clickable(onClick = onClick, role = Role.Button)
+                .padding(vertical = 14.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(c.primaryTint),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = c.primary, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = c.ink)
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.greyText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Icon(AppIcons.ChevronRight, contentDescription = null, tint = c.grey, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+/** The person behind the invoices: name, email and phone. Sign-in and backup will live here too. */
+@Composable
+fun AccountDetailsScreen(nav: Navigator, modifier: Modifier = Modifier) {
+    val actions = LocalActions.current
+    val form = rememberProfileForm()
+
+    fun save() {
+        form.build(actions, "Please enter your name")?.let { profile ->
+            actions.run("Saved", onDone = { nav.back() }) { saveProfile(profile) }
+        }
+    }
+
+    InnerScaffold(
+        modifier = modifier,
+        topBar = {
+            BackTopBar("Account details", nav::back) {
+                AppButton("Save", ::save, variant = ButtonVariant.Link)
+            }
+        },
+    ) { padding ->
+        if (!form.loaded) return@InnerScaffold
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(padding)
+                .padding(horizontal = ScreenMargin, vertical = 8.dp),
+        ) {
+            SettingsSection("You", first = true) {
+                Field("Your name (as on invoice)", form.ownerName, { form.ownerName = it }, placeholder = "Your full name")
+                Field("Email", form.email, { form.email = it }, keyboardType = KeyboardType.Email, placeholder = "e.g. hello@yourstudio.com")
+                Field("Phone", form.phone, { form.phone = it }, keyboardType = KeyboardType.Phone, placeholder = "e.g. +91 98765 43210")
+            }
+            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 24.dp))
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+/** What the invoice says about the business: studio, address, PAN, logo, numbering and bank. */
+@Composable
+fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
+    val actions = LocalActions.current
+    val context = LocalContext.current
+    val banks by actions.repository.observeBankAccounts().collectAsStateWithLifecycle(emptyList())
+    val form = rememberProfileForm()
+    val c = Ui.colors
+
+    val pickLogo = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            val target = File(context.filesDir, "logo")
+            runCatching {
+                context.contentResolver.openInputStream(uri)!!.use { input ->
+                    target.outputStream().use { input.copyTo(it) }
+                }
+            }.onSuccess {
+                form.logoPath = target.absolutePath
+                form.logoVersion++
+            }.onFailure { actions.message("Could not read that image") }
+        }
+    }
+
+    fun save() {
+        form.build(actions, "First add your name in Account details")?.let { profile ->
+            actions.run("Saved", onDone = { nav.back() }) { saveProfile(profile) }
+        }
+    }
+
+    InnerScaffold(
+        modifier = modifier,
+        topBar = {
+            BackTopBar("Business info", nav::back) {
+                AppButton("Save", ::save, variant = ButtonVariant.Link)
+            }
+        },
+    ) { padding ->
+        if (!form.loaded) return@InnerScaffold
+        val logo = rememberLogo(form.logoPath, form.logoVersion)
+        val (scheme, numberingError) = form.numbering()
+        val numberPreview: String? = scheme?.let { s -> s.format(today(), s.startAt) }
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(padding)
+                .padding(horizontal = ScreenMargin, vertical = 8.dp),
+        ) {
+            SettingsSection("Business", first = true) {
+                Field("Studio name (for the sign-off)", form.studioName, { form.studioName = it }, placeholder = "e.g. Revishing Studio")
+                Field("Address", form.address, { form.address = it }, singleLine = false, minLines = 3, placeholder = "Street, city, PIN code")
+                Field("PAN", form.pan, { form.pan = it }, placeholder = "e.g. ABCDE1234F")
             }
 
             SettingsSection("Logo") {
@@ -200,45 +370,45 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                             Image(logo, contentDescription = "Logo", modifier = Modifier.size(40.dp))
                         }
                     }
-                    AppButton(if (logoPath == null) "Choose logo" else "Change logo", { pickLogo.launch("image/*") }, variant = ButtonVariant.Secondary)
-                    if (logoPath != null) AppButton("Remove", { logoPath = null }, variant = ButtonVariant.Tertiary, tint = c.error)
+                    AppButton(if (form.logoPath == null) "Choose logo" else "Change logo", { pickLogo.launch("image/*") }, variant = ButtonVariant.Secondary)
+                    if (form.logoPath != null) AppButton("Remove", { form.logoPath = null }, variant = ButtonVariant.Tertiary, tint = c.error)
                 }
             }
 
             SettingsSection("Invoice numbers") {
                 DropdownField(
                     label = "Style",
-                    selected = NumberStyle.entries.firstOrNull { it.pattern == pattern } ?: NumberStyle.CUSTOM,
+                    selected = NumberStyle.entries.firstOrNull { it.pattern == form.pattern } ?: NumberStyle.CUSTOM,
                     options = NumberStyle.entries,
                     optionLabel = { it.label },
                     onSelect = { style ->
-                        style.pattern?.let { pattern = it }
-                        reset = when (style) {
+                        style.pattern?.let { form.pattern = it }
+                        form.reset = when (style) {
                             NumberStyle.FINANCIAL_YEAR -> NumberReset.FINANCIAL_YEAR
                             NumberStyle.YEAR_NUMBER -> NumberReset.NEVER
-                            NumberStyle.CUSTOM -> reset
+                            NumberStyle.CUSTOM -> form.reset
                         }
                     },
                 )
                 Field(
                     "Pattern",
-                    pattern,
-                    { pattern = it },
+                    form.pattern,
+                    { form.pattern = it },
                     placeholder = "{PREFIX}/{FY}/{SEQ:3}",
                     supportingText = "{PREFIX} {FY} {FYS} {YYYY} {YY} {SEQ} or {SEQ:3}",
                 )
-                Field("Prefix", prefix, { prefix = it }, placeholder = "e.g. RS")
+                Field("Prefix", form.prefix, { form.prefix = it }, placeholder = "e.g. RS")
                 DropdownField(
                     label = "Restart numbering",
-                    selected = reset,
+                    selected = form.reset,
                     options = NumberReset.entries,
                     optionLabel = ::resetLabel,
-                    onSelect = { reset = it },
+                    onSelect = { form.reset = it },
                 )
                 Field(
                     "Start from number",
-                    startAt,
-                    { startAt = it.filter(Char::isDigit) },
+                    form.startAt,
+                    { form.startAt = it.filter(Char::isDigit) },
                     placeholder = "1",
                     keyboardType = KeyboardType.Number,
                     supportingText = "To continue your old series, enter the next number (e.g. 32)",
@@ -254,14 +424,14 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             }
 
             SettingsSection("On the invoice") {
-                SwitchRow("Show due date", null, showDueDate) { showDueDate = it }
-                SwitchRow("Show \"not registered under GST\"", "Recommended while you are not GST registered", showGstNote) {
-                    showGstNote = it
+                SwitchRow("Show due date", null, form.showDueDate) { form.showDueDate = it }
+                SwitchRow("Show \"not registered under GST\"", "Recommended while you are not GST registered", form.showGstNote) {
+                    form.showGstNote = it
                 }
                 Field(
                     "Days until due",
-                    dueDays,
-                    { dueDays = it.filter(Char::isDigit) },
+                    form.dueDays,
+                    { form.dueDays = it.filter(Char::isDigit) },
                     placeholder = "15",
                     keyboardType = KeyboardType.Number,
                 )
@@ -272,36 +442,16 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 AppButton("Add bank account", { nav.go(Screen.BankEditor(null)) }, Modifier.fillMaxWidth(), variant = ButtonVariant.Secondary, icon = AppIcons.Plus)
             }
 
-            SettingsSection("Preview") {
-            AppButton(
-                "Preview a sample invoice",
-                {
-                    val profile = buildProfile()
-                    if (profile != null) {
-                        actions.run {
-                            val (sample, _) = InvoicePdfExporter.sampleInvoice()
-                            val withBank = sample.copy(bankAccount = banks.firstOrNull { it.isDefault } ?: sample.bankAccount)
-                            val file = InvoicePdfExporter.export(context, withBank, profile)
-                            withContext(Dispatchers.Main) { InvoicePdfExporter.open(context, file) }
-                        }
-                    }
-                },
-                Modifier.fillMaxWidth(),
-                variant = ButtonVariant.Secondary,
-                icon = AppIcons.Document,
-            )
-            }
-
             HorizontalDivider(color = c.hairline, modifier = Modifier.padding(top = 20.dp))
-            AppButton("Save settings", ::saveAll, Modifier.fillMaxWidth().padding(top = 20.dp))
-            Spacer(Modifier.height(LocalBottomBarPadding.current + 16.dp))
+            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 20.dp))
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
 
 /**
  * One group of settings: a hairline above it (except the first), the heading, then the
- * fields with 12 dp between them. No card behind it (design.md section 8, Settings).
+ * fields with 12 dp between them. No card behind it (design.md section 6.5, Settings).
  */
 @Composable
 private fun SettingsSection(title: String, first: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
