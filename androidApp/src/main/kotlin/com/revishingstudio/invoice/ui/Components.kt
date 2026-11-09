@@ -44,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.unit.DpOffset
@@ -183,13 +184,46 @@ fun Modifier.progressiveBlur(state: HazeState, tint: Color, blurAtTop: Boolean, 
 // Backgrounds and headers
 // ---------------------------------------------------------------------------
 
-/** The page behind every screen: the plain canvas colour. */
+/**
+ * The app background (design.md section 5.1, decided 2026-11-09): soft sky blue at the top
+ * that fades into the canvas by 60% of the screen height, then plain canvas. Recreated in code
+ * from Saurabh's background image so it stays crisp on every screen size.
+ */
+private val BackgroundStops = arrayOf(
+    0.0f to Color(0xFF80B3F7),
+    0.1f to Color(0xFF8ABAF7),
+    0.2f to Color(0xFFA1CDF9),
+    0.3f to Color(0xFFBCDEFA),
+    0.4f to Color(0xFFD9ECFB),
+    0.5f to Color(0xFFEEF5FB),
+    0.6f to Color(0xFFF5F7FA),
+)
+
+/** The colour at the very top of the background, for the status bar blur band. */
+val BackgroundTop = Color(0xFF80B3F7)
+
+/**
+ * The background gradient measured against the window height, so a bar pinned to the top of
+ * the screen can draw exactly the part of the background behind it.
+ */
+@Composable
+fun rememberBackgroundBrush(alpha: Float = 1f): Brush {
+    val height = LocalWindowInfo.current.containerSize.height.toFloat().coerceAtLeast(1f)
+    return remember(height, alpha) {
+        val stops = BackgroundStops.map { (at, color) -> at to color.copy(alpha = alpha) }.toTypedArray()
+        Brush.verticalGradient(*stops, startY = 0f, endY = height)
+    }
+}
+
+/** The page behind every screen: the sky-to-canvas background. It stays put while content scrolls. */
 @Composable
 fun AppBackground(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+    val brush = rememberBackgroundBrush()
     Box(
         modifier
             .fillMaxSize()
-            .background(Ui.colors.background),
+            .background(Ui.colors.background)
+            .background(brush),
         content = content,
     )
 }

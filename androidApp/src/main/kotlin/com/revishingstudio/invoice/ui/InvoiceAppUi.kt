@@ -203,7 +203,7 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                         .align(Alignment.TopCenter)
                         .fillMaxWidth()
                         .windowInsetsTopHeight(WindowInsets.statusBars)
-                        .progressiveBlur(haze, colors.background.copy(alpha = 0.55f), blurAtTop = true, blur = 20.dp),
+                        .progressiveBlur(haze, BackgroundTop.copy(alpha = 0.55f), blurAtTop = true, blur = 20.dp),
                 )
                 // Progressive blur behind the bottom navigation only, with the tab bar on top.
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {

@@ -132,7 +132,8 @@ fun InnerScaffold(
     var topHeight by remember { mutableStateOf(0.dp) }
     var bottomHeight by remember { mutableStateOf(0.dp) }
     val systemBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val tint = c.background
+    val barTint = rememberBackgroundBrush(alpha = 0.97f)
+    val barFallback = rememberBackgroundBrush()
     Box(modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().hazeSource(haze)) {
             content(PaddingValues(top = topHeight, bottom = maxOf(bottomHeight, systemBottom)))
@@ -145,12 +146,12 @@ fun InnerScaffold(
                 .hazeEffect(haze) {
                     blurRadius = 20.dp
                     noiseFactor = 0f
-                    // Near-solid canvas behind the title and back button so scrolled text never reads
-                    // through them; only the last fifth of the bar fades into the content.
-                    tints = listOf(
-                        HazeTint(Brush.verticalGradient(0f to tint.copy(alpha = 0.97f), 0.8f to tint.copy(alpha = 0.95f), 1f to Color.Transparent)),
-                    )
-                    fallbackTint = HazeTint(Brush.verticalGradient(0f to tint, 0.8f to tint, 1f to Color.Transparent))
+                    // Near-solid background behind the title and back button so scrolled text never
+                    // reads through them. The tint is the same sky gradient as the page behind
+                    // (measured from the top of the screen), so the bar blends in; only its last
+                    // fifth fades into the content.
+                    tints = listOf(HazeTint(barTint))
+                    fallbackTint = HazeTint(barFallback)
                     mask = Brush.verticalGradient(0.8f to Color.Black, 1f to Color.Transparent)
                 },
         ) { topBar() }
