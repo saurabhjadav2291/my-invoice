@@ -37,6 +37,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -110,6 +112,10 @@ private class ProfileForm {
         }
         loaded = true
     }
+
+    /** True once a studio name, address, PAN or logo is filled in. */
+    fun hasBusinessDetails(): Boolean =
+        studioName.isNotBlank() || address.isNotBlank() || pan.isNotBlank() || logoPath != null
 
     /**
      * The numbering scheme, or why it is invalid. Plain nullable values, not kotlin.Result:
@@ -237,14 +243,15 @@ private fun SettingsOption(
                 .padding(vertical = 14.dp, horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // The same raised soft key as the round icon buttons (design.md section 5.3).
             Box(
                 Modifier
                     .size(40.dp)
-                    .clip(CircleShape)
-                    .background(c.primaryTint),
+                    .keyShadow(CircleShape, 3.dp)
+                    .softKey(CircleShape, KeyTop, KeyBottom, shadeAlpha = 0.10f),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = c.primary, modifier = Modifier.size(20.dp))
+                Icon(icon, contentDescription = null, tint = c.greyText, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
@@ -310,6 +317,18 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val banks by actions.repository.observeBankAccounts().collectAsStateWithLifecycle(emptyList())
     val form = rememberProfileForm()
     val c = Ui.colors
+    val scope = rememberCoroutineScope()
+    // Saved details open read-only, so nothing changes by an accidental tap; Edit info unlocks them.
+    var editing by remember { mutableStateOf(false) }
+    var confirmRemove by remember { mutableStateOf(false) }
+    // Whether business details are saved (not just typed), which is what Cancel goes back to.
+    var savedDetails by remember { mutableStateOf(false) }
+    LaunchedEffect(form.loaded) {
+        if (form.loaded) {
+            savedDetails = form.hasBusinessDetails()
+            editing = !savedDetails
+        }
+    }
 
     val pickLogo = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
@@ -327,7 +346,32 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
 
     fun save() {
         form.build(actions, "First add your name in Account details")?.let { profile ->
-            actions.run("Saved", onDone = { nav.back() }) { saveProfile(profile) }
+            actions.run("Saved", onDone = {
+                savedDetails = form.hasBusinessDetails()
+                editing = !savedDetails
+            }) { saveProfile(profile) }
+        }
+    }
+
+    /** Drops unsaved changes by reading the saved profile again. */
+    fun cancelEdit() {
+        scope.launch {
+            form.load(withContext(Dispatchers.IO) { actions.repository.profile() })
+            savedDetails = form.hasBusinessDetails()
+            editing = !savedDetails
+        }
+    }
+
+    fun removeBusinessDetails() {
+        form.studioName = ""
+        form.address = ""
+        form.pan = ""
+        form.logoPath = null
+        form.build(actions, "First add your name in Account details")?.let { profile ->
+            actions.run("Business details removed", onDone = {
+                savedDetails = false
+                editing = true
+            }) { saveProfile(profile) }
         }
     }
 
@@ -335,7 +379,13 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
         modifier = modifier,
         topBar = {
             BackTopBar("Business info", nav::back) {
-                AppButton("Save", ::save, variant = ButtonVariant.Link)
+                if (form.loaded) {
+                    if (editing) {
+                        AppButton("Save", ::save, variant = ButtonVariant.Link)
+                    } else {
+                        AppButton("Edit", { editing = true }, variant = ButtonVariant.Link, icon = AppIcons.Pencil)
+                    }
+                }
             }
         },
     ) { padding ->
@@ -343,6 +393,19 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
         val logo = rememberLogo(form.logoPath, form.logoVersion)
         val (scheme, numberingError) = form.numbering()
         val numberPreview: String? = scheme?.let { s -> s.format(today(), s.startAt) }
+        if (!editing) {
+            BusinessSummary(
+                form = form,
+                logo = logo,
+                numberPreview = numberPreview,
+                banks = banks,
+                padding = padding,
+                onBank = { bank -> nav.go(Screen.BankEditor(bank.id)) },
+                onEdit = { editing = true },
+                onRemove = { confirmRemove = true },
+            )
+            return@InnerScaffold
+        }
         Column(
             Modifier
                 .fillMaxSize()
@@ -444,7 +507,100 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
 
             HorizontalDivider(color = c.hairline, modifier = Modifier.padding(top = 20.dp))
             AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 20.dp))
+            if (savedDetails) {
+                AppButton("Cancel", ::cancelEdit, Modifier.fillMaxWidth().padding(top = 8.dp), variant = ButtonVariant.Tertiary)
+            }
             Spacer(Modifier.height(16.dp))
+        }
+    }
+    if (confirmRemove) {
+        ConfirmDialog(
+            title = "Remove business details?",
+            message = "Studio name, address, PAN and logo are cleared. Your name, invoice numbering and bank accounts stay as they are.",
+            confirmLabel = "Remove",
+            onConfirm = {
+                confirmRemove = false
+                removeBusinessDetails()
+            },
+            onDismiss = { confirmRemove = false },
+        )
+    }
+}
+
+/** Saved business details, read-only, with Edit info and Remove business details below. */
+@Composable
+private fun BusinessSummary(
+    form: ProfileForm,
+    logo: androidx.compose.ui.graphics.ImageBitmap?,
+    numberPreview: String?,
+    banks: List<BankAccount>,
+    padding: androidx.compose.foundation.layout.PaddingValues,
+    onBank: (BankAccount) -> Unit,
+    onEdit: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    val c = Ui.colors
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(padding)
+            .padding(horizontal = ScreenMargin, vertical = 8.dp),
+    ) {
+        SettingsSection("Business", first = true) {
+            if (logo != null) {
+                Box(
+                    Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White)
+                        .border(1.dp, c.hairline, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(logo, contentDescription = "Logo", modifier = Modifier.size(40.dp))
+                }
+            }
+            InfoRow("Studio name", form.studioName)
+            InfoRow("Address", form.address)
+            InfoRow("PAN", form.pan.uppercase())
+        }
+        SettingsSection("Invoice numbers") {
+            InfoRow("Pattern", form.pattern)
+            InfoRow("Restart numbering", resetLabel(form.reset))
+            InfoRow("Next invoice", numberPreview.orEmpty(), mono = true)
+        }
+        SettingsSection("On the invoice") {
+            InfoRow("Due date", if (form.showDueDate) "Shown, ${form.dueDays} days after the invoice date" else "Not shown")
+            InfoRow("\"Not registered under GST\" note", if (form.showGstNote) "Shown" else "Not shown")
+        }
+        SettingsSection("Bank accounts") {
+            if (banks.isEmpty()) InfoRow("Accounts", "")
+            banks.forEach { bank -> BankRow(bank) { onBank(bank) } }
+        }
+        HorizontalDivider(color = c.hairline, modifier = Modifier.padding(top = 20.dp))
+        AppButton("Edit info", onEdit, Modifier.fillMaxWidth().padding(top = 20.dp), icon = AppIcons.Pencil)
+        AppButton(
+            "Remove business details",
+            onRemove,
+            Modifier.fillMaxWidth().padding(top = 8.dp),
+            variant = ButtonVariant.Tertiary,
+            tint = c.error,
+        )
+        Spacer(Modifier.height(16.dp))
+    }
+}
+
+/** A saved value: quiet label above, the value in ink (or "Not added" in grey). */
+@Composable
+private fun InfoRow(label: String, value: String, mono: Boolean = false) {
+    val c = Ui.colors
+    Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = c.grey)
+        val style = MaterialTheme.typography.bodyLarge
+        if (value.isBlank()) {
+            Text("Not added", style = style, color = c.grey)
+        } else {
+            Text(value, style = if (mono) style.serial() else style, color = c.ink)
         }
     }
 }

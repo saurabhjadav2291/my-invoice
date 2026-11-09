@@ -233,9 +233,10 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
 
 - **Invoice row:** number in mono and the status tag on the first line; client name (`titleMedium`) and "Issued 7 Nov 2026" (`grey`) on the left, the amount on the right.
 - **Client row:** avatar tile with the first letter, name and email, currency tag.
-- **Settings (decided 2026-11-09):** the tab is a short list, not a form. Three rows split by hairlines, each a 40 dp `primaryTint` circle with a blue icon, a `titleMedium` title, one `bodySmall` grey line of what is inside, and a chevron:
+- **Settings (decided 2026-11-09):** the tab is a short list, not a form. Three rows split by hairlines, each a 40 dp raised soft-key circle (as the round icon buttons) with a `greyText` icon, a `titleMedium` title, one `bodySmall` grey line of what is inside, and a chevron:
   - **Account details** opens a screen with your name, email and phone (sign-in and backup will go here when they exist).
   - **Business info** opens a screen with studio name, address, PAN, logo, invoice numbers, on-the-invoice options and bank accounts.
+    Once saved it opens read-only (label over value, "Not added" in grey) so nothing changes by accident. **Edit info** (primary, also an Edit link in the top bar) turns the fields on, with Save and Cancel. **Remove business details** (tertiary, red, with a confirm) clears studio name, address, PAN and logo; name, numbering and bank accounts stay.
   - **Preview invoice** opens a sample PDF built from the saved details.
   The two screens use no cards: sections are a `titleLarge` heading over their fields, split by a `hairline` divider with 20 dp above and below, fields 12 dp apart.
 
