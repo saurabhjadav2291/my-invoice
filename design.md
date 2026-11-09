@@ -85,7 +85,7 @@ The PDF keeps its orange accent (`#FF5400`). Since 2026-11-09 it is set in Geist
 
 ## 3. Typography
 
-**Interface:** [Geist](https://vercel.com/font) (decided 2026-11-09), Regular 400 and Medium 500. SemiBold is bundled but not used in the scale. Hierarchy comes from size and colour, not weight.
+**Interface:** [Geist](https://vercel.com/font) (decided 2026-11-09), Regular 400, Medium 500 and SemiBold 600, all bundled. SemiBold for page titles, key figures and section headings (decided 2026-11-09, Medium read too light there); Medium for card titles, labels and buttons; Regular for body text.
 
 **Serial:** [Geist Mono](https://vercel.com/font) Regular, only for invoice numbers (`TextStyle.serial()`).
 
@@ -93,11 +93,11 @@ The PDF keeps its orange accent (`#FF5400`). Since 2026-11-09 it is set in Geist
 
 | Material slot | Size / line | Weight | Tracking | Use |
 |---|---|---|---|---|
-| `displaySmall` | 32 / 36 | Medium | -0.5 | Key figures: still to collect, invoice total |
-| `headlineLarge` | 28 / 32 | Medium | -0.3 | Page titles: Invoices, Clients, Settings |
-| `headlineMedium` | 24 / 28 | Medium | 0 | Editor total |
-| `headlineSmall` | 20 / 28 | Medium | 0 | Empty-state titles |
-| `titleLarge` | 18 / 24 | Medium | 0 | Section headings, top bar titles, dialog titles |
+| `displaySmall` | 32 / 36 | SemiBold | -0.5 | Key figures: still to collect, invoice total |
+| `headlineLarge` | 28 / 32 | SemiBold | -0.3 | Page titles: Invoices, Clients, Settings |
+| `headlineMedium` | 24 / 28 | SemiBold | 0 | Editor total |
+| `headlineSmall` | 20 / 28 | SemiBold | 0 | Empty-state titles |
+| `titleLarge` | 18 / 24 | SemiBold | 0 | Section headings, top bar titles, dialog titles |
 | `titleMedium` | 16 / 24 | Medium | 0 | Client name on a card, amounts on rows |
 | `bodyLarge` | 15 / 22 | Regular | 0 | Body text, field text |
 | `bodySmall` | 13 / 20 | Regular | 0 | Captions, labels above fields, meta |

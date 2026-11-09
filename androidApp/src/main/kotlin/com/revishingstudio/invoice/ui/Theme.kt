@@ -132,17 +132,18 @@ private fun style(size: Int, weight: FontWeight, line: Int, tracking: Double = 0
 )
 
 /**
- * Type scale from design.md section 3. Hierarchy comes from size and colour: Regular and
- * Medium only. Negative tracking only on display sizes.
+ * Type scale from design.md section 3. Page titles, key figures and section headings are
+ * SemiBold (decided 2026-11-09: Geist Medium read too light there); card titles, labels and
+ * buttons are Medium; body text is Regular. Negative tracking only on display sizes.
  */
 private val AppTypography = Typography(
-    displayLarge = style(40, FontWeight.Medium, 44, -0.8),
-    displayMedium = style(36, FontWeight.Medium, 40, -0.6),
-    displaySmall = style(32, FontWeight.Medium, 36, -0.5), // key figure
-    headlineLarge = style(28, FontWeight.Medium, 32, -0.3), // page title
-    headlineMedium = style(24, FontWeight.Medium, 28),
-    headlineSmall = style(20, FontWeight.Medium, 28),
-    titleLarge = style(18, FontWeight.Medium, 24), // section and bar titles
+    displayLarge = style(40, FontWeight.SemiBold, 44, -0.8),
+    displayMedium = style(36, FontWeight.SemiBold, 40, -0.6),
+    displaySmall = style(32, FontWeight.SemiBold, 36, -0.5), // key figure
+    headlineLarge = style(28, FontWeight.SemiBold, 32, -0.3), // page title
+    headlineMedium = style(24, FontWeight.SemiBold, 28),
+    headlineSmall = style(20, FontWeight.SemiBold, 28),
+    titleLarge = style(18, FontWeight.SemiBold, 24), // section and bar titles
     titleMedium = style(16, FontWeight.Medium, 24), // card title
     titleSmall = style(15, FontWeight.Medium, 20),
     bodyLarge = style(15, FontWeight.Normal, 22), // body
