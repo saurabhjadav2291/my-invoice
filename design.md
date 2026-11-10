@@ -260,14 +260,15 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
 
 Two separate pieces floating 20 dp from the screen sides (decided 2026-11-09): the tab pill, 72 dp tall and filling the width, then a 12 dp gap, then the + disc, also 72 dp. The pill is drawn as a soft key from `#F9FAFB` to the track colour `#ECEEF1`, with a white rim and a subtle ink drop shadow (decided 2026-11-09): 24 dp blur at 10% offset 8 dp down, plus a 3 dp contact shadow at 8% offset 1 dp. Never a coloured glow. The + disc casts the same shadow.
 
-- Only the selected tab shows its label: a pressed-in grey pill (the same key as the selected segmented tab) holding the 24 dp icon in `primary` blue and a `labelLarge` label in `ink` (decided 2026-11-08), side by side. The other tabs are a `grey` 24 dp icon only, with no fill. Switching tabs takes 260 ms (decided 2026-11-09): every slot animates its width together, the new pill fades and stretches in while the old one fades and narrows, and the label slides open inside it. The pill is always drawn as a full pill at its current width, never a square or clipped shape mid-transition.
+- Only the selected tab shows its label: a pressed-in grey pill (the same key as the selected segmented tab) holding the 24 dp icon in `primary` blue and a `labelLarge` label in `ink` (decided 2026-11-08), side by side. The other tabs are a `grey` 24 dp icon only, with no fill. Tapping a tab shows no ripple (decided 2026-11-10); the sliding pill is the only feedback. Switching tabs takes 260 ms (decided 2026-11-09): every slot animates its width together, the new pill fades and stretches in while the old one fades and narrows, and the label slides open inside it. The pill is always drawn as a full pill at its current width, never a square or clipped shape mid-transition.
 - The **+ button** stands on its own to the right of the pill, as tall as it: a 72 dp blue soft-key disc inside a 4 dp neutral key ring, with a white + icon and a soft neutral shadow, no glow. Pressed: `primaryPressed` and scale 0.96.
 - Invoices, Clients and Settings share the pill. The first and last tabs sit 8 dp from its ends, the same gap as above and below, so the selected pill is evenly inset. The selected pill takes the width it needs; the other tabs split the remaining space equally, each icon centred in its slot (decided 2026-11-09). Icon-only tabs are at least 48 dp wide; the selected pill has 14 dp side padding.
 
 ### 6.7 Forms
 
+- **Every full-screen form uses one layout (decided 2026-11-10):** no cards. Sections are a `titleLarge` heading over their fields (`SettingsSection`), split by a `hairline` divider with 20 dp above and below, fields 12 dp apart. A final hairline sits above the full-width Save button; a destructive action (Delete, Archive) is a red tertiary button under it. This covers Account details, Business info, Add/edit bank account (Account, Bank codes, Default), the client form and the invoice form. Short dialogs (Record payment) keep their fields in a single column with no sections.
 - Fields: 48 dp tall (12 dp vertical, 16 dp horizontal padding), 8 dp corners, drawn as an inset soft-key well (`Modifier.fieldWell()`): darker at the top, a shade under the top edge and a white rim along the bottom. No border at rest; a 2 dp `primary` border when focused. Label above in `bodySmall` `greyText`.
-- Every blank field shows a guided placeholder in `grey`: an example of what goes there ("e.g. KKBK0000123", "Street, city, PIN code", "0.00"), never a repeat of the label.
+- Every blank field shows a guided placeholder in `grey`: an example of what goes there ("e.g. ABCD0123456", "Street, city, PIN code", "0.00"), never a repeat of the label.
 - Pickers (dropdowns and dates) use the same 48 dp well and open a menu or the date picker.
 - Menus: white, 12 dp corners, hairline, 8 dp shadow.
 - Dialogs and the date picker: white, 20 dp corners.
@@ -277,13 +278,14 @@ Two separate pieces floating 20 dp from the screen sides (decided 2026-11-09): t
 
 A frosted white card with 20 dp corners, a hairline and a soft neutral shadow, with 20 dp side padding and 16 dp vertical padding.
 
-- Left: a 32 dp line icon in the status colour. Success is a ticked circle in the Paid green, errors a circle with "!" in the error red, hints the same in `primary` blue.
+- Left: a 32 dp line icon in the status colour. Success is a ticked circle in the Paid green, errors a circle with "!" in the error red, hints the same in `primary` blue, warnings a triangle with "!" in `warning` amber (#D97706).
+- Tint wash (decided 2026-11-10): over the frosted white, a left-to-right gradient in the same status colour, 14% at the left edge, 6% at a quarter and 0% by the middle, so the right half stays plain frosted white.
 - Then 16 dp, the message in `titleMedium` `ink`, and under it the time in `bodySmall` `grey`.
 - Used for every confirmation ("Payment recorded"), error and hint. It replaces the old dark snackbar.
 
 ### 6.9 Icons
 
-Every icon comes from the free **Hugeicons** set, stroke rounded style (decided 2026-11-10; https://hugeicons.com, npm `@hugeicons/core-free-icons`, MIT). They are copied into `AppIcons.kt` as vectors, each naming its Hugeicons source, so there is no icon library dependency and no Material icons. New icons must also come from the free Hugeicons stroke rounded set. Sizes: 18 dp in buttons and rows, 24 dp in the tab bar, 32 dp in banners, coloured with the text role (`greyText` or `grey`). No emoji.
+Every icon comes from the free **Hugeicons** set, stroke rounded style (decided 2026-11-10; https://hugeicons.com, npm `@hugeicons/core-free-icons`, MIT). They are copied into `AppIcons.kt` as vectors, each naming its Hugeicons source, so there is no icon library dependency and no Material icons. New icons must also come from the free Hugeicons stroke rounded set. Stroke width 2 on the 24 grid (decided 2026-11-10; Hugeicons' 1.5 looked too thin). Sizes: 18 dp in buttons and rows, 24 dp in the tab bar, 32 dp in banners, coloured with the text role (`greyText` or `grey`). No emoji.
 
 ---
 

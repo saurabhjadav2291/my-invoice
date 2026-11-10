@@ -63,6 +63,8 @@ data class AppColors(
     /** Orange of the invoice PDF, used only where the app shows the paper invoice. */
     val paperAccent: Color,
     val error: Color,
+    /** Amber for warning banners. */
+    val warning: Color,
     val draft: StatusColors,
     val sent: StatusColors,
     val partlyPaid: StatusColors,
@@ -94,6 +96,7 @@ val LightAppColors = AppColors(
     onInverse = Color.White,
     paperAccent = Color(0xFFFF5400),
     error = Color(0xFFDC2626),
+    warning = Color(0xFFD97706),
     draft = StatusColors(Color(0xFF4B5565), Color(0xFFECEFF4)),
     sent = StatusColors(Color(0xFF2559B8), Color(0xFFEAF1FC)),
     partlyPaid = StatusColors(Color(0xFF9A5B00), Color(0xFFFBF1E0)),
