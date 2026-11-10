@@ -8,121 +8,160 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
 
-/** Thin, rounded line icons in the style of the design. Drawn on a 24 x 24 grid. */
+/**
+ * App icons from the free Hugeicons set (stroke rounded, 24 x 24 grid, 1.5 stroke).
+ * Source: https://hugeicons.com, npm @hugeicons/core-free-icons (MIT licence).
+ * Each icon names the Hugeicons icon it was copied from, so it can be swapped later.
+ */
 object AppIcons {
 
-    /** Rounded square with lines: the Invoices tab. */
-    val Invoices: ImageVector = lineIcon(
+    /** Receipt with lines: the Invoices tab. Hugeicons "Invoice01". */
+    val Invoices: ImageVector = icon(
         "Invoices",
-        "M7 3.5h10a3.5 3.5 0 0 1 3.5 3.5v10a3.5 3.5 0 0 1 -3.5 3.5h-10a3.5 3.5 0 0 1 -3.5 -3.5v-10a3.5 3.5 0 0 1 3.5 -3.5z",
-        "M8 8.5h8",
-        "M8 12h8",
-        "M8 15.5h5",
+        Stroke("M4 18.6458V8.05426C4 5.20025 4 3.77325 4.87868 2.88663C5.75736 2 7.17157 2 10 2H14C16.8284 2 18.2426 2 19.1213 2.88663C20 3.77325 20 5.20025 20 8.05426V18.6458C20 20.1575 20 20.9133 19.538 21.2108C18.7831 21.6971 17.6161 20.6774 17.0291 20.3073C16.5441 20.0014 16.3017 19.8485 16.0325 19.8397C15.7417 19.8301 15.4949 19.9768 14.9709 20.3073L13.06 21.5124C12.5445 21.8374 12.2868 22 12 22C11.7132 22 11.4555 21.8374 10.94 21.5124L9.02913 20.3073C8.54415 20.0014 8.30166 19.8485 8.03253 19.8397C7.74172 19.8301 7.49493 19.9768 6.97087 20.3073C6.38395 20.6774 5.21687 21.6971 4.46195 21.2108C4 20.9133 4 20.1575 4 18.6458Z"),
+        Stroke("M11 11H8"),
+        Stroke("M14 7L8 7"),
     )
 
-    /** A page with a folded corner and text lines. */
-    val Document: ImageVector = lineIcon(
+    /** A page with a folded corner. Hugeicons "File02". */
+    val Document: ImageVector = icon(
         "Document",
-        "M14 3h-6.5a2.5 2.5 0 0 0 -2.5 2.5v13a2.5 2.5 0 0 0 2.5 2.5h9a2.5 2.5 0 0 0 2.5 -2.5v-10.5z",
-        "M14 3v4a1.5 1.5 0 0 0 1.5 1.5h3.5",
-        "M8.75 9h2.5",
-        "M8.75 12.75h6.5",
-        "M8.75 16.25h6.5",
+        Stroke("M8 17H16"),
+        Stroke("M8 13H12"),
+        Stroke("M13 2.5V3C13 5.82843 13 7.24264 13.8787 8.12132C14.7574 9 16.1716 9 19 9H19.5M20 10.6569V14C20 17.7712 20 19.6569 18.8284 20.8284C17.6569 22 15.7712 22 12 22C8.22876 22 6.34315 22 5.17157 20.8284C4 19.6569 4 17.7712 4 14V9.45584C4 6.21082 4 4.58831 4.88607 3.48933C5.06508 3.26731 5.26731 3.06508 5.48933 2.88607C6.58831 2 8.21082 2 11.4558 2C12.1614 2 12.5141 2 12.8372 2.11401C12.9044 2.13772 12.9702 2.165 13.0345 2.19575C13.3436 2.34355 13.593 2.593 14.0919 3.09188L18.8284 7.82843C19.4065 8.40649 19.6955 8.69552 19.8478 9.06306C20 9.4306 20 9.83935 20 10.6569Z"),
     )
 
-    /** Two people: the Clients tab. */
-    val Clients: ImageVector = lineIcon(
+    /** Two people: the Clients tab. Hugeicons "UserMultiple". */
+    val Clients: ImageVector = icon(
         "Clients",
-        "M5.5 7.5a3.75 3.75 0 1 0 7.5 0a3.75 3.75 0 1 0 -7.5 0z",
-        "M2.5 20.5v-1a4.5 4.5 0 0 1 4.5 -4.5h4.5a4.5 4.5 0 0 1 4.5 4.5v1",
-        "M15.5 3.9a3.75 3.75 0 0 1 0 7.2",
-        "M18.5 15.2a4.5 4.5 0 0 1 3 4.3v1",
+        Stroke("M16 21C15.7668 18.0685 13.3422 15.7477 10.3085 15.5521L9.49999 15.5C9.21121 15.5076 8.94209 15.5178 8.68816 15.5298C5.68124 15.6723 3.23089 18.0974 3 21"),
+        Stroke("M12.75 9.75C12.75 11.5449 11.2949 13 9.5 13C7.70508 13 6.25 11.5449 6.25 9.75C6.25 7.95507 7.70508 6.5 9.5 6.5C11.2949 6.5 12.75 7.95507 12.75 9.75Z"),
+        Stroke("M21 17.501C20.7709 14.6314 18.4541 12.2748 15.5 11.9961"),
+        Stroke("M15.9877 9C16.8965 8.42434 17.5001 7.40788 17.5001 6.25C17.5001 4.45507 16.0496 3 14.2602 3C13.3811 3 12.5838 3.35121 12.0001 3.92139"),
     )
 
-    /** Arrow pointing up and right: "open this" on cards. */
-    val ArrowUpRight: ImageVector = lineIcon("ArrowUpRight", "M7 17L17 7", "M8.5 7h8.5v8.5")
+    /** Arrow pointing up and right: "open this" on cards. Hugeicons "ArrowUpRight01". */
+    val ArrowUpRight: ImageVector = icon(
+        "ArrowUpRight",
+        Stroke("M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5"),
+    )
 
-    /** Arrow pointing left: back. */
-    val Back: ImageVector = lineIcon("Back", "M19 12H5", "M11 6l-6 6l6 6")
+    /** Arrow pointing left: back. Hugeicons "ArrowLeft02". */
+    val Back: ImageVector = icon(
+        "Back",
+        Stroke("M5.5 12.002H19"),
+        Stroke("M10.9999 18.002C10.9999 18.002 4.99998 13.583 4.99997 12.0019C4.99996 10.4208 11 6.00195 11 6.00195"),
+    )
 
-    val Plus: ImageVector = lineIcon("Plus", "M12 5v14", "M5 12h14")
+    /** Hugeicons "Add01". */
+    val Plus: ImageVector = icon(
+        "Plus",
+        Stroke("M12.001 4.00101V20.001"),
+        Stroke("M20.001 12.001L4.00098 12.001"),
+    )
 
-    /** Arrow pointing right: link buttons. */
-    val ArrowRight: ImageVector = lineIcon("ArrowRight", "M5 12h14", "M13 6l6 6l-6 6")
+    /** Arrow pointing right: link buttons. Hugeicons "ArrowRight02". */
+    val ArrowRight: ImageVector = icon(
+        "ArrowRight",
+        Stroke("M18.5 12L4.99997 12"),
+        Stroke("M13 18C13 18 19 13.5811 19 12C19 10.4188 13 6 13 6"),
+    )
 
-    /** Circle with a tick: success banners. */
-    val CheckCircle: ImageVector = lineIcon(
+    /** Circle with a tick: success banners. Hugeicons "CheckmarkCircle02". */
+    val CheckCircle: ImageVector = icon(
         "CheckCircle",
-        "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0z",
-        "M8 12.5l2.75 2.75l5.25 -5.5",
+        Stroke("M22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12Z", cap = StrokeCap.Butt, join = StrokeJoin.Miter),
+        Stroke("M8 12.5L10.5 15L16 9"),
     )
 
-    /** Circle with an exclamation mark: error and notice banners. */
-    val AlertCircle: ImageVector = lineIcon(
+    /** Circle with an exclamation mark: error and notice banners. Hugeicons "AlertCircle". */
+    val AlertCircle: ImageVector = icon(
         "AlertCircle",
-        "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0z",
-        "M12 7.5v5.5",
-        "M12 16.5v0.01",
+        Stroke("M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0z"),
+        Stroke("M12 8V12"),
+        Stroke("M12.125 15.75H12M12.25 15.75C12.25 15.8881 12.1381 16 12 16C11.8619 16 11.75 15.8881 11.75 15.75C11.75 15.6119 11.8619 15.5 12 15.5C12.1381 15.5 12.25 15.6119 12.25 15.75Z"),
     )
 
-    val Trash: ImageVector = lineIcon(
+    /** Hugeicons "Delete02". */
+    val Trash: ImageVector = icon(
         "Trash",
-        "M4.5 7h15",
-        "M9.5 7v-1.5a1.5 1.5 0 0 1 1.5 -1.5h2a1.5 1.5 0 0 1 1.5 1.5v1.5",
-        "M6.5 7l0.8 11.2a2 2 0 0 0 2 1.8h5.4a2 2 0 0 0 2 -1.8l0.8 -11.2",
-        "M10.25 11v5",
-        "M13.75 11v5",
+        Stroke("M18.8516 16.3743L19.5 6H4.5L5.14839 16.3743C5.315 19.0401 5.39831 20.373 6.26426 21.1865C7.13021 22 8.46571 22 11.1367 22H12.8633C15.5343 22 16.8698 22 17.7357 21.1865C18.6017 20.373 18.685 19.0401 18.8516 16.3743Z"),
+        Stroke("M16 6H21M16 6L15.3778 4.34082C15.0007 3.33524 14.8122 2.83245 14.4402 2.50292C14.3213 2.39765 14.1904 2.3069 14.0501 2.2326C13.6109 2 13.074 2 12 2C10.926 2 10.3891 2 9.9499 2.2326C9.8096 2.3069 9.67865 2.39765 9.55982 2.50292C9.18783 2.83245 8.99928 3.33524 8.62219 4.34082L8 6M16 6H8M3 6H8"),
+        Stroke("M9.5 11V17M14.5 11V17"),
     )
 
-    /** Paper plane: send / share the PDF. */
-    val Send: ImageVector = lineIcon(
+    /** Paper plane: send / share the PDF. Hugeicons "Sent". */
+    val Send: ImageVector = icon(
         "Send",
-        "M20.5 3.5l-17 7l7 3l3 7z",
-        "M20.5 3.5l-10 10",
+        Stroke("M21.0477 3.05293C18.8697 0.707363 2.48648 6.4532 2.50001 8.551C2.51535 10.9299 8.89809 11.6617 10.6672 12.1581C11.7311 12.4565 12.016 12.7625 12.2613 13.8781C13.3723 18.9305 13.9301 21.4435 15.2014 21.4996C17.2278 21.5892 23.1733 5.342 21.0477 3.05293Z", cap = StrokeCap.Butt, join = StrokeJoin.Miter),
+        Stroke("M11.4999 12.5L14.9999 9"),
     )
 
-    val Pencil: ImageVector = lineIcon(
+    /** Hugeicons "PencilEdit02". */
+    val Pencil: ImageVector = icon(
         "Pencil",
-        "M4 20h4l10.5 -10.5a2.83 2.83 0 0 0 -4 -4l-10.5 10.5v4",
-        "M13.5 6.5l4 4",
+        Stroke("M16.4249 4.60509L17.4149 3.6151C18.2351 2.79497 19.5648 2.79497 20.3849 3.6151C21.205 4.43524 21.205 5.76493 20.3849 6.58507L19.3949 7.57506M16.4249 4.60509L9.76558 11.2644C9.25807 11.772 8.89804 12.4078 8.72397 13.1041L8 16L10.8959 15.276C11.5922 15.102 12.228 14.7419 12.7356 14.2344L19.3949 7.57506M16.4249 4.60509L19.3949 7.57506", cap = StrokeCap.Butt),
+        Stroke("M18.9999 13.5C18.9999 16.7875 18.9999 18.4312 18.092 19.5376C17.9258 19.7401 17.7401 19.9258 17.5375 20.092C16.4312 21 14.7874 21 11.4999 21H11C7.22876 21 5.34316 21 4.17159 19.8284C3.00003 18.6569 3 16.7712 3 13V12.5C3 9.21252 3 7.56879 3.90794 6.46244C4.07417 6.2599 4.2599 6.07417 4.46244 5.90794C5.56879 5 7.21252 5 10.5 5"),
     )
 
-    /** Three dots: more options. */
-    val More: ImageVector = lineIcon("More", "M5.5 12h0.01", "M12 12h0.01", "M18.5 12h0.01", width = 3f)
+    /** Three dots: more options. Hugeicons "MoreHorizontal". */
+    val More: ImageVector = icon(
+        "More",
+        Stroke("M6.00449 12.5V12M18.0045 12.5V12M12.0045 12.5V12M7.00449 12.5C7.00449 11.9477 6.55677 11.5 6.00449 11.5C5.4522 11.5 5.00449 11.9477 5.00449 12.5C5.00449 13.0523 5.4522 13.5 6.00449 13.5C6.55677 13.5 7.00449 13.0523 7.00449 12.5ZM19.0045 12.5C19.0045 11.9477 18.5568 11.5 18.0045 11.5C17.4522 11.5 17.0045 11.9477 17.0045 12.5C17.0045 13.0523 17.4522 13.5 18.0045 13.5C18.5568 13.5 19.0045 13.0523 19.0045 12.5ZM13.0045 12.5C13.0045 11.9477 12.5568 11.5 12.0045 11.5C11.4522 11.5 11.0045 11.9477 11.0045 12.5C11.0045 13.0523 11.4522 13.5 12.0045 13.5C12.5568 13.5 13.0045 13.0523 13.0045 12.5Z"),
+    )
 
-    /** A coin with a tick: record a payment. */
-    val Payment: ImageVector = lineIcon(
+    /** Money coming in: record a payment. Hugeicons "MoneyReceive02". */
+    val Payment: ImageVector = icon(
         "Payment",
-        "M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0z",
-        "M8.5 12.2l2.4 2.4l4.6 -4.8",
+        Stroke("M14.4998 14.001C14.4998 15.3817 13.3805 16.501 11.9998 16.501C10.619 16.501 9.49976 15.3817 9.49976 14.001C9.49976 12.6203 10.619 11.501 11.9998 11.501C13.3805 11.501 14.4998 12.6203 14.4998 14.001Z"),
+        Stroke("M17 7.00293C18.9452 7.08767 20.3228 7.40675 21.1329 7.6578C21.6756 7.82599 22 8.34037 22 8.90853V18.6833C22 19.7984 20.7719 20.6375 19.6762 20.4305C18.7361 20.253 17.5107 20.1104 16 20.1104C11.2491 20.1104 10.1096 21.9161 3.1448 20.3802C2.47265 20.232 2 19.6275 2 18.9392V8.92217C2 7.94632 2.92079 7.23467 3.87798 7.42461C5.31598 7.70997 6.49012 7.8435 7.5 7.87953"),
+        Stroke("M2.00049 16.4971C4.20963 16.4971 6.00049 18.2879 6.00049 20.4971M22 11.47C20.2655 11.47 18.5005 9.54062 18.5005 7.50098M5.92901 7.75514C5.70483 9.40605 3.95133 11.001 2 11.001M18.102 20.0993C18.2601 18.3112 20.1009 17.001 22 17.001"),
+        Stroke("M12 8.50098L12 3.00098M12 8.50098C12.7002 8.50098 14.5 6.00098 14.5 6.00098M12 8.50098C11.2998 8.50098 9.5 6.00098 9.5 6.00098"),
     )
 
-    /** Gear: the Settings tab. */
-    val Settings: ImageVector = lineIcon(
+    /** Gear: the Settings tab. Hugeicons "Settings01". */
+    val Settings: ImageVector = icon(
         "Settings",
-        "M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0z",
-        "M10.3 3.6a1.7 1.7 0 0 1 3.4 0a1.7 1.7 0 0 0 2.6 1.1a1.7 1.7 0 0 1 2.4 2.4a1.7 1.7 0 0 0 1.1 2.6a1.7 1.7 0 0 1 0 3.4a1.7 1.7 0 0 0 -1.1 2.6a1.7 1.7 0 0 1 -2.4 2.4a1.7 1.7 0 0 0 -2.6 1.1a1.7 1.7 0 0 1 -3.4 0a1.7 1.7 0 0 0 -2.6 -1.1a1.7 1.7 0 0 1 -2.4 -2.4a1.7 1.7 0 0 0 -1.1 -2.6a1.7 1.7 0 0 1 0 -3.4a1.7 1.7 0 0 0 1.1 -2.6a1.7 1.7 0 0 1 2.4 -2.4a1.7 1.7 0 0 0 2.6 -1.1z",
+        Stroke("M3.95631 10.5829L3.03254 9.07084C2.74505 8.60024 2.7389 8.00978 3.01652 7.5333L3.63533 6.47124C3.90953 6.00064 4.41721 5.71571 4.96162 5.7269L6.69131 5.76245C6.92616 5.76728 7.15379 5.68727 7.34333 5.54846C7.79531 5.21745 8.28334 4.93276 8.80042 4.70139C9.01191 4.60675 9.19222 4.45165 9.30469 4.24903L10.1203 2.77965C10.3847 2.30328 10.8865 2.00781 11.4312 2.00781H12.6937C13.2384 2.00781 13.7403 2.30329 14.0047 2.77966L14.8202 4.24902C14.9327 4.45165 15.113 4.60675 15.3245 4.70139C15.8416 4.93274 16.3296 5.2174 16.7815 5.54838C16.9711 5.68718 17.1987 5.76718 17.4336 5.76235L19.1634 5.72676C19.7078 5.71557 20.2155 6.00049 20.4897 6.47111L21.1085 7.53314C21.3862 8.00963 21.38 8.60009 21.0925 9.07068L20.1687 10.5828C20.0481 10.7803 20.002 11.0134 20.0235 11.2439C20.0707 11.7486 20.0707 12.267 20.0235 12.7717C20.002 13.0022 20.0481 13.2353 20.1687 13.4329L21.0924 14.9448C21.3799 15.4154 21.3861 16.0058 21.1084 16.4823L20.4896 17.5444C20.2154 18.015 19.7077 18.2999 19.1633 18.2887L17.4338 18.2531C17.1989 18.2483 16.9713 18.3283 16.7817 18.4671C16.3297 18.7982 15.8416 19.0829 15.3245 19.3142C15.113 19.4089 14.9327 19.564 14.8202 19.7666L14.0047 21.236C13.7403 21.7123 13.2384 22.0078 12.6937 22.0078H11.4312C10.8866 22.0078 10.3847 21.7123 10.1203 21.236L9.30468 19.7665C9.19222 19.5639 9.01191 19.4088 8.80042 19.3142C8.28329 19.0828 7.79519 18.798 7.34316 18.467C7.15362 18.3282 6.92597 18.2482 6.69111 18.253L4.96175 18.2886C4.41733 18.2998 3.90963 18.0148 3.63543 17.5442L3.01663 16.4822C2.739 16.0057 2.74515 15.4152 3.03264 14.9446L3.95631 13.4327C4.07699 13.2351 4.12309 13.002 4.10154 12.7715C4.05437 12.267 4.05438 11.7486 4.10154 11.244C4.12308 11.0135 4.07699 10.7805 3.95631 10.5829Z", cap = StrokeCap.Butt, join = StrokeJoin.Miter),
+        Stroke("M8.5625 12.0078a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0z", cap = StrokeCap.Butt, join = StrokeJoin.Miter),
     )
 
-    /** One person: account details. */
-    val Person: ImageVector = lineIcon(
+    /** One person: account details. Hugeicons "User". */
+    val Person: ImageVector = icon(
         "Person",
-        "M8.25 7.5a3.75 3.75 0 1 0 7.5 0a3.75 3.75 0 1 0 -7.5 0z",
-        "M5 20.5v-1a5 5 0 0 1 5 -5h4a5 5 0 0 1 5 5v1",
+        Stroke("M20 21.0001C19.713 17.269 16.7289 14.3151 12.995 14.0662L12 13.9999C11.6446 14.0096 11.3134 14.0225 11.0008 14.0378C7.3 14.2192 4.28417 17.3057 4 21.0001"),
+        Stroke("M8 6.99988a4 4 0 1 0 8 0a4 4 0 1 0 -8 0z"),
     )
 
-    /** Briefcase: business info. */
-    val Briefcase: ImageVector = lineIcon(
+    /** Briefcase: business info. Hugeicons "Briefcase01". */
+    val Briefcase: ImageVector = icon(
         "Briefcase",
-        "M6 7.5h12a2.5 2.5 0 0 1 2.5 2.5v8a2.5 2.5 0 0 1 -2.5 2.5h-12a2.5 2.5 0 0 1 -2.5 -2.5v-8a2.5 2.5 0 0 1 2.5 -2.5z",
-        "M9 7.5v-1.5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v1.5",
-        "M3.5 13h17",
+        Stroke("M2.00127 8.5L1.99911 13.997C1.99782 17.2979 1.99717 18.9484 3.02235 19.974C4.04754 20.9996 5.69801 20.9996 8.99895 20.9997L15 20.9998C18.2994 20.9999 19.949 21 20.9741 19.9751C21.9992 18.9502 21.9996 17.3005 22.0002 14.0012L22.0013 8.5"),
+        Stroke("M8.49857 6.5C8.49857 5.09554 8.49857 4.39331 8.83563 3.88886C8.98154 3.67048 9.16904 3.48298 9.38743 3.33706C9.89187 3 10.5941 3 11.9986 3C13.403 3 14.1053 3 14.6097 3.33706C14.8281 3.48298 15.0156 3.67048 15.1615 3.88886C15.4986 4.39331 15.4986 5.09554 15.4986 6.5"),
+        Stroke("M3.99885 6.5L19.998 6.50016C21.1024 6.50023 21.998 7.39582 21.9981 8.5003C21.998 10.7093 20.2068 12.5005 17.9978 12.5006H5.99901C3.79005 12.5004 1.99876 10.7091 1.99866 8.50013C1.99876 7.39568 2.8944 6.50007 3.99885 6.5Z"),
+        Stroke("M9.99857 12.5V13.5C9.99857 13.965 9.99857 14.1975 10.0497 14.3882C10.1884 14.9059 10.5927 15.3102 11.1103 15.4489C11.3011 15.5 11.5336 15.5 11.9986 15.5C12.4636 15.5 12.696 15.5 12.8868 15.4489C13.4044 15.3102 13.8088 14.9059 13.9475 14.3882C13.9986 14.1975 13.9986 13.965 13.9986 13.5V12.5"),
     )
 
-    /** Chevron pointing right: "opens another screen" on list rows. */
-    val ChevronRight: ImageVector = lineIcon("ChevronRight", "M9.5 6l6 6l-6 6")
+    /** Chevron pointing right: "opens another screen" on list rows. Hugeicons "ArrowRight01". */
+    val ChevronRight: ImageVector = icon(
+        "ChevronRight",
+        Stroke("M9.00005 6C9.00005 6 15 10.4189 15 12C15 13.5812 9 18 9 18"),
+    )
 
-    private fun lineIcon(name: String, vararg paths: String, width: Float = 1.75f): ImageVector {
+    /** Chevron pointing down: drop-down fields. Hugeicons "ArrowDown01". */
+    val ChevronDown: ImageVector = icon(
+        "ChevronDown",
+        Stroke("M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"),
+    )
+
+    private class Stroke(
+        val d: String,
+        val cap: StrokeCap = StrokeCap.Round,
+        val join: StrokeJoin = StrokeJoin.Round,
+        val width: Float = 1.5f,
+    )
+
+    private fun icon(name: String, vararg strokes: Stroke): ImageVector {
         val builder = ImageVector.Builder(
             name = name,
             defaultWidth = 24.dp,
@@ -130,14 +169,14 @@ object AppIcons {
             viewportWidth = 24f,
             viewportHeight = 24f,
         )
-        paths.forEach { d ->
+        strokes.forEach { s ->
             builder.addPath(
-                pathData = addPathNodes(d),
+                pathData = addPathNodes(s.d),
                 fill = null,
                 stroke = SolidColor(Color.Black),
-                strokeLineWidth = width,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round,
+                strokeLineWidth = s.width,
+                strokeLineCap = s.cap,
+                strokeLineJoin = s.join,
             )
         }
         return builder.build()

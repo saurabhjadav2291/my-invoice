@@ -283,7 +283,7 @@ A frosted white card with 20 dp corners, a hairline and a soft neutral shadow, w
 
 ### 6.9 Icons
 
-The project's own line icon set (`AppIcons.kt`), 18 dp in buttons and rows, 24 dp in the tab bar, 32 dp in banners, coloured with the text role (`greyText` or `grey`). No emoji.
+Every icon comes from the free **Hugeicons** set, stroke rounded style (decided 2026-11-10; https://hugeicons.com, npm `@hugeicons/core-free-icons`, MIT). They are copied into `AppIcons.kt` as vectors, each naming its Hugeicons source, so there is no icon library dependency and no Material icons. New icons must also come from the free Hugeicons stroke rounded set. Sizes: 18 dp in buttons and rows, 24 dp in the tab bar, 32 dp in banners, coloured with the text role (`greyText` or `grey`). No emoji.
 
 ---
 
