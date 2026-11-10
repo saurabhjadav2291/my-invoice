@@ -12,7 +12,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.revishingstudio.invoice"
+        applicationId = "com.myinvoice.app"
         minSdk = 26
         targetSdk = 36
         // Each GitHub build gets a higher number, so a new APK installs as an update.
