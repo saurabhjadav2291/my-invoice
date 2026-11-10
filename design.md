@@ -278,7 +278,8 @@ Two separate pieces floating 20 dp from the screen sides (decided 2026-11-09): t
 
 A frosted white card with 20 dp corners, a hairline and a soft neutral shadow, with 20 dp side padding and 16 dp vertical padding.
 
-- Left: a 32 dp line icon in the status colour. Success is a ticked circle in the Paid green, errors a circle with "!" in the error red, hints the same in `primary` blue.
+- Left: a 32 dp line icon in the status colour. Success is a ticked circle in the Paid green, errors a circle with "!" in the error red, hints the same in `primary` blue, warnings a triangle with "!" in `warning` amber (#D97706).
+- Tint wash (decided 2026-11-10): over the frosted white, a left-to-right gradient in the same status colour, 14% at the left edge, 6% at a quarter and 0% by the middle, so the right half stays plain frosted white.
 - Then 16 dp, the message in `titleMedium` `ink`, and under it the time in `bodySmall` `grey`.
 - Used for every confirmation ("Payment recorded"), error and hint. It replaces the old dark snackbar.
 

@@ -550,7 +550,7 @@ fun OutlineChip(text: String, modifier: Modifier = Modifier, mono: Boolean = fal
 // Alert banner (design.md section 6.8)
 // ---------------------------------------------------------------------------
 
-enum class BannerKind { Success, Error, Notice }
+enum class BannerKind { Success, Error, Warning, Notice }
 
 /**
  * Frosted white banner with a coloured line icon, a message and a quiet second line,
@@ -563,14 +563,25 @@ fun AlertBanner(title: String, subtitle: String?, kind: BannerKind, modifier: Mo
     val (icon, tint) = when (kind) {
         BannerKind.Success -> AppIcons.CheckCircle to c.paid.content
         BannerKind.Error -> AppIcons.AlertCircle to c.error
+        BannerKind.Warning -> AppIcons.Warning to c.warning
         BannerKind.Notice -> AppIcons.AlertCircle to c.primary
     }
+    val shape = SmoothShape(20.dp)
     Row(
         modifier
             .fillMaxWidth()
             .shadow(16.dp, SmoothShape(20.dp), ambientColor = c.shadow.copy(alpha = 0.06f), spotColor = c.shadow.copy(alpha = 0.10f))
-            .background(Brush.verticalGradient(listOf(Color.White, c.frosted)), SmoothShape(20.dp))
-            .border(1.dp, c.hairline, SmoothShape(20.dp))
+            .background(Brush.verticalGradient(listOf(Color.White, c.frosted)), shape)
+            // A wash of the banner's colour from the left edge, gone by the middle (decided 2026-11-10).
+            .background(
+                Brush.horizontalGradient(
+                    0f to tint.copy(alpha = 0.14f),
+                    0.25f to tint.copy(alpha = 0.06f),
+                    0.5f to tint.copy(alpha = 0f),
+                ),
+                shape,
+            )
+            .border(1.dp, c.hairline, shape)
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
