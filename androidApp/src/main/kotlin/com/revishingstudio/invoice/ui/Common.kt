@@ -38,8 +38,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -310,7 +308,7 @@ fun <T> DropdownField(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = c.greyText)
+                Icon(AppIcons.ChevronDown, contentDescription = null, tint = c.greyText, modifier = Modifier.size(20.dp))
             }
             DropdownMenu(
                 expanded = open,
