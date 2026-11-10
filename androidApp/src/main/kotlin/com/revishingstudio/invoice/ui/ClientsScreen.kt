@@ -175,7 +175,7 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
             // No cards: sections split by hairlines, as in Business info (design.md section 6.5).
             SettingsSection("Client", first = true) {
                 Field("Name (shown in bold)", name, { name = it }, placeholder = "e.g. Acme Studio")
-                Field("Registered name (optional)", legalName, { legalName = it }, supportingText = "e.g. YLS Marketing Consultant Pty Ltd", placeholder = "Legal company name")
+                Field("Registered name (optional)", legalName, { legalName = it }, supportingText = "e.g. Acme Creative Pty Ltd", placeholder = "Legal company name")
                 Field("Address", address, { address = it }, singleLine = false, minLines = 2, placeholder = "Street, city, postcode, country")
             }
             SettingsSection("Contact and tax") {

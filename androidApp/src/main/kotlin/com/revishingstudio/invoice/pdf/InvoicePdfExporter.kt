@@ -62,7 +62,7 @@ object InvoicePdfExporter {
         )
         val invoice = Invoice(
             id = 0,
-            number = "RS/26-27/001",
+            number = "INV/26-27/001",
             client = Client(
                 name = "Sample Client",
                 legalName = "Sample Client Pty Ltd",

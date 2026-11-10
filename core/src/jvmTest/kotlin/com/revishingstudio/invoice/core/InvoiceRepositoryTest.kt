@@ -46,10 +46,10 @@ class InvoiceRepositoryTest {
         val a = repo.invoice(repo.createInvoice(draft(LocalDate(2026, 3, 5))))!!
         val b = repo.invoice(repo.createInvoice(draft(LocalDate(2026, 3, 20))))!!
         val c = repo.invoice(repo.createInvoice(draft(LocalDate(2026, 4, 2))))!!
-        assertEquals("RS/25-26/001", a.number)
-        assertEquals("RS/25-26/002", b.number)
-        assertEquals("RS/26-27/001", c.number)
-        assertEquals("RS/26-27/002", repo.previewNextNumber(LocalDate(2026, 11, 6)))
+        assertEquals("INV/25-26/001", a.number)
+        assertEquals("INV/25-26/002", b.number)
+        assertEquals("INV/26-27/001", c.number)
+        assertEquals("INV/26-27/002", repo.previewNextNumber(LocalDate(2026, 11, 6)))
     }
 
     @Test
