@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
 
 /**
- * App icons from the free Hugeicons set (stroke rounded, 24 x 24 grid, 1.5 stroke).
+ * App icons from the free Hugeicons set (stroke rounded, 24 x 24 grid), drawn with a 2.0 stroke instead of Hugeicons' default 1.5.
  * Source: https://hugeicons.com, npm @hugeicons/core-free-icons (MIT licence).
  * Each icon names the Hugeicons icon it was copied from, so it can be swapped later.
  */
@@ -158,7 +158,7 @@ object AppIcons {
         val d: String,
         val cap: StrokeCap = StrokeCap.Round,
         val join: StrokeJoin = StrokeJoin.Round,
-        val width: Float = 1.5f,
+        val width: Float = 2f,
     )
 
     private fun icon(name: String, vararg strokes: Stroke): ImageVector {
