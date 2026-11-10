@@ -673,7 +673,14 @@ private fun NavTab(item: NavItem, width: Dp) {
             .width(slot)
             .height(56.dp)
             .clip(CircleShape)
-            .selectable(selected = item.selected, onClick = item.onClick, role = Role.Tab)
+            // No ripple: the sliding pill is the only feedback when a tab is tapped.
+            .selectable(
+                selected = item.selected,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                role = Role.Tab,
+                onClick = item.onClick,
+            )
             .semantics { contentDescription = item.label },
         contentAlignment = Alignment.Center,
     ) {
