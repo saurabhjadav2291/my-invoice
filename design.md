@@ -266,8 +266,9 @@ Two separate pieces floating 20 dp from the screen sides (decided 2026-11-09): t
 
 ### 6.7 Forms
 
+- **Every full-screen form uses one layout (decided 2026-11-10):** no cards. Sections are a `titleLarge` heading over their fields (`SettingsSection`), split by a `hairline` divider with 20 dp above and below, fields 12 dp apart. A final hairline sits above the full-width Save button; a destructive action (Delete, Archive) is a red tertiary button under it. This covers Account details, Business info, Add/edit bank account (Account, Bank codes, Default), the client form and the invoice form. Short dialogs (Record payment) keep their fields in a single column with no sections.
 - Fields: 48 dp tall (12 dp vertical, 16 dp horizontal padding), 8 dp corners, drawn as an inset soft-key well (`Modifier.fieldWell()`): darker at the top, a shade under the top edge and a white rim along the bottom. No border at rest; a 2 dp `primary` border when focused. Label above in `bodySmall` `greyText`.
-- Every blank field shows a guided placeholder in `grey`: an example of what goes there ("e.g. KKBK0000123", "Street, city, PIN code", "0.00"), never a repeat of the label.
+- Every blank field shows a guided placeholder in `grey`: an example of what goes there ("e.g. ABCD0123456", "Street, city, PIN code", "0.00"), never a repeat of the label.
 - Pickers (dropdowns and dates) use the same 48 dp well and open a menu or the date picker.
 - Menus: white, 12 dp corners, hairline, 8 dp shadow.
 - Dialogs and the date picker: white, 20 dp corners.

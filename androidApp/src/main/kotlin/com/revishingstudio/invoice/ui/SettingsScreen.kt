@@ -303,7 +303,8 @@ fun AccountDetailsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 Field("Email", form.email, { form.email = it }, keyboardType = KeyboardType.Email, placeholder = "e.g. hello@yourstudio.com")
                 Field("Phone", form.phone, { form.phone = it }, keyboardType = KeyboardType.Phone, placeholder = "e.g. +91 98765 43210")
             }
-            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 24.dp))
+            HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
+            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 20.dp))
             // Room above the gesture bar, on top of the scaffold padding, so the last button never sits on it.
             Spacer(Modifier.navigationBarsPadding().height(32.dp))
         }
@@ -710,22 +711,24 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
                 .verticalScroll(rememberScrollState())
                 .padding(padding)
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SettingsSection("Account", first = true) {
                 Field("Nickname (only in the app)", label, { label = it }, placeholder = "e.g. Main current account")
                 Field("Bank name", bankName, { bankName = it }, placeholder = "e.g. Your bank's name")
                 Field("Account name", accountName, { accountName = it }, placeholder = "Name on the account")
                 Field("Account number", accountNumber, { accountNumber = it }, keyboardType = KeyboardType.Number, placeholder = "e.g. 1234567890")
+            }
+            SettingsSection("Bank codes") {
                 Field("IFSC code", ifsc, { ifsc = it }, placeholder = "e.g. ABCD0123456")
                 Field("SWIFT code (for overseas payments)", swift, { swift = it }, placeholder = "e.g. ABCDINBB")
             }
-            AppCard {
+            SettingsSection("Default") {
                 SwitchRow("Use by default on new invoices", null, isDefault) { isDefault = it }
             }
-            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 8.dp))
+            HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
+            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 20.dp))
             if (id != null) {
-                AppButton("Delete this account", { confirmDelete = true }, Modifier.align(Alignment.CenterHorizontally), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
+                AppButton("Delete this account", { confirmDelete = true }, Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
             }
             // Room above the gesture bar, on top of the scaffold padding, so the last button never sits on it.
             Spacer(Modifier.navigationBarsPadding().height(32.dp))
