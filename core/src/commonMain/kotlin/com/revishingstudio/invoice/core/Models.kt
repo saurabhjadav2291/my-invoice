@@ -33,7 +33,7 @@ data class Client(
     val id: Long = 0,
     /** Name in bold on the invoice, e.g. "Beyond Visible". */
     val name: String,
-    /** Optional registered name shown next to it, e.g. "YLS Marketing Consultant Pty Ltd". */
+    /** Optional registered name shown next to it, e.g. "Acme Creative Pty Ltd". */
     val legalName: String = "",
     val address: String = "",
     val phone: String = "",

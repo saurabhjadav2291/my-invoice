@@ -60,7 +60,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 private enum class NumberStyle(val label: String, val pattern: String?) {
-    FINANCIAL_YEAR("Financial year, e.g. RS/26-27/001", NumberingScheme.DEFAULT_PATTERN),
+    FINANCIAL_YEAR("Financial year, e.g. INV/26-27/001", NumberingScheme.DEFAULT_PATTERN),
     YEAR_NUMBER("Year + number, e.g. 26031", "{YY}{SEQ:3}"),
     CUSTOM("Custom pattern", null),
 }
@@ -90,7 +90,7 @@ private class ProfileForm {
     var showDueDate by mutableStateOf(true)
     var dueDays by mutableStateOf("15")
     var pattern by mutableStateOf(NumberingScheme.DEFAULT_PATTERN)
-    var prefix by mutableStateOf("RS")
+    var prefix by mutableStateOf("INV")
     var reset by mutableStateOf(NumberReset.FINANCIAL_YEAR)
     var startAt by mutableStateOf("1")
 
@@ -415,7 +415,7 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 .padding(horizontal = ScreenMargin, vertical = 8.dp),
         ) {
             SettingsSection("Business", first = true) {
-                Field("Studio name (for the sign-off)", form.studioName, { form.studioName = it }, placeholder = "e.g. Revishing Studio")
+                Field("Studio name (for the sign-off)", form.studioName, { form.studioName = it }, placeholder = "e.g. Your Studio Name")
                 Field("Address", form.address, { form.address = it }, singleLine = false, minLines = 3, placeholder = "Street, city, PIN code")
                 Field("PAN", form.pan, { form.pan = it }, placeholder = "e.g. ABCDE1234F")
             }
@@ -461,7 +461,7 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     placeholder = "{PREFIX}/{FY}/{SEQ:3}",
                     supportingText = "{PREFIX} {FY} {FYS} {YYYY} {YY} {SEQ} or {SEQ:3}",
                 )
-                Field("Prefix", form.prefix, { form.prefix = it }, placeholder = "e.g. RS")
+                Field("Prefix", form.prefix, { form.prefix = it }, placeholder = "e.g. INV")
                 DropdownField(
                     label = "Restart numbering",
                     selected = form.reset,
@@ -713,12 +713,12 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             AppCard(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Field("Nickname (only in the app)", label, { label = it }, placeholder = "e.g. Kotak current")
-                Field("Bank name", bankName, { bankName = it }, placeholder = "e.g. Kotak Mahindra Bank")
+                Field("Nickname (only in the app)", label, { label = it }, placeholder = "e.g. Main current account")
+                Field("Bank name", bankName, { bankName = it }, placeholder = "e.g. Your bank's name")
                 Field("Account name", accountName, { accountName = it }, placeholder = "Name on the account")
                 Field("Account number", accountNumber, { accountNumber = it }, keyboardType = KeyboardType.Number, placeholder = "e.g. 1234567890")
-                Field("IFSC code", ifsc, { ifsc = it }, placeholder = "e.g. KKBK0000123")
-                Field("SWIFT code (for overseas payments)", swift, { swift = it }, placeholder = "e.g. KKBKINBB")
+                Field("IFSC code", ifsc, { ifsc = it }, placeholder = "e.g. ABCD0123456")
+                Field("SWIFT code (for overseas payments)", swift, { swift = it }, placeholder = "e.g. ABCDINBB")
             }
             AppCard {
                 SwitchRow("Use by default on new invoices", null, isDefault) { isDefault = it }

@@ -10,9 +10,9 @@ class InvoiceNumberingTest {
     @Test
     fun defaultUsesFinancialYear() {
         val scheme = NumberingScheme()
-        assertEquals("RS/26-27/001", scheme.format(LocalDate(2026, 11, 6), 1))
+        assertEquals("INV/26-27/001", scheme.format(LocalDate(2026, 11, 6), 1))
         // March belongs to the previous financial year.
-        assertEquals("RS/25-26/031", scheme.format(LocalDate(2026, 3, 5), 31))
+        assertEquals("INV/25-26/031", scheme.format(LocalDate(2026, 3, 5), 31))
     }
 
     @Test

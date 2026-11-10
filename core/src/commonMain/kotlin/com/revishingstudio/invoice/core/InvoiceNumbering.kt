@@ -24,12 +24,12 @@ enum class NumberReset {
  *  - `{SEQ}`     running number; `{SEQ:3}` pads it to three digits (001)
  *
  * Examples:
- *  - `{PREFIX}/{FY}/{SEQ:3}`  ->  RS/26-27/001   (default)
+ *  - `{PREFIX}/{FY}/{SEQ:3}`  ->  INV/26-27/001   (default)
  *  - `{YY}{SEQ:3}`            ->  26031          (your current style)
  */
 data class NumberingScheme(
     val pattern: String = DEFAULT_PATTERN,
-    val prefix: String = "RS",
+    val prefix: String = "INV",
     val reset: NumberReset = NumberReset.FINANCIAL_YEAR,
     /** First running number to use in a period with no invoices yet. */
     val startAt: Int = 1,
