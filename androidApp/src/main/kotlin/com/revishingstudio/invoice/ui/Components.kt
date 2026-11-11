@@ -570,7 +570,10 @@ fun AlertBanner(title: String, subtitle: String?, kind: BannerKind, modifier: Mo
     Row(
         modifier
             .fillMaxWidth()
-            .shadow(16.dp, SmoothShape(20.dp), ambientColor = c.shadow.copy(alpha = 0.06f), spotColor = c.shadow.copy(alpha = 0.10f))
+            // Soft ink drop shadow so the banner stands out over any screen (decided 2026-11-11):
+            // a wide, low shadow plus a tight contact shadow at the edge.
+            .dropShadow(shape, Shadow(radius = 24.dp, color = ShadowColor, offset = DpOffset(0.dp, 8.dp), alpha = 0.14f))
+            .dropShadow(shape, Shadow(radius = 4.dp, color = ShadowColor, offset = DpOffset(0.dp, 1.dp), alpha = 0.08f))
             .background(Brush.verticalGradient(listOf(Color.White, c.frosted)), shape)
             // A wash of the banner's colour from the left edge, gone by the middle (decided 2026-11-10).
             .background(
