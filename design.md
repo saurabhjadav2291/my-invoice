@@ -276,7 +276,7 @@ Two separate pieces floating 20 dp from the screen sides (decided 2026-11-09): t
 
 ### 6.8 Alert banner
 
-A frosted white card with 20 dp corners, a hairline and a soft neutral shadow, with 20 dp side padding and 16 dp vertical padding.
+A frosted white card with 20 dp corners, a hairline and a soft ink drop shadow (decided 2026-11-11: 24 dp blur, 8 dp down, 14%, plus a 4 dp contact shadow at 8%) so it stands out over any screen, with 20 dp side padding and 16 dp vertical padding.
 
 - Left: a 32 dp line icon in the status colour. Success is a ticked circle in the Paid green, errors a circle with "!" in the error red, hints the same in `primary` blue, warnings a triangle with "!" in `warning` amber (#D97706).
 - Tint wash (decided 2026-11-10): over the frosted white, a left-to-right gradient in the same status colour, 14% at the left edge, 6% at a quarter and 0% by the middle, so the right half stays plain frosted white.
