@@ -30,8 +30,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -335,18 +333,22 @@ fun ScreenHeader(
             .padding(start = ScreenMargin, end = ScreenMargin, top = 24.dp, bottom = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // The logo is as tall as the title and subtext together (and stays so at any font scale).
-        Row(Modifier.weight(1f).height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
-            if (avatar != null) {
-                Box(Modifier.fillMaxHeight().aspectRatio(1f)) { avatar() }
-                Spacer(Modifier.width(12.dp))
+        if (avatar != null) {
+            // The logo is as tall as the title and subtext together (32 + 4 + 20 = 56 dp at
+            // default font size), following the text when the system font scale changes.
+            val type = MaterialTheme.typography
+            val logoSize = with(LocalDensity.current) {
+                if (subtitle != null) type.headlineLarge.lineHeight.toDp() + 4.dp + type.bodySmall.lineHeight.toDp()
+                else type.headlineLarge.lineHeight.toDp()
             }
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.headlineLarge, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (subtitle != null) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = c.greyText, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+            Box(Modifier.size(logoSize)) { avatar() }
+            Spacer(Modifier.width(12.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.headlineLarge, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (subtitle != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = c.greyText, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
@@ -355,7 +357,7 @@ fun ScreenHeader(
 
 /**
  * Square tile with the studio logo, or the first letter of a name. 44 dp by default; pass
- * [size] = null to fill the space it is given (the screen header sizes it to the title block).
+ * [size] = null to fill the space it is given (the screen header sizes it to the title and subtext).
  */
 @Composable
 fun Avatar(logo: ImageBitmap?, name: String, size: Dp? = 44.dp) {
