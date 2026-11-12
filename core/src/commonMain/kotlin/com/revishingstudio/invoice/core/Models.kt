@@ -38,11 +38,23 @@ data class Client(
     val address: String = "",
     val phone: String = "",
     val email: String = "",
-    /** Free text such as "ABN: 27685519573  ACN: 685519573" or a GSTIN. */
-    val taxIds: String = "",
+    /** Indian GST number, e.g. "27AAPFU0939F1ZV". Blank when the client has none. */
+    val gstin: String = "",
+    /** Other tax IDs with their own labels, e.g. ABN, ACN or VAT, in the order entered. */
+    val taxFields: List<TaxField> = emptyList(),
     val defaultCurrency: Currency = Currency.INR,
     val archived: Boolean = false,
 )
+
+/** One labelled tax ID on a client, e.g. label "ABN", value "12 345 678 901". */
+data class TaxField(val label: String, val value: String)
+
+/** All of a client's tax IDs as label/value pairs, GSTIN first, blanks left out. */
+val Client.allTaxIds: List<TaxField>
+    get() = buildList {
+        if (gstin.isNotBlank()) add(TaxField("GSTIN", gstin.trim()))
+        taxFields.filter { it.value.isNotBlank() }.forEach { add(TaxField(it.label.trim(), it.value.trim())) }
+    }
 
 data class LineItem(
     val description: String,

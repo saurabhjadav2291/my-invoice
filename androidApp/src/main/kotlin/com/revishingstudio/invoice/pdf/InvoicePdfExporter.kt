@@ -6,6 +6,7 @@ import androidx.core.content.FileProvider
 import com.revishingstudio.invoice.core.BankAccount
 import com.revishingstudio.invoice.core.BusinessProfile
 import com.revishingstudio.invoice.core.Client
+import com.revishingstudio.invoice.core.TaxField
 import com.revishingstudio.invoice.core.Currency
 import com.revishingstudio.invoice.core.Invoice
 import com.revishingstudio.invoice.core.InvoiceState
@@ -80,7 +81,7 @@ object InvoicePdfExporter {
                 address = "12 Harbour St, Sydney NSW 2000, Australia.",
                 phone = "+61 400 000 000",
                 email = "accounts@client.example",
-                taxIds = "ABN: 12345678901  ACN: 123456789",
+                taxFields = listOf(TaxField("ABN", "12345678901"), TaxField("ACN", "123456789")),
             ),
             bankAccount = BankAccount(
                 label = "Main",

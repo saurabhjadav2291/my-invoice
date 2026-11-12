@@ -5,9 +5,13 @@ CREATE TABLE client (
     address TEXT NOT NULL DEFAULT '',
     phone TEXT NOT NULL DEFAULT '',
     email TEXT NOT NULL DEFAULT '',
+    -- Legacy free-text tax IDs (before version 3). Read once and moved into gstin/tax_fields on save.
     tax_ids TEXT NOT NULL DEFAULT '',
     default_currency TEXT NOT NULL DEFAULT 'INR',
-    archived INTEGER NOT NULL DEFAULT 0
+    archived INTEGER NOT NULL DEFAULT 0,
+    gstin TEXT NOT NULL DEFAULT '',
+    -- Custom tax IDs such as ABN or VAT, one "label<TAB>value" pair per line.
+    tax_fields TEXT NOT NULL DEFAULT ''
 );
 
 activeClients:
@@ -17,12 +21,12 @@ clientById:
 SELECT * FROM client WHERE id = ?;
 
 insertClient:
-INSERT INTO client (name, legal_name, address, phone, email, tax_ids, default_currency, archived)
-VALUES (?, ?, ?, ?, ?, ?, ?, 0);
+INSERT INTO client (name, legal_name, address, phone, email, gstin, tax_fields, default_currency, archived)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0);
 
 updateClient:
 UPDATE client
-SET name = ?, legal_name = ?, address = ?, phone = ?, email = ?, tax_ids = ?, default_currency = ?
+SET name = ?, legal_name = ?, address = ?, phone = ?, email = ?, tax_ids = '', gstin = ?, tax_fields = ?, default_currency = ?
 WHERE id = ?;
 
 setClientArchived:

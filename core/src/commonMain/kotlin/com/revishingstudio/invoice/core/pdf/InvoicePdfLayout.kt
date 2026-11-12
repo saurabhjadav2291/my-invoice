@@ -6,6 +6,8 @@ import com.revishingstudio.invoice.core.Invoice
 import com.revishingstudio.invoice.core.InvoiceDates
 import com.revishingstudio.invoice.core.LineItem
 import com.revishingstudio.invoice.core.MoneyFormat
+import com.revishingstudio.invoice.core.TaxField
+import com.revishingstudio.invoice.core.allTaxIds
 
 /**
  * Lays out an invoice in the same design as the original hand-made invoices:
@@ -124,25 +126,40 @@ class InvoicePdfLayout(
             page.text(line, LEFT, baseline, BODY)
         }
 
-        if (client.taxIds.isNotBlank()) {
+        val taxIds = client.allTaxIds
+        if (taxIds.isNotEmpty()) {
             baseline += 20.5f
-            drawTaxIds(page, client.taxIds, baseline)
+            baseline = drawTaxIds(page, taxIds, baseline)
         }
         return baseline
     }
 
     /**
      * Tax IDs such as "ABN: 27685519573  ACN: 685519573" are drawn in italics with
-     * grey labels and dark numbers, like the original.
+     * grey labels and dark numbers, like the original. Pairs that don't fit wrap to
+     * the next line. Returns the baseline of the last line.
      */
-    private fun drawTaxIds(page: PageCanvas, text: String, baseline: Float) {
+    private fun drawTaxIds(page: PageCanvas, taxIds: List<TaxField>, firstBaseline: Float): Float {
+        val gap = page.textWidth(TAX_ID_GAP, TAX_VALUE)
+        var baseline = firstBaseline
         var x = LEFT
-        TAX_ID_TOKEN.findAll(text.replace("\n", "  ")).forEach { match ->
-            val token = match.value
-            val style = if (token.endsWith(":")) TAX_LABEL else TAX_VALUE
-            page.text(token, x, baseline, style)
-            x += page.textWidth(token, style)
+        taxIds.forEach { field ->
+            val label = if (field.label.isBlank()) "" else "${field.label}: "
+            val width = page.textWidth(label, TAX_LABEL) + page.textWidth(field.value, TAX_VALUE)
+            if (x > LEFT && x + gap + width > RIGHT) {
+                baseline += LINE
+                x = LEFT
+            } else if (x > LEFT) {
+                x += gap
+            }
+            if (label.isNotEmpty()) {
+                page.text(label, x, baseline, TAX_LABEL)
+                x += page.textWidth(label, TAX_LABEL)
+            }
+            page.text(field.value, x, baseline, TAX_VALUE)
+            x += page.textWidth(field.value, TAX_VALUE)
         }
+        return baseline
     }
 
     // ---- Items table -------------------------------------------------------
@@ -290,7 +307,7 @@ class InvoicePdfLayout(
         private const val BANK_BOX_HEIGHT = 122f
         private const val ITEMS_BOTTOM = BANK_BOX_TOP - 30f
 
-        private val TAX_ID_TOKEN = Regex("""\S+|\s+""")
+        private const val TAX_ID_GAP = "  "
 
         private val TITLE = TextStyle(30f, FontWeight.BOLD)
         private val NUMBER = TextStyle(18.5f, FontWeight.REGULAR)

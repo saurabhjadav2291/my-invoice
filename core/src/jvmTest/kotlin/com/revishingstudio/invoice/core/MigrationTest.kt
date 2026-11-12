@@ -36,11 +36,48 @@ class MigrationTest {
             0,
         )
 
-        InvoiceDatabase.Schema.migrate(driver, 1, InvoiceDatabase.Schema.version)
+        InvoiceDatabase.Schema.migrate(driver, 1, 2)
 
         val profile = InvoiceRepository(driver, Dispatchers.Unconfined).profile()!!
         assertEquals("Owner", profile.ownerName)
         assertTrue(profile.showDueDate)
-        assertEquals(2L, InvoiceDatabase.Schema.version)
+        assertEquals(3L, InvoiceDatabase.Schema.version)
+    }
+
+    @Test
+    fun version2ClientTaxIdsMoveToGstinAndCustomFields() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        // client as it was in version 2 of the app, with free-text tax IDs.
+        driver.execute(
+            null,
+            """
+            CREATE TABLE client (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL, legal_name TEXT NOT NULL DEFAULT '', address TEXT NOT NULL DEFAULT '',
+                phone TEXT NOT NULL DEFAULT '', email TEXT NOT NULL DEFAULT '', tax_ids TEXT NOT NULL DEFAULT '',
+                default_currency TEXT NOT NULL DEFAULT 'INR', archived INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+            0,
+        )
+        driver.execute(null, "INSERT INTO client (name, tax_ids) VALUES ('Aus', 'ABN: 27685519573  ACN: 685519573')", 0)
+        driver.execute(null, "INSERT INTO client (name, tax_ids) VALUES ('Ind', '27AAPFU0939F1ZV')", 0)
+
+        InvoiceDatabase.Schema.migrate(driver, 2, InvoiceDatabase.Schema.version)
+        val repo = InvoiceRepository(driver, Dispatchers.Unconfined)
+
+        val aus = repo.client(1)!!
+        assertEquals("", aus.gstin)
+        assertEquals(listOf(TaxField("ABN", "27685519573"), TaxField("ACN", "685519573")), aus.taxFields)
+        val ind = repo.client(2)!!
+        assertEquals("27AAPFU0939F1ZV", ind.gstin)
+        assertEquals(emptyList(), ind.taxFields)
+
+        // Saving writes the new columns and drops the old text, so nothing doubles up.
+        repo.saveClient(aus.copy(taxFields = aus.taxFields + TaxField("VAT", "GB123")))
+        assertEquals(
+            listOf(TaxField("ABN", "27685519573"), TaxField("ACN", "685519573"), TaxField("VAT", "GB123")),
+            repo.client(1)!!.taxFields,
+        )
     }
 }
