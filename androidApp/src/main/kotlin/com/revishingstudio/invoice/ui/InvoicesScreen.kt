@@ -76,7 +76,7 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
             ScreenHeader(
                 title = "Invoices",
                 subtitle = profile?.studioName?.takeIf { it.isNotBlank() } ?: profile?.ownerName,
-                avatar = logo?.let { image -> @Composable { Avatar(image, profile?.studioName ?: "") } },
+                avatar = logo?.let { image -> @Composable { Avatar(image, profile?.studioName ?: "", size = null) } },
             )
         }
         if (list == null) return@LazyColumn
