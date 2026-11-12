@@ -334,7 +334,14 @@ fun ScreenHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (avatar != null) {
-            avatar()
+            // The logo is as tall as the title and subtext together (32 + 4 + 20 = 56 dp at
+            // default font size), following the text when the system font scale changes.
+            val type = MaterialTheme.typography
+            val logoSize = with(LocalDensity.current) {
+                if (subtitle != null) type.headlineLarge.lineHeight.toDp() + 4.dp + type.bodySmall.lineHeight.toDp()
+                else type.headlineLarge.lineHeight.toDp()
+            }
+            Box(Modifier.size(logoSize)) { avatar() }
             Spacer(Modifier.width(12.dp))
         }
         Column(Modifier.weight(1f)) {
@@ -348,14 +355,17 @@ fun ScreenHeader(
     }
 }
 
-/** 44 dp square tile with the studio logo, or the first letter of a name. */
+/**
+ * Square tile with the studio logo, or the first letter of a name. 44 dp by default; pass
+ * [size] = null to fill the space it is given (the screen header sizes it to the title and subtext).
+ */
 @Composable
-fun Avatar(logo: ImageBitmap?, name: String, size: Dp = 44.dp) {
+fun Avatar(logo: ImageBitmap?, name: String, size: Dp? = 44.dp) {
     val c = Ui.colors
     val shape = SmoothShape(12.dp)
     Box(
         Modifier
-            .size(size)
+            .then(if (size != null) Modifier.size(size) else Modifier.fillMaxSize())
             .surface(shape, color = if (logo != null) c.surface else c.surfaceRaised),
         contentAlignment = Alignment.Center,
     ) {
