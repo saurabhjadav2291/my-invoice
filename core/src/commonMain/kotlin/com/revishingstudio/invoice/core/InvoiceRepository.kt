@@ -85,7 +85,14 @@ class InvoiceRepository(
         }
     }
 
-    fun deleteBankAccount(id: Long) = profiles.deleteBankAccount(id)
+    /** Deletes an account. If it was the default, the next account becomes the default. */
+    fun deleteBankAccount(id: Long) = profiles.transaction {
+        val wasDefault = profiles.bankAccountById(id).executeAsOneOrNull()?.is_default == 1L
+        profiles.deleteBankAccount(id)
+        if (wasDefault) {
+            profiles.allBankAccounts().executeAsList().firstOrNull()?.let { profiles.setDefaultBankAccount(it.id) }
+        }
+    }
 
     // ---- Clients ---------------------------------------------------------
 
@@ -129,13 +136,7 @@ class InvoiceRepository(
         validate(draft)
         val scheme = numberingScheme()
         val periodKey = scheme.periodKey(draft.issueDate)
-        var sequence = nextSequence(scheme, draft.issueDate)
-        var number = scheme.format(draft.issueDate, sequence)
-        // Guard against clashes, e.g. after changing the pattern mid-year.
-        while (invoices.numberExists(number).executeAsOne() > 0) {
-            sequence++
-            number = scheme.format(draft.issueDate, sequence)
-        }
+        val (sequence, number) = freeNumber(scheme, draft.issueDate)
         val bankId = draft.bankAccountId ?: bankAccounts().firstOrNull { it.isDefault }?.id
         invoices.insertInvoice(
             number = number,
@@ -155,10 +156,22 @@ class InvoiceRepository(
         id
     }
 
-    /** Replaces an invoice's details and line items. Its number does not change. */
+    /**
+     * Replaces an invoice's details and line items. A sent invoice keeps its number.
+     * A draft whose new date falls in a different numbering period (e.g. moved from
+     * 31 March to 2 April) gets the next number in that period instead.
+     */
     fun updateInvoice(id: Long, draft: InvoiceDraft) = invoices.transaction {
         validate(draft)
-        requireNotNull(invoices.invoiceById(id).executeAsOneOrNull()) { "Invoice $id not found" }
+        val row = requireNotNull(invoices.invoiceById(id).executeAsOneOrNull()) { "Invoice $id not found" }
+        if (row.state == InvoiceState.DRAFT.name) {
+            val scheme = numberingScheme()
+            val periodKey = scheme.periodKey(draft.issueDate)
+            if (periodKey != row.period_key) {
+                val (sequence, number) = freeNumber(scheme, draft.issueDate)
+                invoices.renumberInvoice(number, periodKey, sequence.toLong(), id)
+            }
+        }
         invoices.updateInvoice(
             client_id = draft.clientId,
             bank_account_id = draft.bankAccountId,
@@ -170,19 +183,50 @@ class InvoiceRepository(
         )
         invoices.deleteLineItemsForInvoice(id)
         insertItems(id, draft.items)
+        // A sent invoice switched to another client or bank takes that one's details now;
+        // everything else it was sent with stays as it was.
+        row.snapshot?.let { text ->
+            val old = InvoiceSnapshot.decode(text, row.client_id)
+            val client = if (draft.clientId != row.client_id) liveClientOrThrow(draft.clientId) else old.client
+            val bank = if (draft.bankAccountId != row.bank_account_id) liveBank(draft.bankAccountId) else old.bank
+            invoices.setSnapshot(old.copy(client = client, bank = bank).encode(), id)
+        }
     }
 
-    fun markSent(id: Long) = invoices.setInvoiceState(InvoiceState.SENT.name, id)
+    /** Marks an invoice as sent and freezes the details it goes out with. */
+    fun markSent(id: Long) = invoices.transaction {
+        invoices.setInvoiceState(InvoiceState.SENT.name, id)
+        freeze(id)
+    }
 
-    fun markDraft(id: Long) = invoices.setInvoiceState(InvoiceState.DRAFT.name, id)
+    /** Back to draft, following the latest details again. Not allowed once money has been received. */
+    fun markDraft(id: Long) = invoices.transaction {
+        require(invoices.paymentCount(id).executeAsOne() == 0L) {
+            "This invoice has payments recorded, so it can't go back to draft"
+        }
+        invoices.setInvoiceState(InvoiceState.DRAFT.name, id)
+        invoices.setSnapshot(null, id)
+    }
 
     /** Cancels an invoice but keeps its number so it is never reused. */
-    fun void(id: Long) = invoices.setInvoiceState(InvoiceState.VOID.name, id)
+    fun void(id: Long) = invoices.transaction {
+        invoices.setInvoiceState(InvoiceState.VOID.name, id)
+        freeze(id)
+    }
+
+    /**
+     * Freezes the details of sent and void invoices that don't have them yet, i.e. those
+     * sent before this was added. Safe to call on every start; it does nothing once done.
+     */
+    fun freezeMissingSnapshots() = invoices.transaction {
+        invoices.invoicesMissingSnapshot().executeAsList().forEach { freeze(it) }
+    }
 
     /** Only drafts can be deleted; sent invoices should be voided instead. */
     fun deleteDraft(id: Long) = invoices.transaction {
         val row = requireNotNull(invoices.invoiceById(id).executeAsOneOrNull()) { "Invoice $id not found" }
         require(row.state == InvoiceState.DRAFT.name) { "Only draft invoices can be deleted. Void it instead." }
+        require(invoices.paymentCount(id).executeAsOne() == 0L) { "This invoice has payments recorded. Void it instead." }
         // Deleted explicitly so this works even where SQLite foreign keys are switched off.
         invoices.deletePaymentsForInvoice(id)
         invoices.deleteLineItemsForInvoice(id)
@@ -191,8 +235,13 @@ class InvoiceRepository(
 
     fun invoice(id: Long): Invoice? {
         val row = invoices.invoiceById(id).executeAsOneOrNull() ?: return null
-        val client = requireNotNull(client(row.client_id)) { "Client ${row.client_id} missing" }
-        val bank = row.bank_account_id?.let { profiles.bankAccountById(it).executeAsOneOrNull()?.toModel() }
+        val snapshot = row.snapshot?.let { InvoiceSnapshot.decode(it, row.client_id) }
+        val client = snapshot?.client ?: requireNotNull(client(row.client_id)) { "Client ${row.client_id} missing" }
+        val bank = if (snapshot != null) {
+            snapshot.bank
+        } else {
+            row.bank_account_id?.let { profiles.bankAccountById(it).executeAsOneOrNull()?.toModel() }
+        }
         val items = invoices.lineItemsForInvoice(id).executeAsList().map {
             LineItem(it.description, it.rate_minor, it.quantity_milli, it.amount_minor)
         }
@@ -218,6 +267,7 @@ class InvoiceRepository(
             items = items,
             payments = payments,
             notes = row.notes,
+            issuer = snapshot?.issuer,
         )
     }
 
@@ -243,7 +293,10 @@ class InvoiceRepository(
             note = payment.note,
         )
         // Receiving money means the invoice has clearly been sent.
-        if (row.state == InvoiceState.DRAFT.name) invoices.setInvoiceState(InvoiceState.SENT.name, invoiceId)
+        if (row.state == InvoiceState.DRAFT.name) {
+            invoices.setInvoiceState(InvoiceState.SENT.name, invoiceId)
+            freeze(invoiceId)
+        }
         profiles.lastInsertRowId().executeAsOne()
     }
 
@@ -266,8 +319,33 @@ class InvoiceRepository(
         return scheme.nextSequence(highest?.toInt())
     }
 
+    /** The next unused sequence and number for [date]. */
+    private fun freeNumber(scheme: NumberingScheme, date: LocalDate): Pair<Int, String> {
+        var sequence = nextSequence(scheme, date)
+        var number = scheme.format(date, sequence)
+        // Guard against clashes, e.g. after changing the pattern mid-year.
+        while (invoices.numberExists(number).executeAsOne() > 0) {
+            sequence++
+            number = scheme.format(date, sequence)
+        }
+        return sequence to number
+    }
+
+    private fun liveClientOrThrow(id: Long): Client = requireNotNull(client(id)) { "Client $id not found" }
+
+    private fun liveBank(id: Long?): BankAccount? = id?.let { profiles.bankAccountById(it).executeAsOneOrNull()?.toModel() }
+
+    /** Stores the current client, business and bank details on the invoice, if it has none yet. */
+    private fun freeze(id: Long) {
+        val row = invoices.invoiceById(id).executeAsOneOrNull() ?: return
+        if (row.snapshot != null) return
+        val snapshot = InvoiceSnapshot(liveClientOrThrow(row.client_id), profile(), liveBank(row.bank_account_id))
+        invoices.setSnapshot(snapshot.encode(), id)
+    }
+
     private fun validate(draft: InvoiceDraft) {
         require(draft.items.isNotEmpty()) { "An invoice needs at least one line item" }
+        require(draft.items.sumOf { it.amountMinor } >= 0) { "The total can't be below zero. Check the discount lines." }
         require(draft.items.all { it.description.isNotBlank() }) { "Every line item needs a description" }
         require(draft.dueDate >= draft.issueDate) { "Due date cannot be before the invoice date" }
         requireNotNull(clients.clientById(draft.clientId).executeAsOneOrNull()) { "Client ${draft.clientId} not found" }
@@ -294,12 +372,13 @@ class InvoiceRepository(
         dueDate: String,
         state: String,
         clientName: String,
+        snapshot: String?,
         totalMinor: Long,
         paidMinor: Long,
     ) = InvoiceSummary(
         id = id,
         number = number,
-        clientName = clientName,
+        clientName = snapshot?.let { InvoiceSnapshot.decode(it, 0).client.name } ?: clientName,
         currency = Currency.fromCode(currency),
         issueDate = LocalDate.parse(issueDate),
         dueDate = LocalDate.parse(dueDate),

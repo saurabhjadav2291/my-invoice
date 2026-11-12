@@ -101,7 +101,8 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
                             border = BorderStroke(1.dp, c.hairline),
                             shadowElevation = 8.dp,
                         ) {
-                            if (inv.state == InvoiceState.SENT) {
+                            // Once money has been received the invoice stays sent (it could be voided instead).
+                            if (inv.state == InvoiceState.SENT && inv.payments.isEmpty()) {
                                 DropdownMenuItem(text = { Text("Move back to draft", color = c.ink) }, onClick = {
                                     menuOpen = false
                                     actions.run(onDone = reload) { markDraft(id) }
@@ -169,7 +170,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
                 if (inv.state == InvoiceState.DRAFT) {
                     AppButton(
                         "Mark as sent",
-                        { actions.run("Marked as sent", onDone = reload) { markSent(id) } },
+                        { actions.run("Marked as sent", onDone = reload, once = true) { markSent(id) } },
                         Modifier.weight(1f),
                         variant = ButtonVariant.Secondary,
                     )
@@ -258,7 +259,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
             onDismiss = { showPayment = false },
             onSave = { payment ->
                 showPayment = false
-                actions.run("Payment recorded", onDone = reload) { recordPayment(id, payment) }
+                actions.run("Payment recorded", onDone = reload, once = true) { recordPayment(id, payment) }
             },
         )
     }

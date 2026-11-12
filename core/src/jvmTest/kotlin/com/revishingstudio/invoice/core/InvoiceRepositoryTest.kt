@@ -179,4 +179,93 @@ class InvoiceRepositoryTest {
         assertTrue(repo.clients().isEmpty())
         assertEquals("Acme", repo.invoice(id)!!.client.name)
     }
+
+    // ---- Bug hunt 2026-11-12 ------------------------------------------------
+
+    @Test
+    fun sentInvoiceKeepsTheDetailsItWasSentWith() {
+        val bankId = repo.saveBankAccount(BankAccount(label = "Main", bankName = "Old Bank", accountName = "Owner", accountNumber = "1", ifsc = "", swift = ""))
+        val sent = repo.createInvoice(draft())
+        val draftId = repo.createInvoice(draft())
+        repo.markSent(sent)
+
+        repo.saveClient(repo.client(clientId)!!.copy(name = "Acme Renamed", address = "New address"))
+        repo.saveProfile(repo.profile()!!.copy(address = "New studio address"))
+        repo.saveBankAccount(repo.bankAccounts().first { it.id == bankId }.copy(bankName = "New Bank"))
+
+        val frozen = repo.invoice(sent)!!
+        assertEquals("Acme", frozen.client.name)
+        assertEquals("", frozen.client.address)
+        assertEquals("1 Test Street", frozen.issuer!!.address)
+        assertEquals("Old Bank", frozen.bankAccount!!.bankName)
+        assertEquals("Acme", repo.invoiceSummaries().first { it.id == sent }.clientName)
+
+        // Drafts follow the latest details.
+        val live = repo.invoice(draftId)!!
+        assertEquals("Acme Renamed", live.client.name)
+        assertNull(live.issuer)
+        assertEquals("New Bank", live.bankAccount!!.bankName)
+
+        // Back to draft: follows the latest details again.
+        repo.markDraft(sent)
+        assertEquals("Acme Renamed", repo.invoice(sent)!!.client.name)
+    }
+
+    @Test
+    fun oldSentInvoicesGetTheirDetailsFrozen() {
+        val id = repo.createInvoice(draft())
+        repo.markSent(id)
+        repo.freezeMissingSnapshots() // nothing to do, already frozen
+        repo.saveClient(repo.client(clientId)!!.copy(name = "Changed"))
+        assertEquals("Acme", repo.invoice(id)!!.client.name)
+    }
+
+    @Test
+    fun snapshotSurvivesSpecialCharacters() {
+        val client = Client(name = "A\\B", address = "Line 1\nLine 2", taxFields = listOf(TaxField("ABN", "1 2\t3")))
+        val decoded = InvoiceSnapshot.decode(InvoiceSnapshot(client, null, null).encode(), 0)
+        assertEquals(client.copy(taxFields = listOf(TaxField("ABN", "1 2 3"))), decoded.client)
+    }
+
+    @Test
+    fun deletingTheDefaultBankMakesTheNextOneDefault() {
+        val a = repo.saveBankAccount(BankAccount(label = "A", bankName = "A", accountName = "x", accountNumber = "1", ifsc = "", swift = ""))
+        val b = repo.saveBankAccount(BankAccount(label = "B", bankName = "B", accountName = "x", accountNumber = "2", ifsc = "", swift = ""))
+        repo.deleteBankAccount(a)
+        assertTrue(repo.bankAccounts().single { it.id == b }.isDefault)
+        assertEquals(b, repo.invoice(repo.createInvoice(draft()))!!.bankAccount?.id)
+    }
+
+    @Test
+    fun invoicesWithPaymentsCannotGoBackToDraftOrBeDeleted() {
+        val id = repo.createInvoice(draft())
+        repo.recordPayment(id, Payment(receivedOn = LocalDate(2026, 11, 7), amountMinor = 100_00, method = PaymentMethod.UPI))
+        assertFailsWith<IllegalArgumentException> { repo.markDraft(id) }
+        assertFailsWith<IllegalArgumentException> { repo.deleteDraft(id) }
+        assertEquals(1, repo.invoice(id)!!.payments.size)
+    }
+
+    @Test
+    fun draftMovedIntoNewFinancialYearIsRenumbered() {
+        val old = repo.createInvoice(draft(LocalDate(2026, 3, 20)))
+        val moved = repo.createInvoice(draft(LocalDate(2026, 3, 31)))
+        repo.createInvoice(draft(LocalDate(2026, 4, 1)))
+        repo.updateInvoice(moved, draft(LocalDate(2026, 4, 2)))
+        assertEquals("INV/26-27/002", repo.invoice(moved)!!.number)
+        assertEquals("INV/25-26/001", repo.invoice(old)!!.number)
+
+        // Sent invoices keep their number.
+        repo.markSent(old)
+        repo.updateInvoice(old, draft(LocalDate(2026, 4, 3)))
+        assertEquals("INV/25-26/001", repo.invoice(old)!!.number)
+    }
+
+    @Test
+    fun totalCannotBeNegative() {
+        assertFailsWith<IllegalArgumentException> {
+            repo.createInvoice(draft(items = listOf(LineItem.fixed("Work", 100_00), LineItem.fixed("Discount", -200_00))))
+        }
+        val id = repo.createInvoice(draft(items = listOf(LineItem.fixed("Work", 100_00), LineItem.fixed("Discount", -50_00))))
+        assertEquals(50_00, repo.invoice(id)!!.totalMinor)
+    }
 }

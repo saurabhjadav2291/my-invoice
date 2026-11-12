@@ -65,7 +65,7 @@ fun PdfPreviewScreen(path: String, title: String, nav: Navigator, modifier: Modi
     var failed by remember { mutableStateOf(false) }
 
     LaunchedEffect(path) {
-        // Sharp enough to zoom in on small print: twice the screen width, within memory limits.
+        // Sharp enough to zoom in on small print: up to twice the screen width.
         val targetWidth = (context.resources.displayMetrics.widthPixels * 2).coerceIn(1200, 2400)
         val rendered = withContext(Dispatchers.IO) { runCatching { renderPages(file, targetWidth) } }
         rendered.onSuccess { pages = it }.onFailure { failed = true }
@@ -172,10 +172,18 @@ private fun ZoomablePages(pages: List<ImageBitmap>, modifier: Modifier) {
     }
 }
 
-/** Draws each page of [file] on white, [width] pixels wide. */
-private fun renderPages(file: File, width: Int): List<ImageBitmap> =
+/**
+ * Draws each page of [file] on white, at most [maxWidth] pixels wide. All pages are
+ * held in memory at once, so long invoices are drawn narrower to stay within a share
+ * of the app's memory (each A4 page at 2400 px wide is about 33 MB).
+ */
+private fun renderPages(file: File, maxWidth: Int): List<ImageBitmap> =
     ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
         PdfRenderer(fd).use { renderer ->
+            val budget = Runtime.getRuntime().maxMemory() / 4
+            val perPageAtWidth1 = 4.0 * 1.415 // bytes per pixel x A4 height/width
+            val fit = kotlin.math.sqrt(budget / (renderer.pageCount.coerceAtLeast(1) * perPageAtWidth1)).toInt()
+            val width = fit.coerceIn(600, maxWidth)
             (0 until renderer.pageCount).map { i ->
                 renderer.openPage(i).use { page ->
                     val height = (width.toFloat() * page.height / page.width).toInt()

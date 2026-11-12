@@ -31,6 +31,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
@@ -89,9 +92,27 @@ class Actions(
     private val scope: CoroutineScope,
     private val snackbar: SnackbarHostState,
 ) {
-    fun run(successMessage: String? = null, onDone: () -> Unit = {}, block: suspend InvoiceRepository.() -> Unit) {
+    /** True while a [run] with once = true is still working. */
+    var busy by mutableStateOf(false)
+        private set
+
+    /**
+     * Runs [block] off the main thread. With [once], taps that arrive while it is
+     * still running are ignored, so a quick double tap on Create makes one invoice.
+     */
+    fun run(
+        successMessage: String? = null,
+        onDone: () -> Unit = {},
+        once: Boolean = false,
+        block: suspend InvoiceRepository.() -> Unit,
+    ) {
+        if (once) {
+            if (busy) return
+            busy = true
+        }
         scope.launch {
             val result = runCatching { withContext(Dispatchers.IO) { repository.block() } }
+            if (once) busy = false
             result.onSuccess {
                 onDone()
                 successMessage?.let { snackbar.showSnackbar(BannerVisuals(it, BannerKind.Success)) }
@@ -134,7 +155,7 @@ val LocalActions = staticCompositionLocalOf<Actions> { error("Actions not provid
 
 @Composable
 fun InvoiceAppUi(repository: InvoiceRepository) {
-    val stack = remember { mutableStateListOf<Screen>(Screen.Invoices) }
+    val stack = rememberSaveable(saver = ScreenStackSaver) { mutableStateListOf<Screen>(Screen.Invoices) }
     val nav = remember { Navigator(stack) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()

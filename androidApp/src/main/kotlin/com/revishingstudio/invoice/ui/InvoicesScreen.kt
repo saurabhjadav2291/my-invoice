@@ -46,7 +46,7 @@ import com.revishingstudio.invoice.core.PaymentStatus
 /** The studio logo from Settings, decoded once per path. */
 @Composable
 fun rememberLogo(path: String?, version: Int = 0): ImageBitmap? = remember(path, version) {
-    path?.let { runCatching { BitmapFactory.decodeFile(it)?.asImageBitmap() }.getOrNull() }
+    path?.let { runCatching { com.revishingstudio.invoice.pdf.LogoImages.decode(it, maxSide = 512)?.asImageBitmap() }.getOrNull() }
 }
 
 private enum class InvoiceFilter(val label: String, val matches: (PaymentStatus) -> Boolean) {

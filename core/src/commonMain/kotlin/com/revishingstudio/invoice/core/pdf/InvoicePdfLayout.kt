@@ -20,8 +20,10 @@ import com.revishingstudio.invoice.core.allTaxIds
  */
 class InvoicePdfLayout(
     private val invoice: Invoice,
-    private val profile: BusinessProfile,
+    latestProfile: BusinessProfile,
 ) {
+    /** A sent invoice prints the business details it was sent with. */
+    private val profile = invoice.issuer ?: latestProfile
     private val showDueDate = profile.showDueDate
     private val currency = invoice.currency
 
@@ -60,7 +62,8 @@ class InvoicePdfLayout(
     private fun drawHeader(page: PageCanvas) {
         profile.logoPath?.let { page.image(it, LEFT - 5f, 35f, maxWidth = 180f, maxHeight = 64f) }
         page.textRight("INVOICE", RIGHT, 72f, TITLE)
-        page.textRight("#${invoice.number}", RIGHT, 96f, NUMBER)
+        val number = "#${invoice.number}"
+        page.textRight(number, RIGHT, 96f, fitted(page, number, NUMBER, RIGHT - LEFT - 190f))
     }
 
     /** Your name, address, PAN and invoice details. Returns the box's bottom edge. */
@@ -70,7 +73,8 @@ class InvoicePdfLayout(
         val leftWidth = rightColumn - innerLeft - 12f
 
         var baseline = top + 24f
-        drawLabelled(page, "Name: ", profile.ownerName, innerLeft, baseline, BODY_SEMIBOLD, BODY_SEMIBOLD)
+        val nameRoom = leftWidth - page.textWidth("Name: ", BODY_SEMIBOLD)
+        drawLabelled(page, "Name: ", profile.ownerName, innerLeft, baseline, BODY_SEMIBOLD, fitted(page, profile.ownerName, BODY_SEMIBOLD, nameRoom))
 
         baseline += 23f
         page.text("Address:", innerLeft, baseline, BODY)
@@ -90,7 +94,8 @@ class InvoicePdfLayout(
         }.filter { it.second.isNotBlank() }
         var rightBaseline = maxOf(lastLeftBaseline - LINE * (details.size - 1), top + 24f)
         details.forEach { (label, value, valueStyle) ->
-            drawLabelled(page, label, value, rightColumn, rightBaseline, BODY, valueStyle)
+            val room = RIGHT - 12f - rightColumn - page.textWidth(label, BODY)
+            drawLabelled(page, label, value, rightColumn, rightBaseline, BODY, fitted(page, value, valueStyle, room))
             rightBaseline += LINE
         }
 
@@ -106,20 +111,33 @@ class InvoicePdfLayout(
         page.text("BILL TO", LEFT, baseline, LABEL)
 
         baseline += 23f
-        val nameWidth = page.textWidth(client.name, CLIENT_NAME)
-        page.text(client.name, LEFT, baseline, CLIENT_NAME)
-        if (client.legalName.isNotBlank()) {
-            page.text(" (${client.legalName})", LEFT + nameWidth, baseline, CLIENT_LEGAL)
+        val contentWidth = RIGHT - LEFT
+        val legal = if (client.legalName.isNotBlank()) " (${client.legalName.trim()})" else ""
+        val oneLine = page.textWidth(client.name, CLIENT_NAME) + page.textWidth(legal, CLIENT_LEGAL) <= contentWidth
+        if (oneLine) {
+            page.text(client.name, LEFT, baseline, CLIENT_NAME)
+            if (legal.isNotEmpty()) page.text(legal, LEFT + page.textWidth(client.name, CLIENT_NAME), baseline, CLIENT_LEGAL)
+        } else {
+            // Too long for one line: the name wraps, and the registered name goes on its own line(s).
+            wrapText(page, client.name, CLIENT_NAME, contentWidth).forEachIndexed { i, line ->
+                if (i > 0) baseline += NAME_LINE
+                page.text(line, LEFT, baseline, CLIENT_NAME)
+            }
+            if (legal.isNotEmpty()) {
+                wrapText(page, legal.trim(), CLIENT_LEGAL, contentWidth).forEach { line ->
+                    baseline += NAME_LINE
+                    page.text(line, LEFT, baseline, CLIENT_LEGAL)
+                }
+            }
         }
 
         baseline += 7f
-        val contentWidth = RIGHT - LEFT
         val lines = buildList {
             if (client.address.isNotBlank()) {
                 addAll(wrapParagraphs(page, "Address: " + client.address.replace("\n", ", "), BODY, contentWidth))
             }
-            if (client.phone.isNotBlank()) add("Phone: ${client.phone}")
-            if (client.email.isNotBlank()) add("Email: ${client.email}")
+            if (client.phone.isNotBlank()) addAll(wrapText(page, "Phone: ${client.phone}", BODY, contentWidth))
+            if (client.email.isNotBlank()) addAll(wrapText(page, "Email: ${client.email}", BODY, contentWidth))
         }
         lines.forEach { line ->
             baseline += LINE
@@ -285,6 +303,13 @@ class InvoicePdfLayout(
         page.text(value, x + page.textWidth(label, labelStyle), baseline, valueStyle)
     }
 
+    /** [style], made smaller (down to 7 pt) if needed so [text] fits in [maxWidth]. */
+    private fun fitted(page: PageCanvas, text: String, style: TextStyle, maxWidth: Float): TextStyle {
+        var fit = style
+        while (fit.size > 7f && page.textWidth(text, fit) > maxWidth) fit = fit.copy(size = fit.size - 0.5f)
+        return fit
+    }
+
     private fun formatQuantity(milli: Long): String {
         val whole = milli / 1000
         val fraction = (milli % 1000).toString().padStart(3, '0').trimEnd('0')
@@ -298,6 +323,7 @@ class InvoicePdfLayout(
         private const val ITEM_LINE = 14f
         private const val ROW_GAP = 26f
         private const val SMALL_LINE = 13f
+        private const val NAME_LINE = 19f
         private const val RATE_CENTER = 379.5f
         private const val QTY_CENTER = 441f
         private const val DESCRIPTION_WIDTH = 290f

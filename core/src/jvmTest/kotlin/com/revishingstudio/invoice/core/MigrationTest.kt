@@ -41,7 +41,7 @@ class MigrationTest {
         val profile = InvoiceRepository(driver, Dispatchers.Unconfined).profile()!!
         assertEquals("Owner", profile.ownerName)
         assertTrue(profile.showDueDate)
-        assertEquals(3L, InvoiceDatabase.Schema.version)
+        assertEquals(4L, InvoiceDatabase.Schema.version)
     }
 
     @Test
@@ -63,7 +63,7 @@ class MigrationTest {
         driver.execute(null, "INSERT INTO client (name, tax_ids) VALUES ('Aus', 'ABN: 27685519573  ACN: 685519573')", 0)
         driver.execute(null, "INSERT INTO client (name, tax_ids) VALUES ('Ind', '27AAPFU0939F1ZV')", 0)
 
-        InvoiceDatabase.Schema.migrate(driver, 2, InvoiceDatabase.Schema.version)
+        InvoiceDatabase.Schema.migrate(driver, 2, 3)
         val repo = InvoiceRepository(driver, Dispatchers.Unconfined)
 
         val aus = repo.client(1)!!
@@ -79,5 +79,22 @@ class MigrationTest {
             listOf(TaxField("ABN", "27685519573"), TaxField("ACN", "685519573"), TaxField("VAT", "GB123")),
             repo.client(1)!!.taxFields,
         )
+    }
+
+    @Test
+    fun version3SentInvoicesGetTheirDetailsFrozen() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        InvoiceDatabase.Schema.create(driver)
+        // Make it look like version 3: a sent invoice with no snapshot.
+        val repo = InvoiceRepository(driver, Dispatchers.Unconfined)
+        repo.saveProfile(BusinessProfile("Owner", "Studio", "Addr", "PAN"))
+        val clientId = repo.saveClient(Client(name = "Acme"))
+        val date = kotlinx.datetime.LocalDate(2026, 11, 6)
+        val id = repo.createInvoice(InvoiceDraft(clientId, Currency.INR, date, date, listOf(LineItem.fixed("Work", 100))))
+        driver.execute(null, "UPDATE invoice SET state = 'SENT', snapshot = NULL WHERE id = $id", 0)
+
+        repo.freezeMissingSnapshots()
+        repo.saveClient(repo.client(clientId)!!.copy(name = "Renamed"))
+        assertEquals("Acme", repo.invoice(id)!!.client.name)
     }
 }
