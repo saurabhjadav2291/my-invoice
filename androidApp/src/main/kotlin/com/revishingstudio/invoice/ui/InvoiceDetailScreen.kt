@@ -80,7 +80,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
         val owner = profile ?: return actions.message("Add your details in Settings first")
         actions.run {
             val file = InvoicePdfExporter.export(context, current, owner)
-            withContext(Dispatchers.Main) { InvoicePdfExporter.open(context, file) }
+            withContext(Dispatchers.Main) { nav.go(Screen.PdfPreview(file.absolutePath, current.number)) }
         }
     }
 

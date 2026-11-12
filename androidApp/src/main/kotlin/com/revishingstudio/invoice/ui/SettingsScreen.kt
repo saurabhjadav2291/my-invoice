@@ -187,7 +187,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             val (sample, _) = InvoicePdfExporter.sampleInvoice()
             val withBank = sample.copy(bankAccount = banks.firstOrNull { it.isDefault } ?: sample.bankAccount)
             val file = InvoicePdfExporter.export(context, withBank, saved)
-            withContext(Dispatchers.Main) { InvoicePdfExporter.open(context, file) }
+            withContext(Dispatchers.Main) { nav.go(Screen.PdfPreview(file.absolutePath, "Preview invoice")) }
         }
     }
 

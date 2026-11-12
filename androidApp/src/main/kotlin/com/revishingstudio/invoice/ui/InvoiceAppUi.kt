@@ -55,6 +55,8 @@ sealed interface Screen {
     data class InvoiceEditor(val id: Long?) : Screen
     data class ClientEditor(val id: Long?) : Screen
     data class BankEditor(val id: Long?) : Screen
+    /** An invoice PDF shown inside the app. */
+    data class PdfPreview(val path: String, val title: String) : Screen
 }
 
 class Navigator(private val stack: MutableList<Screen>) {
@@ -194,6 +196,7 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                     is Screen.InvoiceEditor -> InvoiceEditorScreen(current.id, nav)
                     is Screen.ClientEditor -> ClientEditorScreen(current.id, nav)
                     is Screen.BankEditor -> BankEditorScreen(current.id, nav)
+                    is Screen.PdfPreview -> PdfPreviewScreen(current.path, current.title, nav)
                 }
             }
             if (isTab) {
