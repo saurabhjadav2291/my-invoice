@@ -167,4 +167,23 @@ class InvoicePdfTest {
         assertTrue("templates" in text)
         assertTrue("Rupees Eighty Five Thousand Only" in text)
     }
+
+    @Test
+    fun longClientNameWrapsInsteadOfRunningOffThePage() {
+        val long = client.copy(
+            name = "International Brand Consultancy Partners",
+            legalName = "International Brand Consultancy Partners Private Limited",
+            email = "accounts.payable.department.northwind.traders@northwindtradersinternational.example.com",
+        )
+        val (_, text) = textOf(render(invoice().copy(client = long, number = "REVISHINGSTUDIO/2026-2027/000123")))
+        assertTrue("Private Limited" in text)
+        assertTrue("REVISHINGSTUDIO/2026-2027/000123" in text)
+    }
+
+    @Test
+    fun sentInvoicePrintsItsFrozenBusinessDetails() {
+        val frozen = profile.copy(address = "Old studio address")
+        val (_, text) = textOf(render(invoice().copy(issuer = frozen)))
+        assertTrue("Old studio address" in text)
+    }
 }

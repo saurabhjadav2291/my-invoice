@@ -108,7 +108,7 @@ private class AndroidPage(
     }
 
     override fun image(path: String, x: Float, y: Float, maxWidth: Float, maxHeight: Float) {
-        val bitmap = BitmapFactory.decodeFile(path) ?: return
+        val bitmap = LogoImages.decode(path) ?: return
         val scale = minOf(maxWidth / bitmap.width, maxHeight / bitmap.height)
         val dest = RectF(x, y, x + bitmap.width * scale, y + bitmap.height * scale)
         canvas.drawBitmap(bitmap, null, dest, Paint(Paint.FILTER_BITMAP_FLAG))

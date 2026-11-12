@@ -35,6 +35,10 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.heightIn
@@ -79,6 +83,12 @@ private class ItemInput(
     }
 
     companion object {
+        /** Keeps the lines being typed if Android closes the app in the background. */
+        val ListSaver = listSaver<SnapshotStateList<ItemInput>, String>(
+            save = { list -> list.flatMap { listOf(it.description, it.priced.toString(), it.amount, it.rate, it.qty) } },
+            restore = { flat -> flat.chunked(5).map { ItemInput(it[0], it[1].toBoolean(), it[2], it[3], it[4]) }.toMutableStateList() },
+        )
+
         fun from(item: LineItem): ItemInput =
             if (item.rateMinor != null && item.quantityMilli != null) {
                 ItemInput(item.description, true, minorToInput(item.amountMinor), minorToInput(item.rateMinor!!), formatQuantity(item.quantityMilli!!))
@@ -95,18 +105,21 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
     val clients by repo.observeClients().collectAsStateWithLifecycle(emptyList())
     val banks by repo.observeBankAccounts().collectAsStateWithLifecycle(emptyList())
 
-    var loaded by remember { mutableStateOf(false) }
-    var number by remember { mutableStateOf("") }
-    var clientId by remember { mutableStateOf<Long?>(null) }
-    var currency by remember { mutableStateOf(Currency.INR) }
-    var issueDate by remember { mutableStateOf(today()) }
-    var dueDate by remember { mutableStateOf(today().plus(DatePeriod(days = 15))) }
-    var dueDays by remember { mutableStateOf(15) }
-    var bankId by remember { mutableStateOf<Long?>(null) }
-    var notes by remember { mutableStateOf("") }
-    val items = remember { mutableStateListOf<ItemInput>() }
+    // Saveable, so a half-filled invoice survives Android closing the app in the background.
+    var loaded by rememberSaveable { mutableStateOf(false) }
+    var number by rememberSaveable { mutableStateOf("") }
+    var clientId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var currency by rememberSaveable { mutableStateOf(Currency.INR) }
+    var issueDate by rememberSaveable(stateSaver = LocalDateSaver) { mutableStateOf(today()) }
+    var dueDate by rememberSaveable(stateSaver = LocalDateSaver) { mutableStateOf(today().plus(DatePeriod(days = 15))) }
+    var dueDays by rememberSaveable { mutableStateOf(15) }
+    var bankId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var notes by rememberSaveable { mutableStateOf("") }
+    val items = rememberSaveable(saver = ItemInput.ListSaver) { mutableStateListOf<ItemInput>() }
 
     LaunchedEffect(id) {
+        // Restored after the app was closed in the background: keep what was typed.
+        if (loaded) return@LaunchedEffect
         val profile = withContext(Dispatchers.IO) { repo.profile() }
         val defaultBank = withContext(Dispatchers.IO) { repo.bankAccounts().firstOrNull { it.isDefault }?.id }
         val existing = id?.let { withContext(Dispatchers.IO) { repo.invoice(it) } }
@@ -150,11 +163,11 @@ fun InvoiceEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier
         )
         if (id == null) {
             var newId = 0L
-            actions.run("Invoice created", onDone = { nav.replace(Screen.InvoiceDetail(newId)) }) {
+            actions.run("Invoice created", onDone = { nav.replace(Screen.InvoiceDetail(newId)) }, once = true) {
                 newId = createInvoice(draft)
             }
         } else {
-            actions.run("Invoice saved", onDone = { nav.back() }) { updateInvoice(id, draft) }
+            actions.run("Invoice saved", onDone = { nav.back() }, once = true) { updateInvoice(id, draft) }
         }
     }
 
