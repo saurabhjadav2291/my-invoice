@@ -15,6 +15,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
@@ -130,11 +131,16 @@ fun InnerScaffold(
     var topHeight by remember { mutableStateOf(0.dp) }
     var bottomHeight by remember { mutableStateOf(0.dp) }
     val systemBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    // The keyboard. The content area stops at its top edge, so a form scrolls all the way to its
+    // last field, and the focused field is brought into view above it. A bottom bar that already
+    // sits above the keyboard (imePadding) measures the keyboard in its own height, so that part
+    // is taken off its padding rather than counted twice.
+    val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
     val barTint = rememberBackgroundBrush(alpha = 0.97f)
     val barFallback = rememberBackgroundBrush()
     Box(modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().hazeSource(haze)) {
-            content(PaddingValues(top = topHeight, bottom = maxOf(bottomHeight, systemBottom)))
+        Box(Modifier.fillMaxSize().hazeSource(haze).padding(bottom = imeBottom)) {
+            content(PaddingValues(top = topHeight, bottom = maxOf(bottomHeight - imeBottom, systemBottom - imeBottom, 0.dp)))
         }
         Box(
             Modifier

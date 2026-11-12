@@ -186,10 +186,9 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
             SettingsSection("Usual currency") {
                 PillChoice(Currency.entries, currency, { it.code }, { currency = it }, Modifier.fillMaxWidth())
             }
-            HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
-            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 20.dp))
             if (id != null) {
-                AppButton("Archive client", { confirmArchive = true }, Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
+                HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
+                AppButton("Archive client", { confirmArchive = true }, Modifier.fillMaxWidth().padding(top = 12.dp), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
             }
             Spacer(Modifier.navigationBarsPadding().height(32.dp))
         }

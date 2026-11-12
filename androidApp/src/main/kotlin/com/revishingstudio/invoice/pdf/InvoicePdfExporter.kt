@@ -32,6 +32,17 @@ object InvoicePdfExporter {
         return file
     }
 
+    /** Opens the share sheet for the PDF (WhatsApp, Gmail, Drive, Files and so on). */
+    fun share(context: Context, file: File) {
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(send, file.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
     /** Opens the PDF in a viewer app, with the option to share it from there. */
     fun open(context: Context, file: File) {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
