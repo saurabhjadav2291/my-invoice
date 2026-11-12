@@ -332,10 +332,9 @@ fun AccountDetailsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     Field("Email", form.email, { form.email = it }, keyboardType = KeyboardType.Email, placeholder = "e.g. hello@yourstudio.com")
                     Field("Phone", form.phone, { form.phone = it }, keyboardType = KeyboardType.Phone, placeholder = "e.g. +91 98765 43210")
                 }
-                HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
-                AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 20.dp))
                 if (saved) {
-                    AppButton("Cancel", ::cancelEdit, Modifier.fillMaxWidth().padding(top = 8.dp), variant = ButtonVariant.Tertiary)
+                    HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
+                    AppButton("Cancel", ::cancelEdit, Modifier.fillMaxWidth().padding(top = 12.dp), variant = ButtonVariant.Tertiary)
                 }
             } else {
                 SettingsSection("You", first = true) {
@@ -343,8 +342,6 @@ fun AccountDetailsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     InfoRow("Email", form.email)
                     InfoRow("Phone", form.phone)
                 }
-                HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
-                AppButton("Edit details", { editing = true }, Modifier.fillMaxWidth().padding(top = 20.dp), icon = AppIcons.Pencil)
             }
             // Room above the gesture bar, on top of the scaffold padding, so the last button never sits on it.
             Spacer(Modifier.navigationBarsPadding().height(32.dp))
@@ -361,7 +358,7 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val form = rememberProfileForm()
     val c = Ui.colors
     val scope = rememberCoroutineScope()
-    // Saved details open read-only, so nothing changes by an accidental tap; Edit info unlocks them.
+    // Saved details open read-only, so nothing changes by an accidental tap; Edit in the top bar unlocks them.
     var editing by remember { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf(false) }
     // Whether business details are saved (not just typed), which is what Cancel goes back to.
@@ -444,7 +441,6 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 banks = banks,
                 padding = padding,
                 onBank = { bank -> nav.go(Screen.BankEditor(bank.id)) },
-                onEdit = { editing = true },
                 onRemove = { confirmRemove = true },
             )
             return@InnerScaffold
@@ -548,10 +544,9 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 AppButton("Add bank account", { nav.go(Screen.BankEditor(null)) }, Modifier.fillMaxWidth(), variant = ButtonVariant.Secondary, icon = AppIcons.Plus)
             }
 
-            HorizontalDivider(color = c.hairline, modifier = Modifier.padding(top = 20.dp))
-            AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 20.dp))
             if (savedDetails) {
-                AppButton("Cancel", ::cancelEdit, Modifier.fillMaxWidth().padding(top = 8.dp), variant = ButtonVariant.Tertiary)
+                HorizontalDivider(color = c.hairline, modifier = Modifier.padding(top = 20.dp))
+                AppButton("Cancel", ::cancelEdit, Modifier.fillMaxWidth().padding(top = 12.dp), variant = ButtonVariant.Tertiary)
             }
             // Room above the gesture bar, on top of the scaffold padding, so the last button never sits on it.
             Spacer(Modifier.navigationBarsPadding().height(32.dp))
@@ -571,7 +566,7 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
     }
 }
 
-/** Saved business details, read-only, with Edit info and Remove business details below. */
+/** Saved business details, read-only, with Remove business details below (Edit is in the top bar). */
 @Composable
 private fun BusinessSummary(
     form: ProfileForm,
@@ -580,7 +575,6 @@ private fun BusinessSummary(
     banks: List<BankAccount>,
     padding: androidx.compose.foundation.layout.PaddingValues,
     onBank: (BankAccount) -> Unit,
-    onEdit: () -> Unit,
     onRemove: () -> Unit,
 ) {
     val c = Ui.colors
@@ -622,11 +616,10 @@ private fun BusinessSummary(
             banks.forEach { bank -> BankRow(bank) { onBank(bank) } }
         }
         HorizontalDivider(color = c.hairline, modifier = Modifier.padding(top = 20.dp))
-        AppButton("Edit info", onEdit, Modifier.fillMaxWidth().padding(top = 20.dp), icon = AppIcons.Pencil)
         AppButton(
             "Remove business details",
             onRemove,
-            Modifier.fillMaxWidth().padding(top = 8.dp),
+            Modifier.fillMaxWidth().padding(top = 12.dp),
             variant = ButtonVariant.Tertiary,
             tint = c.error,
         )
@@ -791,8 +784,7 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
                     InfoRow("Use by default on new invoices", if (isDefault) "Yes" else "No")
                 }
                 HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
-                AppButton("Edit account", { editing = true }, Modifier.fillMaxWidth().padding(top = 20.dp), icon = AppIcons.Pencil)
-                AppButton("Delete this account", { confirmDelete = true }, Modifier.fillMaxWidth().padding(top = 8.dp), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
+                AppButton("Delete this account", { confirmDelete = true }, Modifier.fillMaxWidth().padding(top = 12.dp), variant = ButtonVariant.Tertiary, tint = Ui.colors.error)
             } else {
                 SettingsSection("Account", first = true) {
                     Field("Nickname (only in the app)", label, { label = it }, placeholder = "e.g. Main current account")
@@ -807,10 +799,9 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
                 SettingsSection("Default") {
                     SwitchRow("Use by default on new invoices", null, isDefault) { isDefault = it }
                 }
-                HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
-                AppButton("Save", ::save, Modifier.fillMaxWidth().padding(top = 20.dp))
                 if (id != null) {
-                    AppButton("Cancel", ::cancelEdit, Modifier.fillMaxWidth().padding(top = 8.dp), variant = ButtonVariant.Tertiary)
+                    HorizontalDivider(color = Ui.colors.hairline, modifier = Modifier.padding(top = 20.dp))
+                    AppButton("Cancel", ::cancelEdit, Modifier.fillMaxWidth().padding(top = 12.dp), variant = ButtonVariant.Tertiary)
                 }
             }
             // Room above the gesture bar, on top of the scaffold padding, so the last button never sits on it.
