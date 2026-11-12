@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.revishingstudio.invoice.core.Client
 import com.revishingstudio.invoice.core.Currency
+import com.revishingstudio.invoice.core.TaxField
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -110,6 +112,16 @@ fun ClientsScreen(nav: Navigator, modifier: Modifier = Modifier) {
     }
 }
 
+/** One custom tax ID: a short label (ABN, VAT...) beside its number, with a remove button. */
+@Composable
+private fun TaxFieldRow(field: TaxField, onChange: (TaxField) -> Unit, onRemove: () -> Unit) {
+    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Field("Label", field.label, { onChange(field.copy(label = it)) }, Modifier.weight(0.38f), placeholder = "e.g. ABN")
+        Field("Number", field.value, { onChange(field.copy(value = it)) }, Modifier.weight(0.62f), placeholder = "e.g. 12 345 678 901")
+        RoundIconButton(AppIcons.Trash, "Remove tax field", onRemove, Modifier.padding(bottom = 4.dp), style = RoundStyle.Quiet)
+    }
+}
+
 @Composable
 fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
     val actions = LocalActions.current
@@ -119,7 +131,8 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
     var address by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var taxIds by remember { mutableStateOf("") }
+    var gstin by remember { mutableStateOf("") }
+    val taxFields = remember { mutableStateListOf<TaxField>() }
     var currency by remember { mutableStateOf(Currency.INR) }
     var confirmArchive by remember { mutableStateOf(false) }
 
@@ -131,7 +144,9 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
                 address = c.address
                 phone = c.phone
                 email = c.email
-                taxIds = c.taxIds
+                gstin = c.gstin
+                taxFields.clear()
+                taxFields.addAll(c.taxFields)
                 currency = c.defaultCurrency
             }
             loaded = true
@@ -143,6 +158,10 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
             actions.message("Please enter the client's name")
             return
         }
+        if (taxFields.any { it.value.isNotBlank() && it.label.isBlank() }) {
+            actions.message("Please give each tax field a label, e.g. ABN or VAT")
+            return
+        }
         val client = Client(
             id = id ?: 0,
             name = name.trim(),
@@ -150,7 +169,10 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
             address = address.trim(),
             phone = phone.trim(),
             email = email.trim(),
-            taxIds = taxIds.trim(),
+            gstin = gstin.trim().uppercase(),
+            taxFields = taxFields
+                .map { TaxField(it.label.trim(), it.value.trim()) }
+                .filter { it.value.isNotEmpty() },
             defaultCurrency = currency,
         )
         actions.run("Client saved", onDone = { nav.back() }) { saveClient(client) }
@@ -178,10 +200,31 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
                 Field("Registered name (optional)", legalName, { legalName = it }, supportingText = "e.g. Acme Creative Pty Ltd", placeholder = "Legal company name")
                 Field("Address", address, { address = it }, singleLine = false, minLines = 2, placeholder = "Street, city, postcode, country")
             }
-            SettingsSection("Contact and tax") {
+            SettingsSection("Contact") {
                 Field("Phone", phone, { phone = it }, keyboardType = KeyboardType.Phone, placeholder = "e.g. +61 400 123 456")
                 Field("Email", email, { email = it }, keyboardType = KeyboardType.Email, placeholder = "e.g. accounts@client.com")
-                Field("Tax IDs (optional)", taxIds, { taxIds = it }, supportingText = "e.g. ABN: 12345678901  ACN: 123456789, or a GSTIN", placeholder = "ABN, ACN or GSTIN")
+            }
+            SettingsSection("Tax IDs") {
+                Field("GSTIN (optional)", gstin, { gstin = it }, placeholder = "e.g. 27AAPFU0939F1ZV")
+                taxFields.forEachIndexed { index, field ->
+                    TaxFieldRow(
+                        field = field,
+                        onChange = { taxFields[index] = it },
+                        onRemove = { taxFields.removeAt(index) },
+                    )
+                }
+                AppButton(
+                    "Add field",
+                    { taxFields.add(TaxField("", "")) },
+                    variant = ButtonVariant.Secondary,
+                    icon = AppIcons.Plus,
+                )
+                Text(
+                    "For other tax IDs such as ABN, ACN or VAT. Each one shows on the invoice under Bill To.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Ui.colors.greyText,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
             }
             SettingsSection("Usual currency") {
                 PillChoice(Currency.entries, currency, { it.code }, { currency = it }, Modifier.fillMaxWidth())

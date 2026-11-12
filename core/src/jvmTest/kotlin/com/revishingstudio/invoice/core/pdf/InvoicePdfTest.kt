@@ -7,6 +7,7 @@ import com.revishingstudio.invoice.core.Currency
 import com.revishingstudio.invoice.core.Invoice
 import com.revishingstudio.invoice.core.InvoiceState
 import com.revishingstudio.invoice.core.LineItem
+import com.revishingstudio.invoice.core.TaxField
 import kotlinx.datetime.LocalDate
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.text.PDFTextStripper
@@ -33,7 +34,7 @@ class InvoicePdfTest {
         address = "12 Harbour St, Sydney NSW 2000, Australia.",
         phone = "+61 400 000 000",
         email = "accounts@northwind.example",
-        taxIds = "ABN: 12345678901  ACN: 123456789",
+        taxFields = listOf(TaxField("ABN", "12345678901"), TaxField("ACN", "123456789")),
     )
 
     private val bank = BankAccount(
@@ -105,6 +106,25 @@ class InvoicePdfTest {
             "Thank You!",
             "from Example Studio",
         ).forEach { assertTrue(it in text, "Missing \"$it\" in:\n$text") }
+    }
+
+    @Test
+    fun gstinAndCustomTaxFieldsShowUnderBillTo() {
+        val taxed = client.copy(
+            gstin = "27AAPFU0939F1ZV",
+            taxFields = listOf(
+                TaxField("ABN", "12 345 678 901"),
+                TaxField("ACN", "123 456 789"),
+                TaxField("VAT No", "GB 123 4567 89"),
+                TaxField("Company Reg", "09876543"),
+                TaxField("EORI", "GB123456789000"),
+            ),
+        )
+        val pdf = render(invoice().copy(client = taxed))
+        val (pages, text) = textOf(pdf)
+        assertEquals(1, pages)
+        listOf("GSTIN: 27AAPFU0939F1ZV", "ABN: 12 345 678 901", "VAT No: GB 123 4567 89", "EORI: GB123456789000")
+            .forEach { assertTrue(it in text, "Missing \"$it\" in:\n$text") }
     }
 
     @Test

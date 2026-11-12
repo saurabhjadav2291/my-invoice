@@ -1,0 +1,4 @@
+-- Version 2 -> 3: a dedicated GSTIN field plus any number of custom tax fields (ABN, ACN, VAT...).
+-- The old free-text tax_ids stay put; the app reads them into the new fields until the client is saved again.
+ALTER TABLE client ADD COLUMN gstin TEXT NOT NULL DEFAULT '';
+ALTER TABLE client ADD COLUMN tax_fields TEXT NOT NULL DEFAULT '';

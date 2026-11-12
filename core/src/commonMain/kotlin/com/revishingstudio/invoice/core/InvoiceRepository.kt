@@ -101,13 +101,13 @@ class InvoiceRepository(
         if (client.id == 0L) {
             clients.insertClient(
                 client.name, client.legalName, client.address, client.phone,
-                client.email, client.taxIds, client.defaultCurrency.code,
+                client.email, client.gstin.trim(), TaxIds.encode(client.taxFields), client.defaultCurrency.code,
             )
             profiles.lastInsertRowId().executeAsOne()
         } else {
             clients.updateClient(
                 client.name, client.legalName, client.address, client.phone,
-                client.email, client.taxIds, client.defaultCurrency.code, client.id,
+                client.email, client.gstin.trim(), TaxIds.encode(client.taxFields), client.defaultCurrency.code, client.id,
             )
             client.id
         }
@@ -348,14 +348,20 @@ private fun BankAccountRow.toModel() = BankAccount(
     isDefault = is_default != 0L,
 )
 
-private fun ClientRow.toModel() = Client(
-    id = id,
-    name = name,
-    legalName = legal_name,
-    address = address,
-    phone = phone,
-    email = email,
-    taxIds = tax_ids,
-    defaultCurrency = Currency.fromCode(default_currency),
-    archived = archived != 0L,
-)
+private fun ClientRow.toModel(): Client {
+    // Clients saved before version 3 only have free-text tax_ids; read them into the new
+    // fields. Saving the client writes the new columns and clears tax_ids.
+    val legacy = if (tax_ids.isNotBlank()) TaxIds.parseLegacy(tax_ids) else null
+    return Client(
+        id = id,
+        name = name,
+        legalName = legal_name,
+        address = address,
+        phone = phone,
+        email = email,
+        gstin = gstin.ifBlank { legacy?.gstin.orEmpty() },
+        taxFields = TaxIds.decode(tax_fields) + legacy?.fields.orEmpty(),
+        defaultCurrency = Currency.fromCode(default_currency),
+        archived = archived != 0L,
+    )
+}
