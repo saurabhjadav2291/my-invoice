@@ -327,35 +327,6 @@ fun BackupNudge(title: String, detail: String, onOpen: () -> Unit, onDismiss: ()
     }
 }
 
-/** On a fresh install: bring everything back from Drive or a file before setting up. */
-@Composable
-fun RestoreOffer(controller: BackupController, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    val c = Ui.colors
-    HeroCard(modifier) {
-        Text("Moving from another phone?", style = MaterialTheme.typography.titleLarge, color = c.ink)
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "Restore your invoices, clients and business details from a backup before you set up.",
-            style = MaterialTheme.typography.bodyLarge,
-            color = c.greyText,
-        )
-        Spacer(Modifier.height(16.dp))
-        AppButton(
-            "Restore from Google Drive",
-            controller::restoreFromDrive,
-            Modifier.fillMaxWidth(),
-            variant = ButtonVariant.Secondary,
-            icon = AppIcons.GoogleDrive,
-            iconInColour = true,
-        )
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            AppButton("Restore from a file", controller::importFile, variant = ButtonVariant.Link)
-            AppButton("Not now", onDismiss, variant = ButtonVariant.Tertiary)
-        }
-    }
-}
-
 /**
  * Asked once, after the person has set up their details: turn on Google Drive backup?
  * Optional. "Not now" leaves it off, and the quiet nudge on Invoices reminds them later.

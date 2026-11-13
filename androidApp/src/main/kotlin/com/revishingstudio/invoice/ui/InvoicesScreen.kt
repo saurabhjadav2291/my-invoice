@@ -96,16 +96,6 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
             )
         }
         if (list == null) return@LazyColumn
-        if (list.isEmpty() && profile == null && !backup.restoreOfferDismissed) {
-            // A fresh install: offer to bring everything back before setting up.
-            item(key = "restore") {
-                RestoreOffer(
-                    backupController,
-                    onDismiss = backupPrefs::dismissRestoreOffer,
-                    modifier = Modifier.padding(horizontal = ScreenMargin).padding(bottom = 8.dp),
-                )
-            }
-        }
         if (list.isEmpty()) {
             item(key = "empty") {
                 // No background block behind empty states (design.md section 7.1).

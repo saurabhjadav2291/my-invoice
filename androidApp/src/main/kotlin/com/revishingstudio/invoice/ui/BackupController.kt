@@ -138,15 +138,45 @@ class BackupController(context: Context, private val actions: Actions) {
     }
 
     private fun restoreFromDrive(token: String, file: DriveFile, email: String?) {
-        dialog = BackupDialog.ConfirmRestore(describe(file)) {
-            scope.launch {
-                val bytes = runStep("Downloading your backup…") { DriveClient(token).download(file.id) } ?: return@launch
-                unlockAndRestore(bytes) { password ->
-                    // This phone carries on backing up to the same Drive, with the same password.
-                    prefs.setPassword(password)
-                    prefs.setDrive(true, email ?: prefs.status.value.account)
-                }
-            }
+        dialog = BackupDialog.ConfirmRestore(describe(file)) { scope.launch { downloadAndRestore(token, file, email) } }
+    }
+
+    private suspend fun downloadAndRestore(token: String, file: DriveFile, email: String?) {
+        val bytes = runStep("Downloading your backup…") { DriveClient(token).download(file.id) } ?: return
+        unlockAndRestore(bytes) { password ->
+            // This phone carries on backing up to the same Drive, with the same password.
+            prefs.setPassword(password)
+            prefs.setDrive(true, email ?: prefs.status.value.account)
+        }
+    }
+
+    // ---- Welcome (fresh install) ---------------------------------------------
+
+    /** The Google account someone signed in with on the welcome screen, and its backup if any. */
+    class SignedIn(val token: String, val email: String?, val backup: DriveFile?) {
+        val summary: String? get() = backup?.let(::describeBackup)
+    }
+
+    /** Signs in with Google and looks for a backup in that account's Drive. */
+    fun signIn(then: (SignedIn) -> Unit) = withDrive { token, result ->
+        val (email, file) = working("Looking for your backup…") {
+            val client = DriveClient(token)
+            (DriveAuth.email(result) ?: client.accountEmail()) to client.latestBackup()
+        }
+        then(SignedIn(token, email, file))
+    }
+
+    /** Restores the backup found at sign-in. Nothing is on the phone yet, so there is no extra confirm. */
+    fun restoreSignedIn(account: SignedIn) {
+        val file = account.backup ?: return
+        scope.launch { downloadAndRestore(account.token, file, account.email) }
+    }
+
+    /** Turns on Drive backup for the account signed in on the welcome screen. */
+    fun turnOnSignedIn(account: SignedIn, onDone: () -> Unit) = withPassword { _ ->
+        scope.launch {
+            enableAndBackUp(account.email, account.token)
+            onDone()
         }
     }
 
@@ -305,13 +335,16 @@ class BackupController(context: Context, private val actions: Actions) {
         null
     }
 
-    private fun describe(file: DriveFile): String {
-        val counts = listOfNotNull(
-            file.invoiceCount?.let { if (it == 1) "1 invoice" else "$it invoices" },
-            file.clientCount?.let { if (it == 1) "1 client" else "$it clients" },
-        ).joinToString(", ")
-        return "Backup from ${formatBackupTime(file.takenAt)}" + if (counts.isNotEmpty()) " · $counts" else ""
-    }
+    private fun describe(file: DriveFile): String = describeBackup(file)
+}
+
+/** "Backup from 12 Nov 2026, 14:05 · 14 invoices, 3 clients". */
+fun describeBackup(file: DriveFile): String {
+    val counts = listOfNotNull(
+        file.invoiceCount?.let { if (it == 1) "1 invoice" else "$it invoices" },
+        file.clientCount?.let { if (it == 1) "1 client" else "$it clients" },
+    ).joinToString(", ")
+    return "Backup from ${formatBackupTime(file.takenAt)}" + if (counts.isNotEmpty()) " · $counts" else ""
 }
 
 /** "Today, 14:05", "Yesterday, 09:12" or "12 Nov 2026, 14:05". */

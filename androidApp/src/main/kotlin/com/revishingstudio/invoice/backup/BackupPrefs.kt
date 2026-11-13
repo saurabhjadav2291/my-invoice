@@ -30,7 +30,8 @@ data class BackupStatus(
     /** When the "not backed up" banner on Invoices was last closed. */
     val bannerDismissedAt: Long = 0,
     /** The "restore from another phone" offer on a fresh install was closed. */
-    val restoreOfferDismissed: Boolean = false,
+    /** The welcome screen of a fresh install is done (signed in, skipped or restored). */
+    val welcomeDone: Boolean = false,
     /** The one-time "Back up to Google Drive?" question was answered (either way). */
     val drivePromptAnswered: Boolean = false,
 ) {
@@ -56,7 +57,7 @@ class BackupPrefs private constructor(context: Context) {
         lastError = prefs.getString(LAST_ERROR, null),
         hasPassword = prefs.contains(PASSWORD),
         bannerDismissedAt = prefs.getLong(BANNER_DISMISSED, 0),
-        restoreOfferDismissed = prefs.getBoolean(RESTORE_OFFER_DISMISSED, false),
+        welcomeDone = prefs.getBoolean(WELCOME_DONE, false),
         drivePromptAnswered = prefs.getBoolean(DRIVE_PROMPT_ANSWERED, false),
     )
 
@@ -89,7 +90,11 @@ class BackupPrefs private constructor(context: Context) {
 
     fun dismissBanner() = edit { putLong(BANNER_DISMISSED, System.currentTimeMillis()) }
 
-    fun dismissRestoreOffer() = edit { putBoolean(RESTORE_OFFER_DISMISSED, true) }
+    /** New people answer the backup question on the welcome screen, so the later prompt is skipped. */
+    fun finishWelcome() = edit {
+        putBoolean(WELCOME_DONE, true)
+        putBoolean(DRIVE_PROMPT_ANSWERED, true)
+    }
 
     fun answerDrivePrompt() = edit { putBoolean(DRIVE_PROMPT_ANSWERED, true) }
 
@@ -97,7 +102,8 @@ class BackupPrefs private constructor(context: Context) {
     fun restored(backupTakenAt: Long) = edit(commit = true) {
         putLong(LAST_BACKUP, backupTakenAt)
         putLong(CHANGED, backupTakenAt)
-        putBoolean(RESTORE_OFFER_DISMISSED, true)
+        putBoolean(WELCOME_DONE, true)
+        putBoolean(DRIVE_PROMPT_ANSWERED, true)
         remove(LAST_ERROR)
     }
 
@@ -116,7 +122,7 @@ class BackupPrefs private constructor(context: Context) {
         private const val LAST_ERROR = "last_error"
         private const val PASSWORD = "password"
         private const val BANNER_DISMISSED = "banner_dismissed"
-        private const val RESTORE_OFFER_DISMISSED = "restore_offer_dismissed"
+        private const val WELCOME_DONE = "welcome_done"
         private const val DRIVE_PROMPT_ANSWERED = "drive_prompt_answered"
 
         @Volatile

@@ -45,6 +45,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 
 /** Every screen in the app. Screens are kept on a simple back stack. */
 sealed interface Screen {
@@ -165,11 +166,21 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
     val actions = remember { Actions(repository, scope, snackbar) }
     val profile by repository.observeProfile().collectAsStateWithLifecycle(null)
     val clients by repository.observeClients().collectAsStateWithLifecycle(null)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val backupPrefs = remember { com.revishingstudio.invoice.backup.BackupPrefs.get(context) }
+    val backupStatus by backupPrefs.status.collectAsStateWithLifecycle()
+    // A fresh install (no details, no clients) opens on the welcome screen until it is done.
+    val freshInstall by androidx.compose.runtime.produceState<Boolean?>(null) {
+        value = withContext(Dispatchers.IO) {
+            repository.profile() == null && repository.observeClients().first().isEmpty()
+        }
+    }
+    val welcome = freshInstall == true && !backupStatus.welcomeDone
 
     BackHandler(enabled = nav.canGoBack) { nav.back() }
 
     val current = nav.current
-    val isTab = current == Screen.Invoices || current == Screen.Clients || current == Screen.Settings
+    val isTab = !welcome && (current == Screen.Invoices || current == Screen.Clients || current == Screen.Settings)
     val colors = Ui.colors
 
     // Every screen sits on the light canvas, so the system bar icons are dark.
@@ -210,7 +221,9 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
         Box(Modifier.fillMaxSize()) {
             // Everything that scrolls is the blur source for the bands and the tab bar.
             AppBackground(Modifier.hazeSource(haze)) {
-                when (current) {
+                if (welcome) {
+                    WelcomeScreen(onDone = backupPrefs::finishWelcome)
+                } else when (current) {
                     Screen.Invoices -> InvoicesScreen(nav)
                     Screen.Clients -> ClientsScreen(nav)
                     Screen.Settings -> SettingsScreen(nav)
