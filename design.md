@@ -253,6 +253,7 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
   - **Account details** opens a screen with your name, email and phone (sign-in and backup will go here when they exist).
   - **Business info** opens a screen with studio name, address, PAN, logo, invoice numbers, on-the-invoice options and bank accounts.
     Once saved it opens read-only (label over value, "Not added" in grey) so nothing changes by accident. **Edit info** (primary, also an Edit link in the top bar) turns the fields on, with Save and Cancel. **Remove business details** (tertiary, red, with a confirm) clears studio name, address, PAN and logo; name, numbering and bank accounts stay.
+  - **Backup & restore** (added 2026-11-13) opens a screen with three sections: Google Drive (an on/off switch with the account, last backup time, Back up now, Restore from Google Drive), Backup password (Change password) and Backup file (Export backup file, Restore from a file). Its grey line says when the last backup ran.
   - **Preview invoice** opens a sample PDF built from the saved details.
   The two screens use no cards (nor do the client form, decided 2026-11-09: Client, Contact and tax, Usual currency; and the invoice form: Client and currency, Dates, Items, On the invoice, with a hairline between items and an "Item 1" heading carrying the remove button): sections are a `titleLarge` heading over their fields, split by a `hairline` divider with 20 dp above and below, fields 12 dp apart.
 
@@ -282,6 +283,12 @@ A frosted white card with 20 dp corners, a hairline and a soft ink drop shadow (
 - Tint wash (decided 2026-11-10): over the frosted white, a left-to-right gradient in the same status colour, 14% at the left edge, 6% at a quarter and 0% by the middle, so the right half stays plain frosted white.
 - Then 16 dp, the message in `titleMedium` `ink`, and under it the time in `bodySmall` `grey`.
 - Used for every confirmation ("Payment recorded"), error and hint. It replaces the old dark snackbar.
+
+**Backup nudge (added 2026-11-13).** When backup is off, or out of date with changes waiting, the Invoices tab shows a quiet card under the header: a white-to-frosted card with 16 dp corners, a hairline, the same amber wash as a warning banner but no shadow (it sits in the list, it does not float), a 24 dp cloud icon in `warning`, the message in `titleMedium` with a `bodySmall` line under it, and a small cross. Tapping the card opens Backup & restore; the cross hides it for two weeks. Once the person has saved their details and Drive backup is off, a one-time dialog asks "Back up to Google Drive?" (Turn on / Not now). People who came through the welcome screen are not asked again.
+
+**Welcome screen (decided 2026-11-13).** A fresh install opens on a welcome screen with no tab bar: the paper invoice, "Welcome to My Invoice", then "Continue with Google" (secondary, Drive logo), "Skip for now" (tertiary) and a "Restore from a backup file" link. After sign-in it asks one question: if that Google account has a backup, "Welcome back" with the backup's date and counts, "Restore backup" or "Start fresh instead"; if not, "Turn on backup?" with "Turn on backup" or "Not now". Sign-in is optional.
+
+**Google Drive logo (decided 2026-11-13).** The Google Drive buttons ("Restore from Google Drive") and the backup prompt use the Drive logo in its own colours. It is the one icon that is not from Hugeicons.
 
 ### 6.9 Icons
 

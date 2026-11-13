@@ -70,6 +70,8 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
         if (loadedInvoice == null) nav.back()
     }
     val reload: () -> Unit = { refresh++ }
+    // Sending an invoice or recording a payment is a good moment to ask about backup, if there is none.
+    val backupMoment: () -> Unit = { com.revishingstudio.invoice.backup.BackupPrefs.get(context).keyMoment() }
 
     val inv = invoice
     val today = today()
@@ -170,7 +172,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
                 if (inv.state == InvoiceState.DRAFT) {
                     AppButton(
                         "Mark as sent",
-                        { actions.run("Marked as sent", onDone = reload, once = true) { markSent(id) } },
+                        { actions.run("Marked as sent", onDone = { reload(); backupMoment() }, once = true) { markSent(id) } },
                         Modifier.weight(1f),
                         variant = ButtonVariant.Secondary,
                     )
@@ -259,7 +261,7 @@ fun InvoiceDetailScreen(id: Long, nav: Navigator, modifier: Modifier = Modifier)
             onDismiss = { showPayment = false },
             onSave = { payment ->
                 showPayment = false
-                actions.run("Payment recorded", onDone = reload, once = true) { recordPayment(id, payment) }
+                actions.run("Payment recorded", onDone = { reload(); backupMoment() }, once = true) { recordPayment(id, payment) }
             },
         )
     }

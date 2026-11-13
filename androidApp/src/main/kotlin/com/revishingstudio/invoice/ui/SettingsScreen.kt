@@ -55,6 +55,7 @@ import com.revishingstudio.invoice.core.BusinessProfile
 import com.revishingstudio.invoice.core.NumberReset
 import com.revishingstudio.invoice.core.NumberingScheme
 import com.revishingstudio.invoice.pdf.InvoicePdfExporter
+import com.revishingstudio.invoice.backup.BackupPrefs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -177,6 +178,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val profile by actions.repository.observeProfile().collectAsStateWithLifecycle(null)
     val banks by actions.repository.observeBankAccounts().collectAsStateWithLifecycle(emptyList())
+    val backup by remember { BackupPrefs.get(context).status }.collectAsStateWithLifecycle()
 
     fun previewInvoice() {
         val saved = profile
@@ -214,6 +216,11 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 title = "Business info",
                 subtitle = "Studio, address, PAN, logo, invoice numbers and bank",
             ) { nav.go(Screen.BusinessInfo) }
+            SettingsOption(
+                icon = AppIcons.CloudUpload,
+                title = "Backup & restore",
+                subtitle = backupSummary(backup),
+            ) { nav.go(Screen.Backup) }
             SettingsOption(
                 icon = AppIcons.Document,
                 title = "Preview invoice",
@@ -631,7 +638,7 @@ private fun BusinessSummary(
 
 /** A saved value: quiet label above, the value in ink (or "Not added" in grey). */
 @Composable
-private fun InfoRow(label: String, value: String, mono: Boolean = false) {
+fun InfoRow(label: String, value: String, mono: Boolean = false) {
     val c = Ui.colors
     Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = c.grey)

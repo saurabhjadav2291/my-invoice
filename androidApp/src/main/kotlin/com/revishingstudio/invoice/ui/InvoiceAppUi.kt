@@ -45,6 +45,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 
 /** Every screen in the app. Screens are kept on a simple back stack. */
 sealed interface Screen {
@@ -60,6 +61,8 @@ sealed interface Screen {
     data class BankEditor(val id: Long?) : Screen
     /** An invoice PDF shown inside the app. */
     data class PdfPreview(val path: String, val title: String) : Screen
+    /** Google Drive backup, backup file export and import, restore. */
+    data object Backup : Screen
 }
 
 class Navigator(private val stack: MutableList<Screen>) {
@@ -89,7 +92,8 @@ class Navigator(private val stack: MutableList<Screen>) {
 /** Runs database work off the main thread and shows any error as a message. */
 class Actions(
     val repository: InvoiceRepository,
-    private val scope: CoroutineScope,
+    /** Lives as long as the app's UI, so work started on one screen finishes after leaving it. */
+    val scope: CoroutineScope,
     private val snackbar: SnackbarHostState,
 ) {
     /** True while a [run] with once = true is still working. */
@@ -125,8 +129,8 @@ class Actions(
     }
 
     /** A hint for the person, e.g. a missing field. */
-    fun message(text: String) {
-        scope.launch { snackbar.showSnackbar(BannerVisuals(text, BannerKind.Notice)) }
+    fun message(text: String, kind: BannerKind = BannerKind.Notice) {
+        scope.launch { snackbar.showSnackbar(BannerVisuals(text, kind)) }
     }
 }
 
@@ -162,11 +166,21 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
     val actions = remember { Actions(repository, scope, snackbar) }
     val profile by repository.observeProfile().collectAsStateWithLifecycle(null)
     val clients by repository.observeClients().collectAsStateWithLifecycle(null)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val backupPrefs = remember { com.revishingstudio.invoice.backup.BackupPrefs.get(context) }
+    val backupStatus by backupPrefs.status.collectAsStateWithLifecycle()
+    // A fresh install (no details, no clients) opens on the welcome screen until it is done.
+    val freshInstall by androidx.compose.runtime.produceState<Boolean?>(null) {
+        value = withContext(Dispatchers.IO) {
+            repository.profile() == null && repository.observeClients().first().isEmpty()
+        }
+    }
+    val welcome = freshInstall == true && !backupStatus.welcomeDone
 
     BackHandler(enabled = nav.canGoBack) { nav.back() }
 
     val current = nav.current
-    val isTab = current == Screen.Invoices || current == Screen.Clients || current == Screen.Settings
+    val isTab = !welcome && (current == Screen.Invoices || current == Screen.Clients || current == Screen.Settings)
     val colors = Ui.colors
 
     // Every screen sits on the light canvas, so the system bar icons are dark.
@@ -207,7 +221,9 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
         Box(Modifier.fillMaxSize()) {
             // Everything that scrolls is the blur source for the bands and the tab bar.
             AppBackground(Modifier.hazeSource(haze)) {
-                when (current) {
+                if (welcome) {
+                    WelcomeScreen(onDone = backupPrefs::finishWelcome)
+                } else when (current) {
                     Screen.Invoices -> InvoicesScreen(nav)
                     Screen.Clients -> ClientsScreen(nav)
                     Screen.Settings -> SettingsScreen(nav)
@@ -218,6 +234,7 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                     is Screen.ClientEditor -> ClientEditorScreen(current.id, nav)
                     is Screen.BankEditor -> BankEditorScreen(current.id, nav)
                     is Screen.PdfPreview -> PdfPreviewScreen(current.path, current.title, nav)
+                    Screen.Backup -> BackupScreen(nav)
                 }
             }
             if (isTab) {
@@ -246,6 +263,16 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                         modifier = Modifier.padding(top = NavBandHeight - NavBarRowHeight).navigationBarsPadding(),
                     )
                 }
+            }
+            // After sending an invoice or recording a payment with no backup on (at most monthly).
+            if (!welcome && backupStatus.keyMomentPending) {
+                KeyMomentBackupPrompt(
+                    onSetUp = {
+                        backupPrefs.answerKeyMoment()
+                        nav.go(Screen.Backup)
+                    },
+                    onNotNow = backupPrefs::answerKeyMoment,
+                )
             }
             SnackbarHost(
                 snackbar,
