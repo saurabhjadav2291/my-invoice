@@ -264,6 +264,16 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                     )
                 }
             }
+            // After sending an invoice or recording a payment with no backup on (at most monthly).
+            if (!welcome && backupStatus.keyMomentPending) {
+                KeyMomentBackupPrompt(
+                    onSetUp = {
+                        backupPrefs.answerKeyMoment()
+                        nav.go(Screen.Backup)
+                    },
+                    onNotNow = backupPrefs::answerKeyMoment,
+                )
+            }
             SnackbarHost(
                 snackbar,
                 Modifier

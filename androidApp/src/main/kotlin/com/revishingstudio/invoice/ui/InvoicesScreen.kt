@@ -113,7 +113,7 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
             }
             return@LazyColumn
         }
-        backupNudge(backup)?.let { (title, detail) ->
+        backupNudge(backup, list.size)?.let { (title, detail) ->
             item(key = "backup") {
                 BackupNudge(
                     title,

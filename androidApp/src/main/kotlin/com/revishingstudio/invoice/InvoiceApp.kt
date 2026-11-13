@@ -14,6 +14,7 @@ class InvoiceApp : Application() {
         Thread { runCatching { repository.freezeMissingSnapshots() } }.start()
         // Keeps the daily Drive backup booked while backup is on.
         BackupScheduler.ensureScheduled(this)
+        com.revishingstudio.invoice.backup.FolderBackup.schedule(this)
     }
 
     /**

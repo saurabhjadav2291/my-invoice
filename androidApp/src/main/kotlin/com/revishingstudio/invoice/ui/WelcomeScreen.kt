@@ -86,6 +86,14 @@ fun WelcomeScreen(onDone: () -> Unit, modifier: Modifier = Modifier) {
                 AppButton("Skip for now", onDone, wide, variant = ButtonVariant.Tertiary)
                 Spacer(Modifier.height(16.dp))
                 AppButton("Restore from a backup file", controller::importFile, variant = ButtonVariant.Link)
+                Text(
+                    "Weekly backup files are kept in the folder you chose, for example Documents, " +
+                        "and are named \"My Invoice auto-backup\".",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.grey,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
             }
             signedIn.backup != null -> {
                 AppButton("Restore backup", { controller.restoreSignedIn(signedIn) }, wide, icon = AppIcons.CloudDownload)

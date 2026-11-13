@@ -114,7 +114,25 @@ fun BackupScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 }
             }
             SettingsSection("Backup file") {
-                Paragraph("Save an encrypted backup file to your phone or another app, and restore from it later. Works without Google.")
+                Paragraph(
+                    "Save an encrypted backup file to a folder on your phone, like Documents. Files there stay even if " +
+                        "the app is removed, and you can restore from them later. Works without Google.",
+                )
+                SwitchRow(
+                    title = "Weekly backup file",
+                    subtitle = status.folderName?.let { "Saved to $it" } ?: if (status.folderBackupOn) "On" else "Off",
+                    checked = status.folderBackupOn,
+                    onChange = { on -> if (on) controller.turnOnFolderBackup() else controller.turnOffFolderBackup() },
+                )
+                if (status.folderBackupOn) {
+                    InfoRow("Last backup file", if (status.lastExportAt > 0) formatBackupTime(status.lastExportAt) else "Not yet")
+                    val error = status.exportError
+                    if (error != null && !status.folderUpToDate) {
+                        Text(error, style = MaterialTheme.typography.bodySmall, color = c.error, modifier = Modifier.padding(horizontal = 4.dp))
+                    }
+                    AppButton("Save backup file now", controller::saveToFolderNow, Modifier.fillMaxWidth(), variant = ButtonVariant.Secondary, icon = AppIcons.FileExport)
+                    AppButton("Change folder", controller::turnOnFolderBackup, Modifier.fillMaxWidth(), variant = ButtonVariant.Tertiary)
+                }
                 AppButton("Export backup file", controller::exportFile, Modifier.fillMaxWidth(), variant = ButtonVariant.Secondary, icon = AppIcons.FileExport)
                 AppButton("Restore from a file", controller::importFile, Modifier.fillMaxWidth(), variant = ButtonVariant.Secondary, icon = AppIcons.FileImport)
             }
@@ -268,24 +286,62 @@ private fun PasswordDialog(
 // On the Invoices tab
 // ---------------------------------------------------------------------------
 
-/** Days a closed banner stays away. */
-private const val BANNER_QUIET_DAYS = 14L
+/** Days a closed banner stays away; shorter once there is more to lose. */
+private fun quietDays(invoices: Int) = if (invoices >= 10) 3L else 14L
 /** A backup this old with unsaved changes counts as out of date. */
 private const val STALE_DAYS = 3L
 private const val DAY = 86_400_000L
 
-/** The banner's message, or null when nothing needs saying. */
-fun backupNudge(status: BackupStatus, now: Long = System.currentTimeMillis()): Pair<String, String>? {
-    if (now - status.bannerDismissedAt < BANNER_QUIET_DAYS * DAY) return null
+/**
+ * The banner's message, or null when nothing needs saying. With no backup at all it names
+ * how many invoices are at risk, and comes back sooner once there are many.
+ */
+fun backupNudge(status: BackupStatus, invoices: Int, now: Long = System.currentTimeMillis()): Pair<String, String>? {
+    if (now - status.bannerDismissedAt < quietDays(invoices) * DAY) return null
+    fun ago(at: Long) = if (at > 0) "Last backup ${formatBackupTime(at).replaceFirstChar { it.lowercase() }}" else "Not backed up yet"
     return when {
-        !status.driveEnabled -> "Your invoices aren't backed up" to "Turn on Google Drive backup"
-        status.upToDate -> null
-        status.lastError != null && now - status.lastBackupAt > DAY -> "Backup needs attention" to status.lastError
-        now - status.lastBackupAt > STALE_DAYS * DAY && now - status.changedAt > DAY ->
-            "Backup is out of date" to
-                if (status.lastBackupAt > 0) "Last backup ${formatBackupTime(status.lastBackupAt).replaceFirstChar { it.lowercase() }}" else "Not backed up yet"
-        else -> null
+        !status.isProtected ->
+            (if (invoices == 1) "1 invoice isn't backed up" else "$invoices invoices aren't backed up") to
+                "If this phone is lost or the app is removed, they're gone. Turn on Google Drive backup or a weekly backup file."
+        status.driveEnabled -> when {
+            status.upToDate -> null
+            status.lastError != null && now - status.lastBackupAt > DAY -> "Backup needs attention" to status.lastError
+            now - status.lastBackupAt > STALE_DAYS * DAY && now - status.changedAt > DAY -> "Backup is out of date" to ago(status.lastBackupAt)
+            else -> null
+        }
+        else -> when {
+            status.folderUpToDate -> null
+            status.exportError != null -> "Backup file needs attention" to status.exportError
+            now - status.lastExportAt > 8 * DAY -> "Backup file is out of date" to ago(status.lastExportAt)
+            else -> null
+        }
     }
+}
+
+/**
+ * Asked after sending an invoice or recording a payment, when nothing backs the data up
+ * (at most once a month, see BackupPrefs.keyMoment).
+ */
+@Composable
+fun KeyMomentBackupPrompt(onSetUp: () -> Unit, onNotNow: () -> Unit) {
+    val c = Ui.colors
+    AlertDialog(
+        onDismissRequest = onNotNow,
+        icon = { Icon(AppIcons.CloudUpload, contentDescription = null, tint = c.warning, modifier = Modifier.size(32.dp)) },
+        title = { Text("Keep your invoices safe", style = MaterialTheme.typography.titleLarge, color = c.ink) },
+        text = {
+            Text(
+                "Your invoices and payments are only on this phone. If it's lost, reset or the app is removed, " +
+                    "they can't be brought back.\n\nTurn on Google Drive backup, or a weekly backup file in a folder you choose.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = c.greyText,
+            )
+        },
+        confirmButton = { AppButton("Set up backup", onSetUp, variant = ButtonVariant.Link) },
+        dismissButton = { AppButton("Not now", onNotNow, variant = ButtonVariant.Tertiary) },
+        shape = SmoothShape(20.dp),
+        containerColor = c.surface,
+    )
 }
 
 /**

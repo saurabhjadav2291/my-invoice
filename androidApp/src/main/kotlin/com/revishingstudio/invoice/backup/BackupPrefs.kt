@@ -29,14 +29,31 @@ data class BackupStatus(
     val hasPassword: Boolean = false,
     /** When the "not backed up" banner on Invoices was last closed. */
     val bannerDismissedAt: Long = 0,
-    /** The "restore from another phone" offer on a fresh install was closed. */
     /** The welcome screen of a fresh install is done (signed in, skipped or restored). */
     val welcomeDone: Boolean = false,
     /** The one-time "Back up to Google Drive?" question was answered (either way). */
     val drivePromptAnswered: Boolean = false,
+    /** The folder (a document tree the person picked) that gets a weekly backup file, if on. */
+    val folderUri: String? = null,
+    val folderName: String? = null,
+    /** When the last backup file was written to that folder (epoch millis), or 0. */
+    val lastExportAt: Long = 0,
+    /** Why the last weekly backup file failed, until one succeeds. */
+    val exportError: String? = null,
+    /** A "back up now?" question is waiting after sending an invoice or recording a payment. */
+    val keyMomentPending: Boolean = false,
+    val lastKeyMomentAt: Long = 0,
 ) {
     /** Nothing has changed since the last Drive backup. */
     val upToDate: Boolean get() = driveEnabled && lastBackupAt > 0 && lastBackupAt >= changedAt
+
+    val folderBackupOn: Boolean get() = folderUri != null
+
+    /** Nothing has changed since the last backup file in the folder. */
+    val folderUpToDate: Boolean get() = folderBackupOn && lastExportAt > 0 && lastExportAt >= changedAt
+
+    /** Some automatic backup is on. */
+    val isProtected: Boolean get() = driveEnabled || folderBackupOn
 }
 
 /**
@@ -59,6 +76,12 @@ class BackupPrefs private constructor(context: Context) {
         bannerDismissedAt = prefs.getLong(BANNER_DISMISSED, 0),
         welcomeDone = prefs.getBoolean(WELCOME_DONE, false),
         drivePromptAnswered = prefs.getBoolean(DRIVE_PROMPT_ANSWERED, false),
+        folderUri = prefs.getString(FOLDER_URI, null),
+        folderName = prefs.getString(FOLDER_NAME, null),
+        lastExportAt = prefs.getLong(LAST_EXPORT, 0),
+        exportError = prefs.getString(EXPORT_ERROR, null),
+        keyMomentPending = prefs.getBoolean(KEY_MOMENT_PENDING, false),
+        lastKeyMomentAt = prefs.getLong(KEY_MOMENT_AT, 0),
     )
 
     /** commit = true writes before returning; used right before the app restarts. */
@@ -98,6 +121,35 @@ class BackupPrefs private constructor(context: Context) {
 
     fun answerDrivePrompt() = edit { putBoolean(DRIVE_PROMPT_ANSWERED, true) }
 
+    fun setFolder(uri: String?, name: String?) = edit {
+        if (uri != null) putString(FOLDER_URI, uri) else remove(FOLDER_URI)
+        if (name != null) putString(FOLDER_NAME, name) else remove(FOLDER_NAME)
+        remove(EXPORT_ERROR)
+        if (uri == null) remove(LAST_EXPORT)
+    }
+
+    fun exported(at: Long) = edit {
+        putLong(LAST_EXPORT, at)
+        remove(EXPORT_ERROR)
+    }
+
+    fun exportFailed(message: String) = edit { putString(EXPORT_ERROR, message) }
+
+    /**
+     * An invoice was sent or a payment recorded. If nothing backs the data up, ask about
+     * backup, at most once a month.
+     */
+    fun keyMoment(now: Long = System.currentTimeMillis()) {
+        val s = status.value
+        if (s.isProtected || now - s.lastKeyMomentAt < 30 * 86_400_000L) return
+        edit {
+            putBoolean(KEY_MOMENT_PENDING, true)
+            putLong(KEY_MOMENT_AT, now)
+        }
+    }
+
+    fun answerKeyMoment() = edit { putBoolean(KEY_MOMENT_PENDING, false) }
+
     /** After a restore, the restored data is what the last backup held. */
     fun restored(backupTakenAt: Long) = edit(commit = true) {
         putLong(LAST_BACKUP, backupTakenAt)
@@ -123,6 +175,12 @@ class BackupPrefs private constructor(context: Context) {
         private const val PASSWORD = "password"
         private const val BANNER_DISMISSED = "banner_dismissed"
         private const val WELCOME_DONE = "welcome_done"
+        private const val FOLDER_URI = "folder_uri"
+        private const val FOLDER_NAME = "folder_name"
+        private const val LAST_EXPORT = "last_export"
+        private const val EXPORT_ERROR = "export_error"
+        private const val KEY_MOMENT_PENDING = "key_moment_pending"
+        private const val KEY_MOMENT_AT = "key_moment_at"
         private const val DRIVE_PROMPT_ANSWERED = "drive_prompt_answered"
 
         @Volatile

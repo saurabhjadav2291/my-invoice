@@ -22,6 +22,7 @@ import com.revishingstudio.invoice.backup.DriveAuth
 import com.revishingstudio.invoice.backup.DriveBackup
 import com.revishingstudio.invoice.backup.DriveClient
 import com.revishingstudio.invoice.backup.DriveFile
+import com.revishingstudio.invoice.backup.FolderBackup
 import com.revishingstudio.invoice.backup.OpenedBackup
 import com.revishingstudio.invoice.backup.backupMessage
 import com.revishingstudio.invoice.core.backup.BackupFormat
@@ -68,6 +69,7 @@ class BackupController(context: Context, private val actions: Actions) {
     internal lateinit var launchConsent: (IntentSenderRequest) -> Unit
     internal lateinit var launchExport: (String) -> Unit
     internal lateinit var launchImport: () -> Unit
+    internal lateinit var launchFolder: () -> Unit
 
     private var afterConsent: (suspend (String, AuthorizationResult) -> Unit)? = null
     private var exportPassword: CharArray? = null
@@ -201,6 +203,35 @@ class BackupController(context: Context, private val actions: Actions) {
     }
 
     fun importFile() = launchImport()
+
+    // ---- Weekly backup file in a folder -----------------------------------------
+
+    /** Picks a folder for the weekly backup file, after making sure a password is set. */
+    fun turnOnFolderBackup() = withPassword { _ -> launchFolder() }
+
+    internal fun onFolderPicked(tree: Uri?) {
+        if (tree == null) return
+        scope.launch {
+            runStep(null) { FolderBackup.choose(context, tree) } ?: return@launch
+            saveToFolderNow()
+        }
+    }
+
+    fun saveToFolderNow() {
+        scope.launch {
+            val error = working("Saving backup file…") { FolderBackup.run(context) }
+            if (error == null) {
+                actions.message("Backup file saved", BannerKind.Success)
+            } else {
+                actions.message(error, BannerKind.Error)
+            }
+        }
+    }
+
+    fun turnOffFolderBackup() {
+        FolderBackup.turnOff(context)
+        actions.message("Weekly backup file turned off. Files already saved stay in the folder.", BannerKind.Success)
+    }
 
     internal fun onImportPicked(uri: Uri?) {
         if (uri == null) return
@@ -372,5 +403,7 @@ fun rememberBackupController(): BackupController {
     controller.launchConsent = { consent.launch(it) }
     controller.launchExport = { export.launch(it) }
     controller.launchImport = { import.launch(arrayOf("*/*")) }
+    val folder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { controller.onFolderPicked(it) }
+    controller.launchFolder = { folder.launch(null) }
     return controller
 }
