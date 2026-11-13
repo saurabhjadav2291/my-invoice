@@ -96,7 +96,8 @@ fun BackupScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     controller::restoreFromDrive,
                     Modifier.fillMaxWidth(),
                     variant = ButtonVariant.Secondary,
-                    icon = AppIcons.CloudDownload,
+                    icon = AppIcons.GoogleDrive,
+                    iconInColour = true,
                 )
             }
             SettingsSection("Backup password") {
@@ -344,7 +345,8 @@ fun RestoreOffer(controller: BackupController, onDismiss: () -> Unit, modifier: 
             controller::restoreFromDrive,
             Modifier.fillMaxWidth(),
             variant = ButtonVariant.Secondary,
-            icon = AppIcons.CloudDownload,
+            icon = AppIcons.GoogleDrive,
+            iconInColour = true,
         )
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
@@ -352,4 +354,31 @@ fun RestoreOffer(controller: BackupController, onDismiss: () -> Unit, modifier: 
             AppButton("Not now", onDismiss, variant = ButtonVariant.Tertiary)
         }
     }
+}
+
+/**
+ * Asked once, after the person has set up their details: turn on Google Drive backup?
+ * Optional. "Not now" leaves it off, and the quiet nudge on Invoices reminds them later.
+ */
+@Composable
+fun DriveBackupPrompt(onTurnOn: () -> Unit, onNotNow: () -> Unit) {
+    val c = Ui.colors
+    AlertDialog(
+        onDismissRequest = onNotNow,
+        icon = { Icon(AppIcons.GoogleDrive, contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(40.dp)) },
+        title = { Text("Back up to Google Drive?", style = MaterialTheme.typography.titleLarge, color = c.ink) },
+        text = {
+            Text(
+                "Keep an encrypted copy of your invoices, clients and business details in your Google Drive. " +
+                    "If you change phones or reinstall the app, you can bring everything back in one step.\n\n" +
+                    "It's optional, and you can turn it on later in Settings.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = c.greyText,
+            )
+        },
+        confirmButton = { AppButton("Turn on", onTurnOn, variant = ButtonVariant.Link) },
+        dismissButton = { AppButton("Not now", onNotNow, variant = ButtonVariant.Tertiary) },
+        shape = SmoothShape(20.dp),
+        containerColor = c.surface,
+    )
 }

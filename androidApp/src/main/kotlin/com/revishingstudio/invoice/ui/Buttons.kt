@@ -115,6 +115,8 @@ fun AppButton(
     modifier: Modifier = Modifier,
     variant: ButtonVariant = ButtonVariant.Primary,
     icon: ImageVector? = null,
+    /** Draws [icon] in its own colours, e.g. the Google Drive logo. */
+    iconInColour: Boolean = false,
     trailingIcon: ImageVector? = null,
     enabled: Boolean = true,
     tint: Color? = null,
@@ -201,7 +203,7 @@ fun AppButton(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = null, tint = if (iconInColour) Color.Unspecified else iconColor, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
         }
         Text(text, color = content, style = MaterialTheme.typography.labelLarge, maxLines = 1)

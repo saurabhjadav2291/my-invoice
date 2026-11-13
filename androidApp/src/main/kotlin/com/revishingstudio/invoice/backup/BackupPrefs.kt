@@ -31,6 +31,8 @@ data class BackupStatus(
     val bannerDismissedAt: Long = 0,
     /** The "restore from another phone" offer on a fresh install was closed. */
     val restoreOfferDismissed: Boolean = false,
+    /** The one-time "Back up to Google Drive?" question was answered (either way). */
+    val drivePromptAnswered: Boolean = false,
 ) {
     /** Nothing has changed since the last Drive backup. */
     val upToDate: Boolean get() = driveEnabled && lastBackupAt > 0 && lastBackupAt >= changedAt
@@ -55,6 +57,7 @@ class BackupPrefs private constructor(context: Context) {
         hasPassword = prefs.contains(PASSWORD),
         bannerDismissedAt = prefs.getLong(BANNER_DISMISSED, 0),
         restoreOfferDismissed = prefs.getBoolean(RESTORE_OFFER_DISMISSED, false),
+        drivePromptAnswered = prefs.getBoolean(DRIVE_PROMPT_ANSWERED, false),
     )
 
     /** commit = true writes before returning; used right before the app restarts. */
@@ -88,6 +91,8 @@ class BackupPrefs private constructor(context: Context) {
 
     fun dismissRestoreOffer() = edit { putBoolean(RESTORE_OFFER_DISMISSED, true) }
 
+    fun answerDrivePrompt() = edit { putBoolean(DRIVE_PROMPT_ANSWERED, true) }
+
     /** After a restore, the restored data is what the last backup held. */
     fun restored(backupTakenAt: Long) = edit(commit = true) {
         putLong(LAST_BACKUP, backupTakenAt)
@@ -112,6 +117,7 @@ class BackupPrefs private constructor(context: Context) {
         private const val PASSWORD = "password"
         private const val BANNER_DISMISSED = "banner_dismissed"
         private const val RESTORE_OFFER_DISMISSED = "restore_offer_dismissed"
+        private const val DRIVE_PROMPT_ANSWERED = "drive_prompt_answered"
 
         @Volatile
         private var instance: BackupPrefs? = null

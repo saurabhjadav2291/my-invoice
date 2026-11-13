@@ -72,6 +72,16 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val backup by backupPrefs.status.collectAsStateWithLifecycle()
     val backupController = rememberBackupController()
     BackupDialogs(backupController)
+    // Once the person has set up their details, ask once about Drive backup, as other apps do.
+    if (profile != null && !backup.driveEnabled && !backup.drivePromptAnswered) {
+        DriveBackupPrompt(
+            onTurnOn = {
+                backupPrefs.answerDrivePrompt()
+                backupController.turnOnDrive()
+            },
+            onNotNow = backupPrefs::answerDrivePrompt,
+        )
+    }
 
     LazyColumn(
         modifier.fillMaxSize(),

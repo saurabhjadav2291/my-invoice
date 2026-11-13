@@ -284,7 +284,9 @@ A frosted white card with 20 dp corners, a hairline and a soft ink drop shadow (
 - Then 16 dp, the message in `titleMedium` `ink`, and under it the time in `bodySmall` `grey`.
 - Used for every confirmation ("Payment recorded"), error and hint. It replaces the old dark snackbar.
 
-**Backup nudge (added 2026-11-13).** When backup is off, or out of date with changes waiting, the Invoices tab shows a quiet card under the header: a white-to-frosted card with 16 dp corners, a hairline, the same amber wash as a warning banner but no shadow (it sits in the list, it does not float), a 24 dp cloud icon in `warning`, the message in `titleMedium` with a `bodySmall` line under it, and a small cross. Tapping the card opens Backup & restore; the cross hides it for two weeks. On a fresh install with nothing set up, a hero card above the empty state offers "Restore from Google Drive", "Restore from a file" and "Not now".
+**Backup nudge (added 2026-11-13).** When backup is off, or out of date with changes waiting, the Invoices tab shows a quiet card under the header: a white-to-frosted card with 16 dp corners, a hairline, the same amber wash as a warning banner but no shadow (it sits in the list, it does not float), a 24 dp cloud icon in `warning`, the message in `titleMedium` with a `bodySmall` line under it, and a small cross. Tapping the card opens Backup & restore; the cross hides it for two weeks. On a fresh install with nothing set up, a hero card above the empty state offers "Restore from Google Drive", "Restore from a file" and "Not now". Once the person has saved their details and Drive backup is off, a one-time dialog asks "Back up to Google Drive?" (Turn on / Not now), the way WhatsApp asks during setup.
+
+**Google Drive logo (decided 2026-11-13).** The Google Drive buttons ("Restore from Google Drive") and the backup prompt use the Drive logo in its own colours. It is the one icon that is not from Hugeicons.
 
 ### 6.9 Icons
 

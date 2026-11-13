@@ -190,6 +190,28 @@ object AppIcons {
         Stroke("M4 13L4 14.5442C4 17.7892 4 19.4117 4.88607 20.5107C5.06508 20.7327 5.26731 20.9349 5.48933 21.1139C6.58831 22 8.21082 22 11.4558 22C12.1614 22 12.5141 22 12.8372 21.886C12.9044 21.8623 12.9702 21.835 13.0345 21.8043C13.3436 21.6564 13.593 21.407 14.0919 20.9081L18.8284 16.1716C19.4065 15.5935 19.6955 15.3045 19.8478 14.9369C20 14.5694 20 14.1606 20 13.3431V10C20 6.22876 20 4.34315 18.8284 3.17157C17.6569 2 15.7712 2 12 2M13 21.5V21C13 18.1716 13 16.7574 13.8787 15.8787C14.7574 15 16.1716 15 19 15H19.5"),
     )
 
+    /**
+     * The Google Drive logo in its own colours, the one exception to the Hugeicons set: it marks
+     * the Google Drive backup buttons, as other apps do (Saurabh's request, 2026-11-13). Draw it
+     * with Color.Unspecified as the tint so the colours stay.
+     */
+    val GoogleDrive: ImageVector = ImageVector.Builder(
+        name = "GoogleDrive",
+        defaultWidth = 24.dp,
+        defaultHeight = 21.44.dp,
+        viewportWidth = 87.3f,
+        viewportHeight = 78f,
+    ).apply {
+        listOf(
+            "m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" to 0xFF0066DA,
+            "m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" to 0xFF00AC47,
+            "m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" to 0xFFEA4335,
+            "m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" to 0xFF00832D,
+            "m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" to 0xFF2684FC,
+            "m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" to 0xFFFFBA00,
+        ).forEach { (d, color) -> addPath(pathData = addPathNodes(d), fill = SolidColor(Color(color))) }
+    }.build()
+
     /** A cross: close a banner. Hugeicons "Cancel01". */
     val Close: ImageVector = icon(
         "Close",
