@@ -60,6 +60,8 @@ sealed interface Screen {
     data class BankEditor(val id: Long?) : Screen
     /** An invoice PDF shown inside the app. */
     data class PdfPreview(val path: String, val title: String) : Screen
+    /** Google Drive backup, backup file export and import, restore. */
+    data object Backup : Screen
 }
 
 class Navigator(private val stack: MutableList<Screen>) {
@@ -89,7 +91,8 @@ class Navigator(private val stack: MutableList<Screen>) {
 /** Runs database work off the main thread and shows any error as a message. */
 class Actions(
     val repository: InvoiceRepository,
-    private val scope: CoroutineScope,
+    /** Lives as long as the app's UI, so work started on one screen finishes after leaving it. */
+    val scope: CoroutineScope,
     private val snackbar: SnackbarHostState,
 ) {
     /** True while a [run] with once = true is still working. */
@@ -125,8 +128,8 @@ class Actions(
     }
 
     /** A hint for the person, e.g. a missing field. */
-    fun message(text: String) {
-        scope.launch { snackbar.showSnackbar(BannerVisuals(text, BannerKind.Notice)) }
+    fun message(text: String, kind: BannerKind = BannerKind.Notice) {
+        scope.launch { snackbar.showSnackbar(BannerVisuals(text, kind)) }
     }
 }
 
@@ -218,6 +221,7 @@ fun InvoiceAppUi(repository: InvoiceRepository) {
                     is Screen.ClientEditor -> ClientEditorScreen(current.id, nav)
                     is Screen.BankEditor -> BankEditorScreen(current.id, nav)
                     is Screen.PdfPreview -> PdfPreviewScreen(current.path, current.title, nav)
+                    Screen.Backup -> BackupScreen(nav)
                 }
             }
             if (isTab) {

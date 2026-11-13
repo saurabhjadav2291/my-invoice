@@ -42,6 +42,7 @@ import com.revishingstudio.invoice.core.InvoiceDates
 import com.revishingstudio.invoice.core.InvoiceSummary
 import com.revishingstudio.invoice.core.MoneyFormat
 import com.revishingstudio.invoice.core.PaymentStatus
+import com.revishingstudio.invoice.backup.BackupPrefs
 
 /** The studio logo from Settings, decoded once per path. */
 @Composable
@@ -66,6 +67,11 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val today = today()
     val logo = rememberLogo(profile?.logoPath)
     val list = invoices
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val backupPrefs = remember { BackupPrefs.get(context) }
+    val backup by backupPrefs.status.collectAsStateWithLifecycle()
+    val backupController = rememberBackupController()
+    BackupDialogs(backupController)
 
     LazyColumn(
         modifier.fillMaxSize(),
@@ -80,6 +86,16 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
             )
         }
         if (list == null) return@LazyColumn
+        if (list.isEmpty() && profile == null && !backup.restoreOfferDismissed) {
+            // A fresh install: offer to bring everything back before setting up.
+            item(key = "restore") {
+                RestoreOffer(
+                    backupController,
+                    onDismiss = backupPrefs::dismissRestoreOffer,
+                    modifier = Modifier.padding(horizontal = ScreenMargin).padding(bottom = 8.dp),
+                )
+            }
+        }
         if (list.isEmpty()) {
             item(key = "empty") {
                 // No background block behind empty states (design.md section 7.1).
@@ -96,6 +112,17 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 }
             }
             return@LazyColumn
+        }
+        backupNudge(backup)?.let { (title, detail) ->
+            item(key = "backup") {
+                BackupNudge(
+                    title,
+                    detail,
+                    onOpen = { nav.go(Screen.Backup) },
+                    onDismiss = backupPrefs::dismissBanner,
+                    modifier = Modifier.padding(horizontal = ScreenMargin),
+                )
+            }
         }
         item(key = "outstanding") { OutstandingCard(list, today, Modifier.padding(horizontal = ScreenMargin)) }
         item(key = "filters") {

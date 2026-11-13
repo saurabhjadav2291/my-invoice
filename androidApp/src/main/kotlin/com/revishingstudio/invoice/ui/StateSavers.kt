@@ -36,6 +36,7 @@ private fun Screen.encode(): String = when (this) {
     is Screen.ClientEditor -> "clientEditor\t${id ?: ""}"
     is Screen.BankEditor -> "bankEditor\t${id ?: ""}"
     is Screen.PdfPreview -> "pdf\t$path\t$title"
+    Screen.Backup -> "backup"
 }
 
 private fun decodeScreen(text: String): Screen? {
@@ -52,6 +53,7 @@ private fun decodeScreen(text: String): Screen? {
         "clientEditor" -> Screen.ClientEditor(id)
         "bankEditor" -> Screen.BankEditor(id)
         // The PDF lives in the cache, which may be cleared; the preview shows a message if so.
+        "backup" -> Screen.Backup
         "pdf" -> Screen.PdfPreview(parts.getOrElse(1) { "" }, parts.getOrElse(2) { "" })
         else -> null
     }
