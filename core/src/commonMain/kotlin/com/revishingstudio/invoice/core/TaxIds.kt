@@ -26,7 +26,7 @@ object TaxIds {
     data class Split(val gstin: String, val fields: List<TaxField>)
 
     /**
-     * Reads old free text such as "ABN: 27685519573  ACN: 685519573", "GSTIN: 27AAPFU0939F1ZV"
+     * Reads old free text such as "ABN: 12345678901  ACN: 123456789", "GSTIN: 27AAPFU0939F1ZV"
      * or a bare GSTIN. A GSTIN goes to its own field; any other "Label: value" becomes a custom
      * field; text without a label is kept as a field called "Tax ID" so nothing is lost.
      */

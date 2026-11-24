@@ -69,7 +69,7 @@ object InvoicePdfExporter {
         val profile = BusinessProfile(
             ownerName = "Your Name",
             studioName = "Your Studio",
-            address = "Flat 101, Sample Residency,\nNear Example Circle,\nAhmedabad - 380001",
+            address = "123 Sample Street,\nSample Area,\nYour City - 000000",
             pan = "ABCDE1234F",
         )
         val invoice = Invoice(

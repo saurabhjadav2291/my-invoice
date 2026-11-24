@@ -23,7 +23,7 @@ class InvoicePdfTest {
     private val profile = BusinessProfile(
         ownerName = "Asha Example",
         studioName = "Example Studio",
-        address = "A-101, Sample Residency,\nNear Test Circle,\nAhmedabad - 380001",
+        address = "123 Sample Street,\nSample Area,\nYour City - 000000",
         pan = "ABCDE1234F",
     )
 
