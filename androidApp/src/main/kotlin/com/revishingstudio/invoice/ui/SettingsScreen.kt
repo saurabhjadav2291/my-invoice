@@ -178,13 +178,14 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
 
     fun previewInvoice() {
         actions.run {
-            // The preview is made entirely of placeholder details (name, studio, address, PAN,
-            // bank, client) so none of the person's own details show. Only the on-invoice
+            // The preview is made entirely of placeholder details (logo, name, studio, address,
+            // PAN, bank, client) so none of the person's own details show. Only the on-invoice
             // options from Settings carry over, so the preview still reflects them.
             val (sample, sampleProfile) = InvoicePdfExporter.sampleInvoice()
+            val withLogo = sampleProfile.copy(logoPath = InvoicePdfExporter.sampleLogo(context))
             val shown = profile?.let {
-                sampleProfile.copy(showGstNote = it.showGstNote, showDueDate = it.showDueDate)
-            } ?: sampleProfile
+                withLogo.copy(showGstNote = it.showGstNote, showDueDate = it.showDueDate)
+            } ?: withLogo
             val file = InvoicePdfExporter.export(context, sample, shown)
             withContext(Dispatchers.Main) { nav.go(Screen.PdfPreview(file.absolutePath, "Preview invoice")) }
         }

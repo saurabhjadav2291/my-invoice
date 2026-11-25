@@ -63,6 +63,20 @@ object InvoicePdfExporter {
         context.startActivity(chooser)
     }
 
+    /**
+     * Copies the bundled placeholder logo (assets/sample-logo.png) to the cache and returns its
+     * path, so the sample invoice shows where a logo goes without using the person's own.
+     */
+    fun sampleLogo(context: Context): String {
+        val file = File(context.cacheDir, "sample-logo.png")
+        if (!file.exists()) {
+            context.assets.open("sample-logo.png").use { input ->
+                file.outputStream().use { input.copyTo(it) }
+            }
+        }
+        return file.absolutePath
+    }
+
     /** Made-up data so the design can be checked before real invoices exist. */
     fun sampleInvoice(): Pair<Invoice, BusinessProfile> {
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
