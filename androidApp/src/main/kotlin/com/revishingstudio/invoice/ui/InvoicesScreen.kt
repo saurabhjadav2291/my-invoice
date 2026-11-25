@@ -42,11 +42,12 @@ import com.revishingstudio.invoice.core.InvoiceDates
 import com.revishingstudio.invoice.core.InvoiceSummary
 import com.revishingstudio.invoice.core.MoneyFormat
 import com.revishingstudio.invoice.core.PaymentStatus
+import com.revishingstudio.invoice.backup.BackupPrefs
 
 /** The studio logo from Settings, decoded once per path. */
 @Composable
 fun rememberLogo(path: String?, version: Int = 0): ImageBitmap? = remember(path, version) {
-    path?.let { runCatching { BitmapFactory.decodeFile(it)?.asImageBitmap() }.getOrNull() }
+    path?.let { runCatching { com.revishingstudio.invoice.pdf.LogoImages.decode(it, maxSide = 512)?.asImageBitmap() }.getOrNull() }
 }
 
 private enum class InvoiceFilter(val label: String, val matches: (PaymentStatus) -> Boolean) {
@@ -66,6 +67,21 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val today = today()
     val logo = rememberLogo(profile?.logoPath)
     val list = invoices
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val backupPrefs = remember { BackupPrefs.get(context) }
+    val backup by backupPrefs.status.collectAsStateWithLifecycle()
+    val backupController = rememberBackupController()
+    BackupDialogs(backupController)
+    // Once the person has set up their details, ask once about Drive backup, as other apps do.
+    if (profile != null && !backup.driveEnabled && !backup.drivePromptAnswered) {
+        DriveBackupPrompt(
+            onTurnOn = {
+                backupPrefs.answerDrivePrompt()
+                backupController.turnOnDrive()
+            },
+            onNotNow = backupPrefs::answerDrivePrompt,
+        )
+    }
 
     LazyColumn(
         modifier.fillMaxSize(),
@@ -96,6 +112,17 @@ fun InvoicesScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 }
             }
             return@LazyColumn
+        }
+        backupNudge(backup, list.size)?.let { (title, detail) ->
+            item(key = "backup") {
+                BackupNudge(
+                    title,
+                    detail,
+                    onOpen = { nav.go(Screen.Backup) },
+                    onDismiss = backupPrefs::dismissBanner,
+                    modifier = Modifier.padding(horizontal = ScreenMargin),
+                )
+            }
         }
         item(key = "outstanding") { OutstandingCard(list, today, Modifier.padding(horizontal = ScreenMargin)) }
         item(key = "filters") {

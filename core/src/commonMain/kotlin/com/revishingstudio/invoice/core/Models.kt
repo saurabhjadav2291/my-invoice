@@ -123,6 +123,11 @@ data class Invoice(
     val items: List<LineItem>,
     val payments: List<Payment>,
     val notes: String,
+    /**
+     * Your business details as they were when the invoice was sent. Null for drafts
+     * (and very old invoices), which use the latest details.
+     */
+    val issuer: BusinessProfile? = null,
 ) {
     val totalMinor: Long get() = items.sumOf { it.amountMinor }
     val paidMinor: Long get() = payments.sumOf { it.amountMinor }

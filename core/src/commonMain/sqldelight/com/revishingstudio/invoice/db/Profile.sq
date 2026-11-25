@@ -56,6 +56,9 @@ WHERE id = ?;
 clearDefaultBankAccount:
 UPDATE bank_account SET is_default = 0;
 
+setDefaultBankAccount:
+UPDATE bank_account SET is_default = 1 WHERE id = ?;
+
 deleteBankAccount:
 DELETE FROM bank_account WHERE id = ?;
 

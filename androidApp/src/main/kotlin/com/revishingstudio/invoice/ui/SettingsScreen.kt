@@ -55,9 +55,11 @@ import com.revishingstudio.invoice.core.BusinessProfile
 import com.revishingstudio.invoice.core.NumberReset
 import com.revishingstudio.invoice.core.NumberingScheme
 import com.revishingstudio.invoice.pdf.InvoicePdfExporter
+import com.revishingstudio.invoice.backup.BackupPrefs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import com.revishingstudio.invoice.pdf.LogoImages
 
 private enum class NumberStyle(val label: String, val pattern: String?) {
     FINANCIAL_YEAR("Financial year, e.g. INV/26-27/001", NumberingScheme.DEFAULT_PATTERN),
@@ -175,6 +177,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val actions = LocalActions.current
     val context = LocalContext.current
     val profile by actions.repository.observeProfile().collectAsStateWithLifecycle(null)
+    val backup by remember { BackupPrefs.get(context).status }.collectAsStateWithLifecycle()
 
     fun previewInvoice() {
         actions.run {
@@ -213,6 +216,11 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                 title = "Business info",
                 subtitle = "Studio, address, PAN, logo, invoice numbers and bank",
             ) { nav.go(Screen.BusinessInfo) }
+            SettingsOption(
+                icon = AppIcons.CloudUpload,
+                title = "Backup & restore",
+                subtitle = backupSummary(backup),
+            ) { nav.go(Screen.Backup) }
             SettingsOption(
                 icon = AppIcons.Document,
                 title = "Preview invoice",
@@ -372,15 +380,15 @@ fun BusinessInfoScreen(nav: Navigator, modifier: Modifier = Modifier) {
 
     val pickLogo = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
-            val target = File(context.filesDir, "logo")
-            runCatching {
-                context.contentResolver.openInputStream(uri)!!.use { input ->
-                    target.outputStream().use { input.copyTo(it) }
-                }
-            }.onSuccess {
-                form.logoPath = target.absolutePath
-                form.logoVersion++
-            }.onFailure { actions.message("Could not read that image") }
+            // Scaled down to a small PNG of its own; the saved logo only changes when you tap Save.
+            scope.launch {
+                runCatching { withContext(Dispatchers.IO) { LogoImages.import(context, uri) } }
+                    .onSuccess {
+                        form.logoPath = it.absolutePath
+                        form.logoVersion++
+                    }
+                    .onFailure { actions.message("Could not read that image") }
+            }
         }
     }
 
@@ -630,7 +638,7 @@ private fun BusinessSummary(
 
 /** A saved value: quiet label above, the value in ink (or "Not added" in grey). */
 @Composable
-private fun InfoRow(label: String, value: String, mono: Boolean = false) {
+fun InfoRow(label: String, value: String, mono: Boolean = false) {
     val c = Ui.colors
     Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = c.grey)
@@ -741,7 +749,7 @@ fun BankEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
             swift = swift.trim().uppercase(),
             isDefault = isDefault,
         )
-        actions.run("Bank account saved", onDone = {
+        actions.run("Bank account saved", once = true, onDone = {
             // A new account goes back to the list; an edited one shows its saved details.
             if (id == null) nav.back() else editing = false
         }) { saveBankAccount(account) }

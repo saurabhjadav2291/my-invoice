@@ -38,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -125,19 +126,20 @@ private fun TaxFieldRow(field: TaxField, onChange: (TaxField) -> Unit, onRemove:
 @Composable
 fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier) {
     val actions = LocalActions.current
-    var loaded by remember { mutableStateOf(id == null) }
-    var name by remember { mutableStateOf("") }
-    var legalName by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var gstin by remember { mutableStateOf("") }
-    val taxFields = remember { mutableStateListOf<TaxField>() }
-    var currency by remember { mutableStateOf(Currency.INR) }
+    // Saveable, so what was typed survives Android closing the app in the background.
+    var loaded by rememberSaveable { mutableStateOf(id == null) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var legalName by rememberSaveable { mutableStateOf("") }
+    var address by rememberSaveable { mutableStateOf("") }
+    var phone by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var gstin by rememberSaveable { mutableStateOf("") }
+    val taxFields = rememberSaveable(saver = TaxFieldsSaver) { mutableStateListOf<TaxField>() }
+    var currency by rememberSaveable { mutableStateOf(Currency.INR) }
     var confirmArchive by remember { mutableStateOf(false) }
 
     LaunchedEffect(id) {
-        if (id != null) {
+        if (id != null && !loaded) {
             withContext(Dispatchers.IO) { actions.repository.client(id) }?.let { c ->
                 name = c.name
                 legalName = c.legalName
@@ -175,7 +177,7 @@ fun ClientEditorScreen(id: Long?, nav: Navigator, modifier: Modifier = Modifier)
                 .filter { it.value.isNotEmpty() },
             defaultCurrency = currency,
         )
-        actions.run("Client saved", onDone = { nav.back() }) { saveClient(client) }
+        actions.run("Client saved", onDone = { nav.back() }, once = true) { saveClient(client) }
     }
 
     InnerScaffold(

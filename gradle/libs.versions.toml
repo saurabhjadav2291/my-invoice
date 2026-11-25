@@ -10,8 +10,12 @@ coreKtx = "1.17.0"
 lifecycle = "2.9.4"
 pdfbox = "3.0.8"
 haze = "1.7.0"
+playServicesAuth = "21.2.0"
+work = "2.10.0"
 
 [libraries]
+play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }

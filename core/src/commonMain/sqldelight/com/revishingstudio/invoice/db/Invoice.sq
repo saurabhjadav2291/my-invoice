@@ -10,7 +10,10 @@ CREATE TABLE invoice (
     due_date TEXT NOT NULL,
     state TEXT NOT NULL,
     notes TEXT NOT NULL DEFAULT '',
-    created_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL,
+    -- Client, business and bank details as they were when the invoice was sent
+    -- (see InvoiceSnapshot). NULL for drafts, which follow the latest details.
+    snapshot TEXT
 );
 
 CREATE INDEX invoice_client ON invoice(client_id);
@@ -55,6 +58,18 @@ WHERE id = ?;
 setInvoiceState:
 UPDATE invoice SET state = ? WHERE id = ?;
 
+setSnapshot:
+UPDATE invoice SET snapshot = ? WHERE id = ?;
+
+renumberInvoice:
+UPDATE invoice SET number = ?, period_key = ?, sequence = ? WHERE id = ?;
+
+invoicesMissingSnapshot:
+SELECT id FROM invoice WHERE state != 'DRAFT' AND snapshot IS NULL;
+
+paymentCount:
+SELECT COUNT(*) FROM payment WHERE invoice_id = ?;
+
 deleteInvoice:
 DELETE FROM invoice WHERE id = ?;
 
@@ -77,6 +92,7 @@ SELECT
     i.due_date,
     i.state,
     c.name AS client_name,
+    i.snapshot,
     COALESCE((SELECT SUM(amount_minor) FROM line_item WHERE invoice_id = i.id), 0) AS total_minor,
     COALESCE((SELECT SUM(amount_minor) FROM payment WHERE invoice_id = i.id), 0) AS paid_minor
 FROM invoice i

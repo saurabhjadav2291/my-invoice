@@ -75,5 +75,8 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.haze)
+    // Google Drive backup: Google authorization for the Drive app folder, and daily background backups.
+    implementation(libs.play.services.auth)
+    implementation(libs.work.runtime)
     debugImplementation(libs.compose.ui.tooling)
 }

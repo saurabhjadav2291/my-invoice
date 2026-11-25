@@ -39,6 +39,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -234,9 +235,12 @@ fun Field(
     supportingText: String? = null,
     isError: Boolean = false,
     placeholder: String? = null,
+    /** Hides the text as dots, for the backup password. */
+    password: Boolean = false,
 ) {
     val c = Ui.colors
     val colors = fieldColors()
+    val transformation = if (password) PasswordVisualTransformation() else VisualTransformation.None
     val interaction = remember { MutableInteractionSource() }
     Column(modifier.fillMaxWidth()) {
         FieldLabel(label)
@@ -247,7 +251,8 @@ fun Field(
             onValueChange = onValueChange,
             singleLine = singleLine,
             minLines = minLines,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            keyboardOptions = KeyboardOptions(keyboardType = if (password) KeyboardType.Password else keyboardType),
+            visualTransformation = transformation,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = c.ink),
             cursorBrush = SolidColor(c.primary),
             interactionSource = interaction,
@@ -258,7 +263,7 @@ fun Field(
                     innerTextField = inner,
                     enabled = true,
                     singleLine = singleLine,
-                    visualTransformation = VisualTransformation.None,
+                    visualTransformation = transformation,
                     interactionSource = interaction,
                     isError = isError,
                     placeholder = placeholder?.let { text -> @Composable { Text(text, style = MaterialTheme.typography.bodyLarge, color = c.grey, maxLines = 1) } },

@@ -1,0 +1,225 @@
+package com.revishingstudio.invoice.backup
+
+import android.content.Context
+import android.content.SharedPreferences
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+
+/** Where backup stands, for the Settings screen and the Invoices banner. */
+data class BackupStatus(
+    /** Automatic Google Drive backup is on. */
+    val driveEnabled: Boolean = false,
+    /** The Google account the backup goes to, when known. */
+    val account: String? = null,
+    /** When the last successful Drive backup was taken (epoch millis), or 0. */
+    val lastBackupAt: Long = 0,
+    /** When the invoices, clients or settings last changed (epoch millis), or 0. */
+    val changedAt: Long = 0,
+    /** Why the last automatic backup failed, until one succeeds. */
+    val lastError: String? = null,
+    val hasPassword: Boolean = false,
+    /** When the "not backed up" banner on Invoices was last closed. */
+    val bannerDismissedAt: Long = 0,
+    /** The welcome screen of a fresh install is done (signed in, skipped or restored). */
+    val welcomeDone: Boolean = false,
+    /** The one-time "Back up to Google Drive?" question was answered (either way). */
+    val drivePromptAnswered: Boolean = false,
+    /** The folder (a document tree the person picked) that gets a weekly backup file, if on. */
+    val folderUri: String? = null,
+    val folderName: String? = null,
+    /** When the last backup file was written to that folder (epoch millis), or 0. */
+    val lastExportAt: Long = 0,
+    /** Why the last weekly backup file failed, until one succeeds. */
+    val exportError: String? = null,
+    /** A "back up now?" question is waiting after sending an invoice or recording a payment. */
+    val keyMomentPending: Boolean = false,
+    val lastKeyMomentAt: Long = 0,
+) {
+    /** Nothing has changed since the last Drive backup. */
+    val upToDate: Boolean get() = driveEnabled && lastBackupAt > 0 && lastBackupAt >= changedAt
+
+    val folderBackupOn: Boolean get() = folderUri != null
+
+    /** Nothing has changed since the last backup file in the folder. */
+    val folderUpToDate: Boolean get() = folderBackupOn && lastExportAt > 0 && lastExportAt >= changedAt
+
+    /** Some automatic backup is on. */
+    val isProtected: Boolean get() = driveEnabled || folderBackupOn
+}
+
+/**
+ * Backup settings, kept on this phone only (the app opts out of Android's own backup).
+ * The backup password is stored encrypted with a key that never leaves the phone's
+ * keystore, so automatic backups can run without asking for it.
+ */
+class BackupPrefs private constructor(context: Context) {
+    private val prefs: SharedPreferences = context.getSharedPreferences("backup", Context.MODE_PRIVATE)
+    private val _status = MutableStateFlow(read())
+    val status: StateFlow<BackupStatus> = _status.asStateFlow()
+
+    private fun read() = BackupStatus(
+        driveEnabled = prefs.getBoolean(DRIVE_ENABLED, false),
+        account = prefs.getString(ACCOUNT, null),
+        lastBackupAt = prefs.getLong(LAST_BACKUP, 0),
+        changedAt = prefs.getLong(CHANGED, 0),
+        lastError = prefs.getString(LAST_ERROR, null),
+        hasPassword = prefs.contains(PASSWORD),
+        bannerDismissedAt = prefs.getLong(BANNER_DISMISSED, 0),
+        welcomeDone = prefs.getBoolean(WELCOME_DONE, false),
+        drivePromptAnswered = prefs.getBoolean(DRIVE_PROMPT_ANSWERED, false),
+        folderUri = prefs.getString(FOLDER_URI, null),
+        folderName = prefs.getString(FOLDER_NAME, null),
+        lastExportAt = prefs.getLong(LAST_EXPORT, 0),
+        exportError = prefs.getString(EXPORT_ERROR, null),
+        keyMomentPending = prefs.getBoolean(KEY_MOMENT_PENDING, false),
+        lastKeyMomentAt = prefs.getLong(KEY_MOMENT_AT, 0),
+    )
+
+    /** commit = true writes before returning; used right before the app restarts. */
+    private fun edit(commit: Boolean = false, block: SharedPreferences.Editor.() -> Unit) {
+        synchronized(this) {
+            val editor = prefs.edit()
+            editor.block()
+            if (commit) editor.commit() else editor.apply()
+            _status.value = read()
+        }
+    }
+
+    fun setDrive(enabled: Boolean, account: String?, commit: Boolean = false) = edit(commit) {
+        putBoolean(DRIVE_ENABLED, enabled)
+        if (account != null) putString(ACCOUNT, account) else remove(ACCOUNT)
+        if (!enabled) remove(LAST_ERROR)
+    }
+
+    fun setAccount(account: String) = edit { putString(ACCOUNT, account) }
+
+    fun backedUp(at: Long) = edit {
+        putLong(LAST_BACKUP, at)
+        remove(LAST_ERROR)
+    }
+
+    fun failed(message: String) = edit { putString(LAST_ERROR, message) }
+
+    fun changed(at: Long = System.currentTimeMillis()) = edit { putLong(CHANGED, at) }
+
+    fun dismissBanner() = edit { putLong(BANNER_DISMISSED, System.currentTimeMillis()) }
+
+    /** New people answer the backup question on the welcome screen, so the later prompt is skipped. */
+    fun finishWelcome() = edit {
+        putBoolean(WELCOME_DONE, true)
+        putBoolean(DRIVE_PROMPT_ANSWERED, true)
+    }
+
+    fun answerDrivePrompt() = edit { putBoolean(DRIVE_PROMPT_ANSWERED, true) }
+
+    fun setFolder(uri: String?, name: String?) = edit {
+        if (uri != null) putString(FOLDER_URI, uri) else remove(FOLDER_URI)
+        if (name != null) putString(FOLDER_NAME, name) else remove(FOLDER_NAME)
+        remove(EXPORT_ERROR)
+        if (uri == null) remove(LAST_EXPORT)
+    }
+
+    fun exported(at: Long) = edit {
+        putLong(LAST_EXPORT, at)
+        remove(EXPORT_ERROR)
+    }
+
+    fun exportFailed(message: String) = edit { putString(EXPORT_ERROR, message) }
+
+    /**
+     * An invoice was sent or a payment recorded. If nothing backs the data up, ask about
+     * backup, at most once a month.
+     */
+    fun keyMoment(now: Long = System.currentTimeMillis()) {
+        val s = status.value
+        if (s.isProtected || now - s.lastKeyMomentAt < 30 * 86_400_000L) return
+        edit {
+            putBoolean(KEY_MOMENT_PENDING, true)
+            putLong(KEY_MOMENT_AT, now)
+        }
+    }
+
+    fun answerKeyMoment() = edit { putBoolean(KEY_MOMENT_PENDING, false) }
+
+    /** After a restore, the restored data is what the last backup held. */
+    fun restored(backupTakenAt: Long) = edit(commit = true) {
+        putLong(LAST_BACKUP, backupTakenAt)
+        putLong(CHANGED, backupTakenAt)
+        putBoolean(WELCOME_DONE, true)
+        putBoolean(DRIVE_PROMPT_ANSWERED, true)
+        remove(LAST_ERROR)
+    }
+
+    fun password(): CharArray? {
+        val stored = prefs.getString(PASSWORD, null) ?: return null
+        return runCatching { PasswordVault.open(stored) }.getOrNull()
+    }
+
+    fun setPassword(password: CharArray, commit: Boolean = false) = edit(commit) { putString(PASSWORD, PasswordVault.seal(password)) }
+
+    companion object {
+        private const val DRIVE_ENABLED = "drive_enabled"
+        private const val ACCOUNT = "account"
+        private const val LAST_BACKUP = "last_backup"
+        private const val CHANGED = "changed"
+        private const val LAST_ERROR = "last_error"
+        private const val PASSWORD = "password"
+        private const val BANNER_DISMISSED = "banner_dismissed"
+        private const val WELCOME_DONE = "welcome_done"
+        private const val FOLDER_URI = "folder_uri"
+        private const val FOLDER_NAME = "folder_name"
+        private const val LAST_EXPORT = "last_export"
+        private const val EXPORT_ERROR = "export_error"
+        private const val KEY_MOMENT_PENDING = "key_moment_pending"
+        private const val KEY_MOMENT_AT = "key_moment_at"
+        private const val DRIVE_PROMPT_ANSWERED = "drive_prompt_answered"
+
+        @Volatile
+        private var instance: BackupPrefs? = null
+
+        fun get(context: Context): BackupPrefs =
+            instance ?: synchronized(this) { instance ?: BackupPrefs(context.applicationContext).also { instance = it } }
+    }
+}
+
+/** Seals the backup password with an AES key kept in the Android keystore. */
+private object PasswordVault {
+    private const val ALIAS = "my_invoice_backup_password"
+
+    private fun key(): SecretKey {
+        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        (store.getKey(ALIAS, null) as? SecretKey)?.let { return it }
+        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        generator.init(
+            KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .build(),
+        )
+        return generator.generateKey()
+    }
+
+    fun seal(password: CharArray): String {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, key())
+        val plain = String(password).toByteArray(Charsets.UTF_8)
+        return Base64.encodeToString(cipher.iv + cipher.doFinal(plain), Base64.NO_WRAP)
+    }
+
+    fun open(sealed: String): CharArray {
+        val bytes = Base64.decode(sealed, Base64.NO_WRAP)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, bytes, 0, 12))
+        return String(cipher.doFinal(bytes, 12, bytes.size - 12), Charsets.UTF_8).toCharArray()
+    }
+}
