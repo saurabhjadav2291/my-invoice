@@ -31,7 +31,7 @@ data class BankAccount(
 
 data class Client(
     val id: Long = 0,
-    /** Name in bold on the invoice, e.g. "Beyond Visible". */
+    /** Name in bold on the invoice, e.g. "Northwind". */
     val name: String,
     /** Optional registered name shown next to it, e.g. "Acme Creative Pty Ltd". */
     val legalName: String = "",
@@ -69,7 +69,7 @@ data class LineItem(
         fun priced(description: String, rateMinor: Long, quantityMilli: Long): LineItem =
             LineItem(description, rateMinor, quantityMilli, amountFor(rateMinor, quantityMilli))
 
-        /** A line with only an amount, like "Advance Payment for Access Embroidery". */
+        /** A line with only an amount, like "Advance payment for website design". */
         fun fixed(description: String, amountMinor: Long): LineItem =
             LineItem(description, null, null, amountMinor)
 
