@@ -60,7 +60,7 @@ class MigrationTest {
             """.trimIndent(),
             0,
         )
-        driver.execute(null, "INSERT INTO client (name, tax_ids) VALUES ('Aus', 'ABN: 27685519573  ACN: 685519573')", 0)
+        driver.execute(null, "INSERT INTO client (name, tax_ids) VALUES ('Aus', 'ABN: 12345678901  ACN: 123456789')", 0)
         driver.execute(null, "INSERT INTO client (name, tax_ids) VALUES ('Ind', '27AAPFU0939F1ZV')", 0)
 
         InvoiceDatabase.Schema.migrate(driver, 2, 3)
@@ -68,7 +68,7 @@ class MigrationTest {
 
         val aus = repo.client(1)!!
         assertEquals("", aus.gstin)
-        assertEquals(listOf(TaxField("ABN", "27685519573"), TaxField("ACN", "685519573")), aus.taxFields)
+        assertEquals(listOf(TaxField("ABN", "12345678901"), TaxField("ACN", "123456789")), aus.taxFields)
         val ind = repo.client(2)!!
         assertEquals("27AAPFU0939F1ZV", ind.gstin)
         assertEquals(emptyList(), ind.taxFields)
@@ -76,7 +76,7 @@ class MigrationTest {
         // Saving writes the new columns and drops the old text, so nothing doubles up.
         repo.saveClient(aus.copy(taxFields = aus.taxFields + TaxField("VAT", "GB123")))
         assertEquals(
-            listOf(TaxField("ABN", "27685519573"), TaxField("ACN", "685519573"), TaxField("VAT", "GB123")),
+            listOf(TaxField("ABN", "12345678901"), TaxField("ACN", "123456789"), TaxField("VAT", "GB123")),
             repo.client(1)!!.taxFields,
         )
     }
