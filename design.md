@@ -253,7 +253,7 @@ White, 16 dp corners, hairline, 16 dp padding. A tappable card steps to `surface
   - **Account details** opens a screen with your name, email and phone (sign-in and backup will go here when they exist).
   - **Business info** opens a screen with studio name, address, PAN, logo, invoice numbers, on-the-invoice options and bank accounts.
     Once saved it opens read-only (label over value, "Not added" in grey) so nothing changes by accident. **Edit info** (primary, also an Edit link in the top bar) turns the fields on, with Save and Cancel. **Remove business details** (tertiary, red, with a confirm) clears studio name, address, PAN and logo; name, numbering and bank accounts stay.
-  - **Preview invoice** opens a sample PDF built from the saved details.
+  - **Preview invoice** opens a sample PDF filled with placeholder details and a sample logo (never your own), keeping only the on-invoice options from Settings.
   The two screens use no cards (nor do the client form, decided 2026-11-09: Client, Contact and tax, Usual currency; and the invoice form: Client and currency, Dates, Items, On the invoice, with a hairline between items and an "Item 1" heading carrying the remove button): sections are a `titleLarge` heading over their fields, split by a `hairline` divider with 20 dp above and below, fields 12 dp apart.
 
 ### 6.6 Bottom navigation

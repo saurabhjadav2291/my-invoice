@@ -175,18 +175,18 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val actions = LocalActions.current
     val context = LocalContext.current
     val profile by actions.repository.observeProfile().collectAsStateWithLifecycle(null)
-    val banks by actions.repository.observeBankAccounts().collectAsStateWithLifecycle(emptyList())
 
     fun previewInvoice() {
-        val saved = profile
-        if (saved == null) {
-            actions.message("First add your name in Account details")
-            return
-        }
         actions.run {
-            val (sample, _) = InvoicePdfExporter.sampleInvoice()
-            val withBank = sample.copy(bankAccount = banks.firstOrNull { it.isDefault } ?: sample.bankAccount)
-            val file = InvoicePdfExporter.export(context, withBank, saved)
+            // The preview is made entirely of placeholder details (logo, name, studio, address,
+            // PAN, bank, client) so none of the person's own details show. Only the on-invoice
+            // options from Settings carry over, so the preview still reflects them.
+            val (sample, sampleProfile) = InvoicePdfExporter.sampleInvoice()
+            val withLogo = sampleProfile.copy(logoPath = InvoicePdfExporter.sampleLogo(context))
+            val shown = profile?.let {
+                withLogo.copy(showGstNote = it.showGstNote, showDueDate = it.showDueDate)
+            } ?: withLogo
+            val file = InvoicePdfExporter.export(context, sample, shown)
             withContext(Dispatchers.Main) { nav.go(Screen.PdfPreview(file.absolutePath, "Preview invoice")) }
         }
     }
@@ -216,7 +216,7 @@ fun SettingsScreen(nav: Navigator, modifier: Modifier = Modifier) {
             SettingsOption(
                 icon = AppIcons.Document,
                 title = "Preview invoice",
-                subtitle = "See a sample invoice with your details",
+                subtitle = "See the invoice layout with placeholder details",
             ) { previewInvoice() }
             HorizontalDivider(color = Ui.colors.hairline)
             Spacer(Modifier.height(LocalBottomBarPadding.current + 16.dp))

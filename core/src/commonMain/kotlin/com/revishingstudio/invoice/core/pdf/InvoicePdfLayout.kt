@@ -135,7 +135,7 @@ class InvoicePdfLayout(
     }
 
     /**
-     * Tax IDs such as "ABN: 27685519573  ACN: 685519573" are drawn in italics with
+     * Tax IDs such as "ABN: 12345678901  ACN: 123456789" are drawn in italics with
      * grey labels and dark numbers, like the original. Pairs that don't fit wrap to
      * the next line. Returns the baseline of the last line.
      */
